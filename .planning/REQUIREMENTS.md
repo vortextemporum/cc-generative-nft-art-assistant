@@ -5,8 +5,8 @@
 ### Platform Infrastructure
 
 - [x] **REQ-01**: User can search 33k+ projects using natural language queries → Phase 1 ✓
-- [ ] **REQ-02**: Developer can access dataset tools from Claude Desktop via MCP → Phase 2
-- [ ] **REQ-03**: System generates screenshots and visual analysis of sketches → Phase 2
+- [x] **REQ-02**: Developer can access dataset tools from Claude Desktop via MCP → Phase 2 ✓
+- [x] **REQ-03**: System generates screenshots and visual analysis of sketches → Phase 2 ✓
 - [ ] **REQ-04**: Minter contract supports allowlist and Dutch auction modes → Phase 3
 - [ ] **REQ-05**: Metadata API returns valid ERC-721 metadata for any token → Phase 3
 - [ ] **REQ-06**: Server renders artwork previews and thumbnails → Phase 5
@@ -43,8 +43,8 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | REQ-01 | Phase 1: Semantic Search | Complete |
-| REQ-02 | Phase 2: Developer Tools | Not started |
-| REQ-03 | Phase 2: Developer Tools | Not started |
+| REQ-02 | Phase 2: Developer Tools | Complete |
+| REQ-03 | Phase 2: Developer Tools | Complete |
 | REQ-04 | Phase 3: Smart Contracts | Not started |
 | REQ-05 | Phase 3: Smart Contracts | Not started |
 | REQ-06 | Phase 5: Artist Dashboard | Not started |
@@ -57,4 +57,4 @@
 | REQ-13 | Phase 6: Deployment | Not started |
 
 ---
-*Last updated: 2026-01-18 after Phase 1 completion*
+*Last updated: 2026-01-18 after Phase 2 completion*
