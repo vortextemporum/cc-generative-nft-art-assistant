@@ -88,6 +88,6 @@ The server reads from `processed/`:
 
 Generate these with:
 ```bash
-node scripts/process-dataset.js data/artblocks-dataset.json fxhash-dataset.json
+node scripts/process-dataset.js data/artblocks-dataset.json data/fxhash-dataset.json
 node services/embeddings/embed.js generate
 ```

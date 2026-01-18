@@ -18,13 +18,17 @@ generative-art-assistant/
 ├── scripts/
 │   ├── artblocks-fetcher.js     # Fetch all Art Blocks projects
 │   ├── fxhash-fetcher.js        # Fetch all fxhash projects
+│   ├── highlight-fetcher.js     # Fetch Highlight.xyz generative collections
+│   ├── dwitter-fetcher.js       # Fetch Dwitter 140-char demos
+│   ├── shadertoy-fetcher.js     # Fetch Shadertoy GLSL shaders
 │   ├── process-dataset.js       # Process into training formats
 │   └── art-assistant.js         # RAG-based assistant CLI
 │
-├── data/
-│   └── artblocks-dataset.json   # Art Blocks dataset (~31MB)
-│
-├── fxhash-dataset.json          # fxhash dataset (~465MB, at root)
+├── data/                        # All datasets (see data/README.md)
+│   ├── artblocks-dataset.json   # Art Blocks (~31MB, 908 projects)
+│   ├── fxhash-dataset.json      # fxhash (~465MB, 27k projects)
+│   ├── highlight-dataset.json   # Highlight.xyz generative collections
+│   └── dwitter-dataset.json     # Dwitter 140-char JS demos
 │
 ├── processed/                   # Generated after processing
 │   ├── training-examples.json   # Instruction-response pairs
@@ -69,7 +73,8 @@ generative-art-assistant/
 │
 └── docs/
     ├── TRAINING-GUIDE.md        # How to use data with Claude
-    └── ARTBLOCKS-RESEARCH.md    # Platform technical details
+    ├── ARTBLOCKS-RESEARCH.md    # Platform technical details
+    └── PLATFORM-FETCHERS.md     # Research on additional data sources
 ```
 
 ## Quick Commands
@@ -91,7 +96,7 @@ node scripts/fxhash-fetcher.js --with-scripts
 node scripts/fxhash-fetcher.js --limit 500
 
 # Process both datasets into training formats (token-efficient)
-node scripts/process-dataset.js data/artblocks-dataset.json fxhash-dataset.json
+node scripts/process-dataset.js data/artblocks-dataset.json data/fxhash-dataset.json
 
 # Or process single dataset
 node scripts/process-dataset.js data/artblocks-dataset.json
@@ -99,6 +104,15 @@ node scripts/process-dataset.js data/artblocks-dataset.json
 # Run the assistant
 export ANTHROPIC_API_KEY=your-key
 node scripts/art-assistant.js "your question"
+
+# Fetch Highlight.xyz generative collections (requires Alchemy key)
+ALCHEMY_API_KEY=xxx node scripts/highlight-fetcher.js --chain base --contract 0x...
+
+# Fetch Dwitter 140-char demos (no key required)
+node scripts/dwitter-fetcher.js --limit 1000
+
+# Fetch Shadertoy shaders (requires Shadertoy API key)
+SHADERTOY_API_KEY=xxx node scripts/shadertoy-fetcher.js --limit 500
 ```
 
 ## Sketch Commands
