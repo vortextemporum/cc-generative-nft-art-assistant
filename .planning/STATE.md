@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-01-18)
 ## Current Position
 
 Phase: 1 of 6 (Semantic Search)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-18 - Completed 01-01-PLAN.md (Embedding Infrastructure)
+Last activity: 2026-01-18 - Completed 01-02-PLAN.md (Search Service and CLI)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 22 min
-- Total execution time: 0.4 hours
+- Total plans completed: 2
+- Average duration: 18 min
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-semantic-search | 1 | 22 min | 22 min |
+| 01-semantic-search | 2 | 37 min | 18 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (22m)
-- Trend: N/A (need more data)
+- Last 5 plans: 01-01 (22m), 01-02 (15m)
+- Trend: Improving (15m vs 22m)
 
 *Updated after each plan completion*
 
@@ -49,6 +49,10 @@ Recent decisions affecting current work:
 - [01-01]: Upgrade from @xenova/transformers to @huggingface/transformers v3
 - [01-01]: 2 chunks per project (metadata + tags) for optimal coverage
 - [01-01]: File-based JSON storage for 60k vectors (~485MB)
+- [01-02]: Deduplicate search results by projectId (keep highest score)
+- [01-02]: Cache embedding index in memory for sub-second follow-up queries
+- [01-02]: Default to incremental mode, --full flag for complete regeneration
+- [01-02]: TF-IDF fallback when embeddings don't exist
 
 ### Pending Todos
 
@@ -56,10 +60,10 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- rag-documents.json has 416 duplicate IDs (86 projects appear multiple times). This affects incremental updates but not search functionality. Consider fixing in data processing pipeline.
 
 ## Session Continuity
 
-Last session: 2026-01-18 14:32 UTC
-Stopped at: Completed 01-01-PLAN.md - Embedding Infrastructure
-Resume file: .planning/phases/01-semantic-search/01-02-PLAN.md (next)
+Last session: 2026-01-18 14:52 UTC
+Stopped at: Completed 01-02-PLAN.md - Search Service and CLI
+Resume file: .planning/phases/01-semantic-search/01-03-PLAN.md (next)
