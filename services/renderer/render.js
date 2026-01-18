@@ -9,12 +9,18 @@
  * Usage:
  *   node render.js capture <path-to-sketch> [output.png]
  *   node render.js batch <sketches-dir> <output-dir>
- *   node render.js analyze <path-to-sketch>
- *   node render.js server [port]
+ *   node render.js analyze <sketch-path>
+ *   node render.js analyze-json <sketch-path>
+ *   node render.js variations <sketch-path> [count]
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ============================================================================
 // CONFIGURATION
@@ -25,11 +31,13 @@ const DEFAULT_HEIGHT = 700;
 const DEFAULT_TIMEOUT = 10000; // 10 seconds for render
 const CAPTURE_DELAY = 2000;    // Wait for animations to settle
 
+export const VERSION = '2.0.0';
+
 // ============================================================================
 // RENDERER CLASS
 // ============================================================================
 
-class SketchRenderer {
+export class SketchRenderer {
   constructor(options = {}) {
     this.browser = null;
     this.width = options.width || DEFAULT_WIDTH;
@@ -151,6 +159,7 @@ class SketchRenderer {
 
   /**
    * Extract visual features from a rendered sketch
+   * Returns structured analysis with metrics, composition, and interpretation
    */
   async analyze(sketchPath, options = {}) {
     await this.init();
@@ -171,91 +180,15 @@ class SketchRenderer {
       await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: this.timeout });
       await page.waitForTimeout(this.captureDelay);
 
-      // Extract visual analysis
-      const analysis = await page.evaluate(() => {
-        const canvas = document.querySelector('canvas');
-        if (!canvas) return { error: 'No canvas found' };
+      // Import and use analyzeCanvas from analyze.js
+      const { analyzeCanvas, formatAnalysis } = await import('./analyze.js');
+      const canvasData = await analyzeCanvas(page);
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return { error: 'Could not get canvas context' };
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        // Color analysis
-        const colorCounts = {};
-        const hueHistogram = new Array(36).fill(0); // 10-degree buckets
-        let totalBrightness = 0;
-        let totalSaturation = 0;
-        let pixelCount = 0;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-          if (a === 0) continue; // Skip transparent
-
-          // Quantize color for counting
-          const qr = Math.floor(r / 32) * 32;
-          const qg = Math.floor(g / 32) * 32;
-          const qb = Math.floor(b / 32) * 32;
-          const key = `${qr},${qg},${qb}`;
-          colorCounts[key] = (colorCounts[key] || 0) + 1;
-
-          // HSL for hue analysis
-          const max = Math.max(r, g, b) / 255;
-          const min = Math.min(r, g, b) / 255;
-          const l = (max + min) / 2;
-          const d = max - min;
-
-          if (d !== 0) {
-            const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            let h;
-            if (max === r / 255) h = ((g - b) / 255 / d + (g < b ? 6 : 0)) / 6;
-            else if (max === g / 255) h = ((b - r) / 255 / d + 2) / 6;
-            else h = ((r - g) / 255 / d + 4) / 6;
-
-            hueHistogram[Math.floor(h * 36)] += 1;
-            totalSaturation += s;
-          }
-
-          totalBrightness += l;
-          pixelCount++;
-        }
-
-        // Get dominant colors
-        const sortedColors = Object.entries(colorCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 10)
-          .map(([color, count]) => ({
-            rgb: color.split(',').map(Number),
-            percentage: (count / pixelCount * 100).toFixed(1),
-          }));
-
-        // Determine color characteristics
-        const avgBrightness = totalBrightness / pixelCount;
-        const avgSaturation = totalSaturation / pixelCount;
-
-        // Check hue spread
-        const activeHues = hueHistogram.filter(h => h > pixelCount * 0.01).length;
-
-        return {
-          dimensions: { width: canvas.width, height: canvas.height },
-          colorProfile: {
-            dominantColors: sortedColors,
-            avgBrightness: avgBrightness.toFixed(2),
-            avgSaturation: avgSaturation.toFixed(2),
-            colorDiversity: activeHues, // How many hue ranges are used
-            isMonochrome: avgSaturation < 0.1,
-            isDark: avgBrightness < 0.3,
-            isLight: avgBrightness > 0.7,
-            isPastel: avgSaturation < 0.5 && avgBrightness > 0.6,
-            isVibrant: avgSaturation > 0.6,
-          },
-          uniqueColors: Object.keys(colorCounts).length,
-        };
-      });
-
-      // Also capture screenshot for reference
+      // Capture screenshot for reference
       const screenshot = await this.capture(sketchPath, options);
+
+      // Get formatted analysis
+      const analysis = formatAnalysis(canvasData, null);
 
       return {
         ...analysis,
@@ -266,13 +199,86 @@ class SketchRenderer {
       await page.close();
     }
   }
+
+  /**
+   * Analyze sketch and return only structured JSON (no screenshot)
+   */
+  async analyzeJson(sketchPath, options = {}) {
+    await this.init();
+
+    const page = await this.browser.newPage();
+    await page.setViewport({
+      width: options.width || this.width,
+      height: options.height || this.height,
+    });
+
+    try {
+      let htmlPath = sketchPath;
+      if (fs.statSync(sketchPath).isDirectory()) {
+        htmlPath = path.join(sketchPath, 'index.html');
+      }
+
+      const fileUrl = `file://${path.resolve(htmlPath)}`;
+      await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: this.timeout });
+      await page.waitForTimeout(this.captureDelay);
+
+      // Import and use analyzeCanvas from analyze.js
+      const { analyzeCanvas, formatAnalysis } = await import('./analyze.js');
+      const canvasData = await analyzeCanvas(page);
+
+      return formatAnalysis(canvasData, null);
+
+    } finally {
+      await page.close();
+    }
+  }
+}
+
+// ============================================================================
+// CONVENIENCE FUNCTIONS
+// ============================================================================
+
+/**
+ * Capture a single sketch screenshot
+ * @param {string} sketchPath - Path to sketch directory or HTML file
+ * @param {Object} options - Capture options
+ * @returns {Promise<Buffer>} Screenshot buffer
+ */
+export async function captureSketch(sketchPath, options = {}) {
+  const renderer = new SketchRenderer(options);
+  try {
+    return await renderer.capture(sketchPath, options);
+  } finally {
+    await renderer.close();
+  }
+}
+
+/**
+ * Analyze a sketch and return structured analysis
+ * @param {string} sketchPath - Path to sketch directory or HTML file
+ * @param {Object} options - Analysis options
+ * @returns {Promise<Object>} Structured analysis with metrics, composition, interpretation
+ */
+export async function analyzeSketch(sketchPath, options = {}) {
+  const renderer = new SketchRenderer(options);
+  try {
+    return await renderer.analyzeJson(sketchPath, options);
+  } finally {
+    await renderer.close();
+  }
 }
 
 // ============================================================================
 // BATCH PROCESSING
 // ============================================================================
 
-async function batchCapture(sketchesDir, outputDir, options = {}) {
+/**
+ * Batch capture screenshots for all sketches in a directory
+ * @param {string} sketchesDir - Directory containing sketch subdirectories
+ * @param {string} outputDir - Directory to save screenshots
+ * @param {Object} options - Capture options, including --analyze flag
+ */
+export async function batchCapture(sketchesDir, outputDir, options = {}) {
   const renderer = new SketchRenderer(options);
 
   try {
@@ -296,6 +302,14 @@ async function batchCapture(sketchesDir, outputDir, options = {}) {
         const screenshot = await renderer.capture(sketchPath);
         fs.writeFileSync(outputPath, screenshot);
         console.log(`    Saved to ${outputPath}`);
+
+        // If --analyze flag is set, also save analysis JSON
+        if (options.analyze) {
+          const analysisPath = path.join(outputDir, `${sketch}-analysis.json`);
+          const analysis = await renderer.analyzeJson(sketchPath, options);
+          fs.writeFileSync(analysisPath, JSON.stringify(analysis, null, 2));
+          console.log(`    Analysis saved to ${analysisPath}`);
+        }
       } catch (error) {
         console.error(`    Error: ${error.message}`);
       }
@@ -307,15 +321,6 @@ async function batchCapture(sketchesDir, outputDir, options = {}) {
 }
 
 // ============================================================================
-// EXPORTS
-// ============================================================================
-
-module.exports = {
-  SketchRenderer,
-  batchCapture,
-};
-
-// ============================================================================
 // CLI
 // ============================================================================
 
@@ -324,12 +329,13 @@ async function main() {
 
   if (!command) {
     console.log(`
-Visual Renderer for Generative Art Sketches
+Visual Renderer for Generative Art Sketches (v${VERSION})
 
 Commands:
   capture <sketch-path> [output.png]   Capture screenshot of a sketch
   batch <sketches-dir> <output-dir>    Batch capture all sketches
-  analyze <sketch-path>                Analyze visual properties
+  analyze <sketch-path>                Analyze visual properties (includes screenshot)
+  analyze-json <sketch-path>           Analyze and output only structured JSON
   variations <sketch-path> [count]     Capture multiple hash variations
 
 Options:
@@ -337,12 +343,15 @@ Options:
   --height=N      Canvas height (default: 700)
   --scale=N       Screenshot scale (default: 2)
   --delay=N       Capture delay in ms (default: 2000)
+  --analyze       For batch: also output analysis JSON for each sketch
 
 Examples:
   node render.js capture sketches/flow-fields
   node render.js capture sketches/flow-fields output.png --scale=4
   node render.js batch sketches/ thumbnails/
+  node render.js batch sketches/ thumbnails/ --analyze
   node render.js analyze sketches/flow-fields
+  node render.js analyze-json sketches/flow-fields
   node render.js variations sketches/flow-fields 6
 `);
     return;
@@ -393,6 +402,19 @@ Examples:
           process.exit(1);
         }
         const analysis = await renderer.analyze(sketchPath, options);
+        // Remove screenshot from output (binary data)
+        const { screenshot, ...jsonAnalysis } = analysis;
+        console.log(JSON.stringify(jsonAnalysis, null, 2));
+        break;
+      }
+
+      case 'analyze-json': {
+        const [sketchPath] = positionalArgs;
+        if (!sketchPath) {
+          console.error('Usage: node render.js analyze-json <sketch-path>');
+          process.exit(1);
+        }
+        const analysis = await renderer.analyzeJson(sketchPath, options);
         console.log(JSON.stringify(analysis, null, 2));
         break;
       }
@@ -422,7 +444,8 @@ Examples:
   }
 }
 
-if (require.main === module) {
+// ESM main detection
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(err => {
     console.error(err);
     process.exit(1);
