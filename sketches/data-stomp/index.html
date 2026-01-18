@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>data-stomp | Generative Noise Pedals</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0d0d14;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      color: #ffffff;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+      color: #666;
+      letter-spacing: 0.1em;
+    }
+
+    .version {
+      font-size: 0.65rem;
+      color: #444;
+      margin-top: 5px;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    @media (min-width: 1000px) {
+      main {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+    }
+
+    .canvas-container {
+      background: #0a0a0a;
+      border: 1px solid #222;
+      border-radius: 4px;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .sidebar {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .panel {
+      background: #111118;
+      border: 1px solid #222;
+      border-radius: 4px;
+      padding: 15px;
+    }
+
+    .panel h2 {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: #888;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #222;
+      padding-bottom: 8px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #1a1a24;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.15s;
+    }
+
+    button:hover {
+      background: #252530;
+      border-color: #444;
+    }
+
+    button:active {
+      background: #333340;
+    }
+
+    button.primary {
+      background: #2a4a2a;
+      border-color: #3a6a3a;
+    }
+
+    button.primary:hover {
+      background: #3a5a3a;
+    }
+
+    .hash-display {
+      font-size: 0.65rem;
+      color: #555;
+      word-break: break-all;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #222;
+    }
+
+    #features-table {
+      width: 100%;
+      font-size: 0.7rem;
+      border-collapse: collapse;
+    }
+
+    #features-table td {
+      padding: 6px 0;
+      border-bottom: 1px solid #1a1a24;
+    }
+
+    #features-table td:first-child {
+      color: #666;
+      width: 40%;
+    }
+
+    #features-table td:last-child {
+      color: #aaa;
+      text-align: right;
+    }
+
+    .rarity-common {
+      color: #888;
+    }
+
+    .rarity-uncommon {
+      color: #4a9eff;
+    }
+
+    .rarity-rare {
+      color: #c9a227;
+    }
+
+    .rarity-legendary {
+      color: #ff6b6b;
+      text-shadow: 0 0 5px rgba(255, 107, 107, 0.3);
+    }
+
+    .shortcuts {
+      font-size: 0.65rem;
+      color: #555;
+    }
+
+    .shortcuts kbd {
+      display: inline-block;
+      background: #1a1a24;
+      border: 1px solid #333;
+      border-radius: 3px;
+      padding: 2px 6px;
+      margin: 0 3px;
+      font-family: inherit;
+    }
+
+    .audio-notice {
+      font-size: 0.6rem;
+      color: #555;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #222;
+      line-height: 1.5;
+    }
+
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.6rem;
+      color: #444;
+    }
+
+    footer a {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DATA-STOMP</h1>
+    <p class="subtitle">Generative Noise Pedals</p>
+    <p class="version">v2.2.0</p>
+  </header>
+
+  <main>
+    <div class="canvas-container">
+      <canvas id="canvas" width="700" height="700"></canvas>
+    </div>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <h2>Controls</h2>
+        <div class="controls">
+          <button id="btn-play" class="primary">Play</button>
+          <button id="btn-regenerate">Regenerate</button>
+          <button id="btn-save">Save PNG</button>
+        </div>
+        <p class="audio-notice">
+          Click Play to start audio. Click pedal footswitches to toggle voices on/off. Drag knobs to adjust parameters.
+        </p>
+        <div class="shortcuts">
+          <kbd>Space</kbd> Play/Stop
+          <kbd>R</kbd> Regenerate
+          <kbd>S</kbd> Save
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Features</h2>
+        <table id="features-table"></table>
+        <div class="hash-display">
+          Hash: <span id="hash-display">...</span>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <p>Inspired by <a href="https://somasynths.com/" target="_blank">Soma Laboratory</a> &middot; <a href="https://www.ryojiikeda.com/" target="_blank">Ryoji Ikeda</a> &middot; <a href="https://alvanoto.com/" target="_blank">Alva Noto</a></p>
+  </footer>
+
+  <script src="sketch.js"></script>
+  <script>
+    // Button bindings
+    document.getElementById('btn-play').addEventListener('click', () => {
+      window.dataStompSketch.togglePlay();
+    });
+
+    document.getElementById('btn-regenerate').addEventListener('click', () => {
+      window.dataStompSketch.regenerate();
+    });
+
+    document.getElementById('btn-save').addEventListener('click', () => {
+      const canvas = document.getElementById('canvas');
+      const link = document.createElement('a');
+      const features = window.dataStompSketch.features();
+      link.download = `data-stomp-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  </script>
+</body>
+</html>
