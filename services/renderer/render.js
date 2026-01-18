@@ -33,6 +33,9 @@ const CAPTURE_DELAY = 2000;    // Wait for animations to settle
 
 export const VERSION = '2.0.0';
 
+// Helper for delays (Puppeteer v22+ deprecated page.waitForTimeout)
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 // ============================================================================
 // RENDERER CLASS
 // ============================================================================
@@ -117,7 +120,7 @@ export class SketchRenderer {
       }
 
       // Wait for render to complete
-      await page.waitForTimeout(options.delay || this.captureDelay);
+      await sleep(options.delay || this.captureDelay);
 
       // Try to trigger fxpreview if available
       await page.evaluate(() => {
@@ -178,7 +181,7 @@ export class SketchRenderer {
 
       const fileUrl = `file://${path.resolve(htmlPath)}`;
       await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: this.timeout });
-      await page.waitForTimeout(this.captureDelay);
+      await sleep(this.captureDelay);
 
       // Import and use analyzeCanvas from analyze.js
       const { analyzeCanvas, formatAnalysis } = await import('./analyze.js');
@@ -220,7 +223,7 @@ export class SketchRenderer {
 
       const fileUrl = `file://${path.resolve(htmlPath)}`;
       await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: this.timeout });
-      await page.waitForTimeout(this.captureDelay);
+      await sleep(this.captureDelay);
 
       // Import and use analyzeCanvas from analyze.js
       const { analyzeCanvas, formatAnalysis } = await import('./analyze.js');

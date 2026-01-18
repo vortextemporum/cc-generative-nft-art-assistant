@@ -11,6 +11,10 @@
     "embeddings": "node services/embeddings/generate.js",
     "search": "node scripts/search-cli.js",
     "render": "node services/renderer/render.js",
+    "render:capture": "node services/renderer/render.js capture",
+    "render:analyze": "node services/renderer/render.js analyze",
+    "render:batch": "node services/renderer/render.js batch",
+    "render:variations": "node services/renderer/render.js variations",
     "mcp": "node mcp-server/src/index.js",
     "assistant": "node scripts/art-assistant.js",
     "start": "node scripts/art-assistant.js"
