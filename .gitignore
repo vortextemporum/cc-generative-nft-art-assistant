@@ -9,6 +9,7 @@ fxhash-dataset.json
 # Processed outputs (regenerate with scripts)
 processed/*.json
 processed/*.md
+processed/embeddings/
 !processed/.gitkeep
 
 # Environment

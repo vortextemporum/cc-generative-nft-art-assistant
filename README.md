@@ -19,7 +19,10 @@ npm run fetch:full         # With scripts (~100MB, slow)
 # 2. Process into training formats
 npm run process
 
-# 3. Run the assistant
+# 3. Generate embeddings for semantic search (optional, ~5 min)
+npm run embeddings
+
+# 4. Run the assistant
 export ANTHROPIC_API_KEY=sk-ant-...
 npm run assistant "How do I create a flow field in p5.js?"
 ```
@@ -48,6 +51,7 @@ After processing, you get:
 | `system-knowledge.json` | Aggregated stats and patterns |
 | `code-examples.json` | Curated high-quality scripts |
 | `system-prompt.md` | Ready-to-use Claude system prompt |
+| `embeddings/` | Vector embeddings for semantic search (~500MB, generated locally) |
 
 ## Using with Claude
 
