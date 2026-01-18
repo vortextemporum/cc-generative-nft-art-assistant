@@ -43,9 +43,14 @@ export {
   indexExists,
   saveIndex,
   getMetadata,
+  loadChecksums,
+  saveChecksums,
+  generateChecksum,
+  getChangedProjects,
   INDEX_DIR,
   VECTORS_PATH,
-  METADATA_PATH
+  METADATA_PATH,
+  CHECKSUMS_PATH
 } from './storage.js';
 
 // Chunker exports

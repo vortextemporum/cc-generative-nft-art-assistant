@@ -7,11 +7,13 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
+import { createHash } from 'crypto';
 
 // Storage paths
 export const INDEX_DIR = './processed/embeddings';
 export const VECTORS_PATH = './processed/embeddings/vectors.json';
 export const METADATA_PATH = './processed/embeddings/metadata.json';
+export const CHECKSUMS_PATH = './processed/embeddings/checksums.json';
 
 /**
  * Ensure the embeddings directory exists
@@ -122,4 +124,74 @@ export function createMetadata(projectCount, chunkCount) {
     chunkCount,
     version: '1.0.0'
   };
+}
+
+// ============================================================================
+// CHECKSUM TRACKING FOR INCREMENTAL UPDATES
+// ============================================================================
+
+/**
+ * Generate checksum for a project document
+ * Uses name + description + script_length for change detection
+ * @param {Object} project - RAG document
+ * @returns {string} MD5 hash hex string
+ */
+export function generateChecksum(project) {
+  const content = project.content || '';
+  const scriptLength = project.metadata?.script_length || 0;
+  const data = `${content.slice(0, 500)}|${scriptLength}`;
+  return createHash('md5').update(data).digest('hex');
+}
+
+/**
+ * Load checksums from disk
+ * @returns {Object} Map of projectId -> checksum
+ */
+export function loadChecksums() {
+  if (!existsSync(CHECKSUMS_PATH)) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(readFileSync(CHECKSUMS_PATH, 'utf8'));
+  } catch (error) {
+    console.error('Error loading checksums:', error.message);
+    return {};
+  }
+}
+
+/**
+ * Save checksums to disk
+ * @param {Object} checksums - Map of projectId -> checksum
+ */
+export function saveChecksums(checksums) {
+  ensureDir();
+  writeFileSync(CHECKSUMS_PATH, JSON.stringify(checksums, null, 2));
+  console.log(`Saved checksums to ${CHECKSUMS_PATH}`);
+}
+
+/**
+ * Get projects that have changed since last embedding
+ * @param {Object[]} projects - Array of RAG documents
+ * @param {Object} checksums - Existing checksums map
+ * @returns {Object} { changed: [], unchanged: [], newChecksums: {} }
+ */
+export function getChangedProjects(projects, checksums) {
+  const changed = [];
+  const unchanged = [];
+  const newChecksums = {};
+
+  for (const project of projects) {
+    const id = project.id;
+    const newChecksum = generateChecksum(project);
+    newChecksums[id] = newChecksum;
+
+    if (checksums[id] === newChecksum) {
+      unchanged.push(project);
+    } else {
+      changed.push(project);
+    }
+  }
+
+  return { changed, unchanged, newChecksums };
 }

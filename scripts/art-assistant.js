@@ -2,23 +2,23 @@
 
 /**
  * Generative Art RAG Assistant
- * 
- * Simple retrieval-augmented generation system for generative art queries.
- * Uses TF-IDF for retrieval (no external dependencies) + Claude API.
- * 
+ *
+ * Retrieval-augmented generation system for generative art queries.
+ * Uses semantic search (bge-small-en-v1.5 embeddings) + Claude API.
+ *
  * Setup:
- *   1. Run process-artblocks-dataset.js first to create processed/ folder
+ *   1. Run `node services/embeddings/generate.js` to create embeddings
  *   2. Set ANTHROPIC_API_KEY environment variable
- *   3. node art-assistant.js "your question here"
- * 
+ *   3. node scripts/art-assistant.js "your question here"
+ *
  * Examples:
- *   node art-assistant.js "How do I create a flow field in p5.js?"
- *   node art-assistant.js "Explain how Fidenza uses noise"
- *   node art-assistant.js "Write code for a generative grid pattern"
+ *   node scripts/art-assistant.js "How do I create a flow field in p5.js?"
+ *   node scripts/art-assistant.js "Explain how Fidenza uses noise"
+ *   node scripts/art-assistant.js "Write code for a generative grid pattern"
  */
 
-const fs = require('fs');
-const https = require('https');
+import { readFileSync, existsSync } from 'fs';
+import https from 'https';
 
 // ============================================================================
 // CONFIG
@@ -26,21 +26,55 @@ const https = require('https');
 
 const PROCESSED_DIR = './processed';
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
-const MAX_CONTEXT_TOKENS = 8000; // Leave room for response
+const TOP_K_RESULTS = 5;
 
 // ============================================================================
-// SIMPLE TF-IDF RETRIEVAL (no dependencies)
+// SEMANTIC SEARCH (using embeddings service)
+// ============================================================================
+
+let searchFn = null;
+let indexExistsFn = null;
+let useSemanticSearch = false;
+
+/**
+ * Initialize semantic search if embeddings are available
+ */
+async function initSearch() {
+  try {
+    // Dynamic import to handle case where embeddings don't exist
+    const embeddings = await import('../services/embeddings/index.js');
+    searchFn = embeddings.search;
+    indexExistsFn = embeddings.indexExists;
+
+    if (indexExistsFn()) {
+      useSemanticSearch = true;
+      return true;
+    }
+  } catch (error) {
+    // Fall through to TF-IDF
+  }
+  return false;
+}
+
+/**
+ * Perform semantic search
+ */
+async function semanticSearch(query, topK = TOP_K_RESULTS) {
+  const results = await searchFn(query, { topK, includeScores: true });
+  return results;
+}
+
+// ============================================================================
+// FALLBACK TF-IDF RETRIEVAL (when embeddings don't exist)
 // ============================================================================
 
 class SimpleRetriever {
   constructor() {
     this.documents = [];
-    this.vocabulary = new Map();
     this.idf = new Map();
     this.tfidf = [];
   }
 
-  // Tokenize and normalize text
   tokenize(text) {
     return (text || '')
       .toLowerCase()
@@ -49,13 +83,11 @@ class SimpleRetriever {
       .filter(t => t.length > 2);
   }
 
-  // Build index from documents
   index(documents) {
     this.documents = documents;
     const docCount = documents.length;
     const termDocFreq = new Map();
 
-    // Calculate document frequencies
     for (const doc of documents) {
       const tokens = new Set(this.tokenize(doc.content));
       for (const token of tokens) {
@@ -63,19 +95,17 @@ class SimpleRetriever {
       }
     }
 
-    // Calculate IDF
     for (const [term, freq] of termDocFreq) {
       this.idf.set(term, Math.log(docCount / freq));
     }
 
-    // Calculate TF-IDF vectors
     this.tfidf = documents.map(doc => {
       const tokens = this.tokenize(doc.content);
       const tf = new Map();
       for (const token of tokens) {
         tf.set(token, (tf.get(token) || 0) + 1);
       }
-      
+
       const vector = new Map();
       for (const [term, count] of tf) {
         const tfidf = (count / tokens.length) * (this.idf.get(term) || 0);
@@ -83,15 +113,12 @@ class SimpleRetriever {
       }
       return vector;
     });
-
-    console.log(`Indexed ${documents.length} documents`);
   }
 
-  // Search for relevant documents
   search(query, topK = 5) {
     const queryTokens = this.tokenize(query);
     const queryVector = new Map();
-    
+
     for (const token of queryTokens) {
       queryVector.set(token, (queryVector.get(token) || 0) + 1);
     }
@@ -99,7 +126,6 @@ class SimpleRetriever {
       queryVector.set(term, (count / queryTokens.length) * (this.idf.get(term) || 0));
     }
 
-    // Calculate cosine similarity
     const scores = this.tfidf.map((docVector, idx) => {
       let dotProduct = 0;
       let docNorm = 0;
@@ -189,51 +215,77 @@ async function callClaude(systemPrompt, userMessage) {
 
 async function main() {
   const query = process.argv.slice(2).join(' ');
-  
+
   if (!query) {
-    console.log('Usage: node art-assistant.js "your question about generative art"');
+    console.log('Usage: node scripts/art-assistant.js "your question about generative art"');
     console.log('');
     console.log('Examples:');
-    console.log('  node art-assistant.js "How do I create a flow field?"');
-    console.log('  node art-assistant.js "Explain perlin noise in generative art"');
-    console.log('  node art-assistant.js "Write p5.js code for a particle system"');
+    console.log('  node scripts/art-assistant.js "How do I create a flow field?"');
+    console.log('  node scripts/art-assistant.js "Explain perlin noise in generative art"');
+    console.log('  node scripts/art-assistant.js "Write p5.js code for a particle system"');
     process.exit(0);
   }
 
   // Load processed data
   console.log('Loading knowledge base...');
-  
-  let systemKnowledge, ragDocs, codeExamples;
-  
+
+  let systemKnowledge, ragDocs;
+
   try {
-    systemKnowledge = JSON.parse(fs.readFileSync(`${PROCESSED_DIR}/system-knowledge.json`, 'utf8'));
-    ragDocs = JSON.parse(fs.readFileSync(`${PROCESSED_DIR}/rag-documents.json`, 'utf8'));
-    codeExamples = JSON.parse(fs.readFileSync(`${PROCESSED_DIR}/code-examples.json`, 'utf8'));
+    systemKnowledge = JSON.parse(readFileSync(`${PROCESSED_DIR}/system-knowledge.json`, 'utf8'));
+    ragDocs = JSON.parse(readFileSync(`${PROCESSED_DIR}/rag-documents.json`, 'utf8'));
   } catch (e) {
-    console.error('Error: Processed data not found. Run process-artblocks-dataset.js first.');
+    console.error('Error: Processed data not found. Run the processing script first.');
     process.exit(1);
   }
 
-  // Build retriever
-  console.log('Building search index...');
-  const retriever = new SimpleRetriever();
-  retriever.index(ragDocs);
-
-  // Search for relevant context
-  console.log(`Searching for: "${query}"`);
-  const results = retriever.search(query, 5);
-  
-  console.log(`Found ${results.length} relevant documents`);
-
-  // Build context from retrieved documents
+  // Try to use semantic search
+  const hasEmbeddings = await initSearch();
+  let results = [];
   let context = '';
-  for (const result of results) {
-    const doc = result.document;
-    context += `\n---\n[${doc.type}] ${doc.id}\n${doc.content.slice(0, 2000)}\n`;
+
+  if (hasEmbeddings) {
+    console.log('Using semantic search (embeddings)...');
+    console.log(`Searching for: "${query}"`);
+
+    const searchResults = await semanticSearch(query, TOP_K_RESULTS);
+    console.log(`Found ${searchResults.length} relevant projects`);
+
+    // Create a map for looking up full document content
+    const docMap = new Map(ragDocs.map(d => [d.id, d]));
+
+    // Build context from semantic search results
+    for (const result of searchResults) {
+      const doc = docMap.get(result.projectId);
+      if (doc) {
+        context += `\n---\n[${result.type}] ${result.projectId} (score: ${result.score.toFixed(3)})\n`;
+        context += `Artist: ${result.artist}\n`;
+        context += `Framework: ${result.scriptType}\n`;
+        context += `${doc.content.slice(0, 1500)}\n`;
+      }
+    }
+  } else {
+    console.log('Embeddings not found. Using TF-IDF search (slower, less accurate).');
+    console.log('Run `node services/embeddings/generate.js` to enable semantic search.');
+    console.log('');
+    console.log('Building TF-IDF index...');
+
+    const retriever = new SimpleRetriever();
+    retriever.index(ragDocs);
+
+    console.log(`Searching for: "${query}"`);
+    const tfidfResults = retriever.search(query, TOP_K_RESULTS);
+    console.log(`Found ${tfidfResults.length} relevant documents`);
+
+    // Build context from TF-IDF results
+    for (const result of tfidfResults) {
+      const doc = result.document;
+      context += `\n---\n[${doc.type}] ${doc.id}\n${doc.content.slice(0, 2000)}\n`;
+    }
   }
 
   // Build system prompt
-  const systemPrompt = `You are an expert generative art assistant with deep knowledge of Art Blocks, p5.js, Three.js, and algorithmic art techniques.
+  const systemPrompt = `You are an expert generative art assistant with deep knowledge of Art Blocks, fxhash, p5.js, Three.js, and algorithmic art techniques.
 
 ## Your Knowledge Base
 
@@ -244,39 +296,39 @@ ${systemKnowledge.overview}
 ${systemKnowledge.common_patterns.slice(0, 10).map(p => `- ${p.pattern}`).join('\n')}
 
 ### Key Techniques Reference
-- Hash-based randomness: Use tokenData.hash to seed deterministic PRNG
+- Hash-based randomness: Use tokenData.hash (Art Blocks) or fxhash (fxhash) to seed deterministic PRNG
 - p5.js: setup() + draw() pattern, createCanvas, 2D primitives
 - Three.js: Scene + Camera + Renderer + Meshes pattern
 - Noise: Perlin/Simplex noise for organic randomness
 - Flow fields: Vector fields that guide particle movement
 
-## Retrieved Context (from Art Blocks database)
+## Retrieved Context (from generative art database)
 ${context}
 
 ## Instructions
 1. Answer questions about generative art techniques, code, and aesthetics
 2. Provide working code examples when asked
-3. Reference specific Art Blocks projects when relevant
+3. Reference specific projects from Art Blocks or fxhash when relevant
 4. Explain both the technical and artistic aspects
 5. Be precise about p5.js, Three.js, or vanilla JS syntax`;
 
   // Call Claude
   console.log('\nAsking Claude...\n');
-  console.log('─'.repeat(60));
-  
+  console.log('-'.repeat(60));
+
   try {
     const response = await callClaude(systemPrompt, query);
     console.log(response);
   } catch (e) {
     console.error('Error calling Claude:', e.message);
-    
+
     if (e.message.includes('API key')) {
       console.log('\nSet your API key:');
       console.log('  export ANTHROPIC_API_KEY=your-key-here');
     }
   }
-  
-  console.log('─'.repeat(60));
+
+  console.log('-'.repeat(60));
 }
 
 main().catch(console.error);
