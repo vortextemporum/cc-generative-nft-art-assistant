@@ -35,7 +35,7 @@ Plans:
 - [x] 01-02-PLAN.md - Implement search CLI and API (search service, CLI with formats, incremental updates) ✓
 
 ### Phase 2: Developer Tools
-**Goal**: Provide Claude Desktop integration and visual analysis capabilities
+**Goal**: Provide Claude Desktop integration via MCP server and visual analysis capabilities via Puppeteer renderer, enabling the creative partnership workflow (Claude Desktop for ideation, Claude Code for implementation feedback)
 **Depends on**: Phase 1
 **Requirements**: REQ-02, REQ-03
 **Success Criteria** (what must be TRUE):
@@ -43,11 +43,11 @@ Plans:
   2. Developer can search dataset from within Claude
   3. Sketches can be rendered to screenshots
   4. Visual analysis extracts color and composition data
-**Plans**: TBD
+**Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 02-01: Complete MCP server with all tools
-- [ ] 02-02: Enhance renderer with batch processing
+- [ ] 02-01-PLAN.md — Refresh MCP server with SDK v1.25.2, technique-focused responses, Phase 1 search integration
+- [ ] 02-02-PLAN.md — Enhance renderer with ESM conversion, structured analysis output, composition detection
 
 ### Phase 3: Smart Contracts
 **Goal**: Deploy minter contract and serve token metadata
@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Semantic Search | 2/2 | Complete | 2026-01-18 |
-| 2. Developer Tools | 0/2 | Not started | - |
+| 2. Developer Tools | 0/2 | Ready to execute | - |
 | 3. Smart Contracts | 0/2 | Not started | - |
 | 4. Frontend Core | 0/3 | Not started | - |
 | 5. Artist Dashboard | 0/2 | Not started | - |
