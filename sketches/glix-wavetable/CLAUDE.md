@@ -1,0 +1,122 @@
+# GLIX Wavetable Generator - Claude Guide
+
+## Project Overview
+
+A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Features smooth parameter animation and interactive controls.
+
+## File Structure
+
+```
+glix-wavetable/
+├── index.html          # Viewer with controls panel
+├── sketch.js           # Main p5.js sketch
+└── CLAUDE.md           # This file
+```
+
+## Origins
+
+Based on "GLIX WAVETABLE GENERATOR v2.1 (Extreme)" - a GenDSP patch for Max/Jitter that generates wavetables with extensive modulation options.
+
+## Parameters (matching GenDSP)
+
+### Oscillator
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| shape | 0-3 | 0=Sine, 1=Triangle, 2=Sawtooth, 3=Pulse |
+| pw | 0-1 | Pulse width (for pulse) or phase shift (for others) |
+| soften | 0.001-50 | Soft saturation (tanh) |
+
+### Phase FX
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| y_bend | -0.25 to 1.0 | Warp morph speed (power curve on Y) |
+| fx_bend | -1 to 1000 | X-axis phase warp |
+| fx_noise | 0-1 | Static noise/dirt on phase |
+| fx_quantize | 0-1 | Pixelate/step the phase |
+
+### Post FX
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| pw_morph | -50 to 50 | Spiraling / PWM shift over Y |
+| fx_fold | 0-10000 | Wavefolder intensity |
+| fx_crush | 0-10000 | Bitcrush intensity |
+| edge_fade | 0-0.5 | De-clicker (fade edges) |
+
+## Animation System
+
+The sketch features smooth, continuous animation:
+- Parameters drift using Perlin noise
+- All changes interpolate smoothly (no jumps)
+- Speed and drift amount are adjustable
+- Animation can be paused/resumed
+
+## Color Palettes
+
+7 built-in palettes:
+- **thermal**: Black to white through purple/red/orange
+- **ocean**: Deep blue to bright cyan
+- **neon**: Vivid magenta/cyan/yellow
+- **sunset**: Purple through orange
+- **monochrome**: Pure grayscale
+- **plasma**: Purple/pink/orange
+- **rainbow**: Full spectrum
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| Space | Pause/resume animation |
+| R | Randomize all parameters |
+| 0 | Reset to defaults |
+| S | Save image (PNG) |
+| 1-4 | Select wave shape |
+| C | Cycle to next color palette |
+| +/- | Adjust animation speed |
+| F | Increase fold amount |
+
+## Technical Details
+
+### Rendering
+- Full pixel-by-pixel wavetable rendering
+- Uses p5.js `pixels[]` array for performance
+- 700x700 default resolution
+- Sample value mapped to color palette gradient
+
+### Signal Flow (matching GenDSP)
+1. Y-warp (time bending via power function)
+2. Phase noise (hash-based static)
+3. Phase quantize (stepped/pixelated)
+4. Phase bend (S-curve stretch)
+5. Waveform generation (shape selection)
+6. Morph/shift application
+7. Soft saturation (tanh)
+8. Bitcrush (amplitude quantize)
+9. Wavefolder (sine drive)
+10. Edge fade (de-click)
+
+## Common Tasks
+
+### Add a new palette
+1. Add color array to `palettes` object in sketch.js
+2. Add option to palette-select dropdown in index.html
+3. Colors are [R, G, B] arrays (0-255)
+
+### Adjust animation behavior
+- Modify `updateAnimation()` function
+- Each parameter uses noise with different offset and speed
+- Adjust multipliers for more/less drift
+
+### Change default parameters
+- Modify initial `params` object at top of sketch.js
+- These are used on load and reset
+
+## Quick Commands
+
+```bash
+# Open in browser
+open index.html
+
+# Or with local server
+python3 -m http.server 8000
+# Visit http://localhost:8000/sketches/glix-wavetable/
+```

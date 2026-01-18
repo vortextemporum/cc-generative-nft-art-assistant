@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Art Blocks Dataset Fetcher</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #0d1117;
+      color: #c9d1d9;
+    }
+    h1 { color: #58a6ff; }
+    h2 { color: #f78166; margin-top: 30px; }
+    
+    button {
+      background: #238636;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      margin: 5px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      font-family: inherit;
+    }
+    button:hover { background: #2ea043; }
+    button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+    button.secondary { background: #1f6feb; }
+    button.secondary:hover { background: #388bfd; }
+    button.danger { background: #da3633; }
+    
+    .progress-container {
+      background: #21262d;
+      border-radius: 6px;
+      height: 24px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, #238636, #2ea043);
+      height: 100%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    #output {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 6px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #30363d;
+    }
+    .success { color: #3fb950; }
+    .error { color: #f85149; }
+    .info { color: #58a6ff; }
+    .warn { color: #d29922; }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat {
+      background: #21262d;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stat-value { font-size: 28px; color: #58a6ff; font-weight: bold; }
+    .stat-label { font-size: 11px; color: #8b949e; margin-top: 5px; }
+    
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    textarea {
+      width: 100%;
+      height: 200px;
+      background: #0d1117;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 11px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Art Blocks Complete Dataset Fetcher</h1>
+  <p>Fetch ALL Art Blocks projects with full metadata, scripts, and details for AI training.</p>
+
+  <h2>1. Fetch Data</h2>
+  <div class="controls">
+    <button onclick="fetchAllProjects()" id="fetch-btn">🚀 Fetch All Projects</button>
+    <button onclick="fetchAllProjects(true)" id="fetch-scripts-btn" class="secondary">🚀 Fetch All + Full Scripts</button>
+    <button onclick="stopFetch()" id="stop-btn" class="danger" disabled>⏹ Stop</button>
+  </div>
+  
+  <div class="progress-container">
+    <div class="progress-bar" id="progress-bar" style="width: 0%">0%</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value" id="stat-total">0</div>
+      <div class="stat-label">Total Projects</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-fetched">0</div>
+      <div class="stat-label">Fetched</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-with-script">0</div>
+      <div class="stat-label">With Scripts</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-size">0 KB</div>
+      <div class="stat-label">Data Size</div>
+    </div>
+  </div>
+
+  <h2>2. Export</h2>
+  <div class="controls">
+    <button onclick="downloadJSON()" id="download-btn" disabled>💾 Download Full JSON</button>
+    <button onclick="downloadCSV()" id="csv-btn" class="secondary" disabled>📊 Download CSV (metadata only)</button>
+    <button onclick="showPreview()" id="preview-btn" class="secondary" disabled>👁 Preview Data</button>
+  </div>
+
+  <h2>3. Console</h2>
+  <div id="output">Ready. Click "Fetch All Projects" to begin.
+
+Note: This fetches from Art Blocks Hasura API (data.artblocks.io)
+- No authentication required
+- Includes: name, artist, description, script, license, aspect ratio, etc.
+- Full scripts can be large (~50-200MB total)</div>
+
+  <h2>4. Data Preview</h2>
+  <textarea id="preview" placeholder="Data preview will appear here..."></textarea>
+
+  <script>
+    // =========================================================================
+    // ART BLOCKS HASURA API
+    // =========================================================================
+    
+    const HASURA_ENDPOINT = "https://data.artblocks.io/v1/graphql";
+    
+    let allProjects = [];
+    let isRunning = false;
+    let shouldStop = false;
+
+    // =========================================================================
+    // GRAPHQL QUERIES
+    // =========================================================================
+    
+    // Query for project list with all metadata (no script - faster)
+    const PROJECTS_LIST_QUERY = `
+      query GetAllProjects($limit: Int!, $offset: Int!) {
+        projects_metadata(
+          limit: $limit, 
+          offset: $offset,
+          order_by: {project_id: asc}
+        ) {
+          id
+          project_id
+          name
+          artist_name
+          description
+          website
+          license
+          script_type
+          aspect_ratio
+          render_delay
+          primary_render_type
+          preview_render_type
+          
+          contract_address
+          minter_address
+          
+          start_datetime
+          complete
+          active
+          paused
+          
+          price_per_token_in_wei
+          currency_symbol
+          currency_address
+          
+          invocations
+          max_invocations
+          
+          royalty_percentage
+          
+          vertical_name
+          vertical: vertical_name
+          
+          tags {
+            tag_name
+          }
+          
+          features {
+            feature_fields
+          }
+          
+          tokens_aggregate {
+            aggregate {
+              count
+            }
+          }
+        }
+      }
+    `;
+
+    // Query for single project with full script
+    const PROJECT_WITH_SCRIPT_QUERY = `
+      query GetProjectScript($id: String!) {
+        projects_metadata_by_pk(id: $id) {
+          id
+          project_id
+          name
+          script
+          script_type
+          script_json
+          dependency
+        }
+      }
+    `;
+
+    // =========================================================================
+    // API FUNCTIONS
+    // =========================================================================
+    
+    async function queryHasura(query, variables = {}) {
+      const response = await fetch(HASURA_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, variables })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data.errors) {
+        throw new Error(JSON.stringify(data.errors));
+      }
+      
+      return data.data;
+    }
+
+    // =========================================================================
+    // FETCH ALL PROJECTS
+    // =========================================================================
+    
+    async function fetchAllProjects(includeScripts = false) {
+      if (isRunning) return;
+      
+      isRunning = true;
+      shouldStop = false;
+      allProjects = [];
+      
+      clearLog();
+      log("=== FETCHING ART BLOCKS DATASET ===", 'info');
+      log("Endpoint: " + HASURA_ENDPOINT);
+      log("Include full scripts: " + includeScripts);
+      log("");
+      
+      updateButtons(true);
+      
+      try {
+        // Step 1: Fetch all project metadata
+        log("Step 1: Fetching project metadata...", 'info');
+        
+        const batchSize = 100;
+        let offset = 0;
+        let totalFetched = 0;
+        
+        while (!shouldStop) {
+          const result = await queryHasura(PROJECTS_LIST_QUERY, {
+            limit: batchSize,
+            offset: offset
+          });
+          
+          const projects = result.projects_metadata || [];
+          
+          if (projects.length === 0) break;
+          
+          // Process each project
+          for (const p of projects) {
+            allProjects.push({
+              // Core identifiers
+              id: p.id,
+              project_id: p.project_id,
+              contract_address: p.contract_address,
+              
+              // Basic info
+              name: p.name,
+              artist_name: p.artist_name,
+              description: p.description,
+              website: p.website,
+              license: p.license,
+              
+              // Technical
+              script_type: p.script_type,
+              aspect_ratio: p.aspect_ratio,
+              render_delay: p.render_delay,
+              primary_render_type: p.primary_render_type,
+              preview_render_type: p.preview_render_type,
+              
+              // Status
+              start_datetime: p.start_datetime,
+              complete: p.complete,
+              active: p.active,
+              paused: p.paused,
+              
+              // Pricing
+              price_per_token_in_wei: p.price_per_token_in_wei,
+              currency_symbol: p.currency_symbol,
+              currency_address: p.currency_address,
+              
+              // Supply
+              invocations: p.invocations,
+              max_invocations: p.max_invocations,
+              tokens_count: p.tokens_aggregate?.aggregate?.count || 0,
+              
+              // Royalties
+              royalty_percentage: p.royalty_percentage,
+              
+              // Categories
+              vertical: p.vertical_name,
+              tags: (p.tags || []).map(t => t.tag_name),
+              
+              // Features schema
+              features: p.features?.feature_fields || null,
+              
+              // Script placeholder (filled later if requested)
+              script: null,
+              script_json: null,
+              dependency: null
+            });
+          }
+          
+          totalFetched += projects.length;
+          offset += batchSize;
+          
+          updateStats(totalFetched, 0);
+          setProgress((totalFetched / 700) * (includeScripts ? 50 : 100)); // Estimate ~700 projects
+          
+          log(`Fetched ${totalFetched} projects...`);
+          
+          // Small delay to be nice to the API
+          await sleep(100);
+        }
+        
+        log(`✓ Fetched ${allProjects.length} projects metadata`, 'success');
+        document.getElementById('stat-total').textContent = allProjects.length;
+        
+        // Step 2: Fetch full scripts if requested
+        if (includeScripts && !shouldStop) {
+          log("");
+          log("Step 2: Fetching full scripts (this may take a while)...", 'info');
+          
+          let scriptsLoaded = 0;
+          
+          for (let i = 0; i < allProjects.length && !shouldStop; i++) {
+            const project = allProjects[i];
+            
+            try {
+              const result = await queryHasura(PROJECT_WITH_SCRIPT_QUERY, {
+                id: project.id
+              });
+              
+              const p = result.projects_metadata_by_pk;
+              if (p) {
+                project.script = p.script;
+                project.script_json = p.script_json;
+                project.dependency = p.dependency;
+                
+                if (p.script) scriptsLoaded++;
+              }
+            } catch (e) {
+              log(`  Warning: Failed to fetch script for ${project.name}: ${e.message}`, 'warn');
+            }
+            
+            if ((i + 1) % 10 === 0) {
+              updateStats(allProjects.length, scriptsLoaded);
+              setProgress(50 + ((i + 1) / allProjects.length) * 50);
+              log(`  Scripts: ${i + 1}/${allProjects.length} (${scriptsLoaded} with code)`);
+            }
+            
+            // Delay between requests
+            await sleep(50);
+          }
+          
+          log(`✓ Loaded ${scriptsLoaded} scripts`, 'success');
+          document.getElementById('stat-with-script').textContent = scriptsLoaded;
+        }
+        
+        // Calculate data size
+        const jsonStr = JSON.stringify(allProjects);
+        const sizeKB = Math.round(jsonStr.length / 1024);
+        const sizeMB = (sizeKB / 1024).toFixed(2);
+        document.getElementById('stat-size').textContent = sizeKB > 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+        
+        setProgress(100);
+        log("");
+        log("=== COMPLETE ===", 'success');
+        log(`Total projects: ${allProjects.length}`);
+        log(`Data size: ${sizeKB > 1024 ? sizeMB + ' MB' : sizeKB + ' KB'}`);
+        log("");
+        log("Click 'Download Full JSON' to save the dataset.", 'info');
+        
+      } catch (error) {
+        log(`✗ ERROR: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        isRunning = false;
+        updateButtons(false);
+      }
+    }
+
+    function stopFetch() {
+      shouldStop = true;
+      log("Stopping...", 'warn');
+    }
+
+    // =========================================================================
+    // EXPORT FUNCTIONS
+    // =========================================================================
+    
+    function downloadJSON() {
+      if (allProjects.length === 0) {
+        log("No data to download", 'error');
+        return;
+      }
+      
+      const data = {
+        metadata: {
+          source: "Art Blocks",
+          api: HASURA_ENDPOINT,
+          fetched_at: new Date().toISOString(),
+          total_projects: allProjects.length,
+          projects_with_scripts: allProjects.filter(p => p.script).length
+        },
+        projects: allProjects
+      };
+      
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `artblocks-dataset-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      log(`💾 Downloaded: ${a.download}`, 'success');
+    }
+
+    function downloadCSV() {
+      if (allProjects.length === 0) {
+        log("No data to download", 'error');
+        return;
+      }
+      
+      // CSV with key metadata fields (no script)
+      const headers = [
+        'id', 'project_id', 'name', 'artist_name', 'description',
+        'script_type', 'aspect_ratio', 'license',
+        'invocations', 'max_invocations',
+        'complete', 'active', 'vertical', 'tags',
+        'contract_address'
+      ];
+      
+      const escape = (str) => {
+        if (str === null || str === undefined) return '';
+        const s = String(str).replace(/"/g, '""');
+        return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+      };
+      
+      let csv = headers.join(',') + '\n';
+      
+      for (const p of allProjects) {
+        const row = headers.map(h => {
+          if (h === 'tags') return escape((p.tags || []).join('; '));
+          if (h === 'description') return escape((p.description || '').slice(0, 500));
+          return escape(p[h]);
+        });
+        csv += row.join(',') + '\n';
+      }
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `artblocks-metadata-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      log(`💾 Downloaded: ${a.download}`, 'success');
+    }
+
+    function showPreview() {
+      if (allProjects.length === 0) return;
+      
+      // Show first 3 projects as preview
+      const preview = allProjects.slice(0, 3).map(p => ({
+        id: p.id,
+        name: p.name,
+        artist_name: p.artist_name,
+        script_type: p.script_type,
+        description: p.description?.slice(0, 200) + '...',
+        script_preview: p.script ? p.script.slice(0, 200) + '...' : null,
+        tags: p.tags
+      }));
+      
+      document.getElementById('preview').value = JSON.stringify(preview, null, 2);
+    }
+
+    // =========================================================================
+    // UI HELPERS
+    // =========================================================================
+    
+    function log(msg, type = '') {
+      const output = document.getElementById('output');
+      const span = document.createElement('span');
+      if (type) span.className = type;
+      span.textContent = msg + '\n';
+      output.appendChild(span);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('output').innerHTML = '';
+    }
+
+    function setProgress(percent) {
+      const bar = document.getElementById('progress-bar');
+      bar.style.width = Math.min(100, percent) + '%';
+      bar.textContent = Math.round(percent) + '%';
+    }
+
+    function updateStats(fetched, withScript) {
+      document.getElementById('stat-fetched').textContent = fetched;
+      document.getElementById('stat-with-script').textContent = withScript;
+    }
+
+    function updateButtons(running) {
+      document.getElementById('fetch-btn').disabled = running;
+      document.getElementById('fetch-scripts-btn').disabled = running;
+      document.getElementById('stop-btn').disabled = !running;
+      document.getElementById('download-btn').disabled = running || allProjects.length === 0;
+      document.getElementById('csv-btn').disabled = running || allProjects.length === 0;
+      document.getElementById('preview-btn').disabled = running || allProjects.length === 0;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>

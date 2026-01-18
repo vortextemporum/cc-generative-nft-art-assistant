@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Genital Forms</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      color: #ddd;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      transition: background 0.3s ease;
+    }
+
+    #sketch-holder {
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    .overlay {
+      position: fixed;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .overlay > * { pointer-events: auto; }
+
+    .top-left {
+      top: 20px;
+      left: 20px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #e8beac, #c45c3e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #555;
+    }
+
+    #hash-display {
+      font-family: monospace;
+      font-size: 10px;
+      color: #444;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+
+    #hash-display:hover { color: #666; }
+
+    .top-right {
+      top: 20px;
+      right: 20px;
+      text-align: right;
+    }
+
+    #status {
+      background: rgba(232, 190, 172, 0.15);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      color: #e8beac;
+      font-weight: 600;
+    }
+
+    .bottom-left {
+      bottom: 20px;
+      left: 20px;
+      max-width: 280px;
+    }
+
+    .features-panel {
+      background: rgba(10, 10, 15, 0.9);
+      border: 1px solid #1a1a25;
+      border-radius: 12px;
+      padding: 14px;
+      backdrop-filter: blur(10px);
+    }
+
+    .features-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #features-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    #features-table td {
+      padding: 4px 0;
+      border-bottom: 1px solid #1a1a25;
+    }
+
+    #features-table tr:last-child td { border-bottom: none; }
+    #features-table td:first-child { color: #666; width: 80px; }
+    #features-table td:nth-child(2) { color: #ddd; }
+    #features-table td:last-child { text-align: right; }
+
+    .rarity-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .rarity-common { background: #333; color: #888; }
+    .rarity-uncommon { background: #1a3a1a; color: #6bff6b; }
+    .rarity-rare { background: #1a1a4a; color: #6b9dff; }
+    .rarity-legendary { background: #3a1a3a; color: #ff6bd9; }
+
+    .bottom-right {
+      bottom: 20px;
+      right: 20px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #e8beac, #c45c3e);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(232, 190, 172, 0.3);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid #252535;
+      color: white;
+    }
+
+    .btn-secondary:hover { background: #151520; }
+
+    .btn-small { padding: 6px 12px; font-size: 10px; }
+
+    .shortcuts {
+      font-size: 10px;
+      color: #444;
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    .shortcuts kbd {
+      background: #151520;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #888;
+    }
+
+    .version {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: #333;
+      z-index: 50;
+    }
+
+    .warning {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(10, 10, 15, 0.95);
+      border: 1px solid #c45c3e;
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      z-index: 1000;
+      max-width: 400px;
+    }
+
+    .warning h2 {
+      color: #e8beac;
+      margin-bottom: 15px;
+    }
+
+    .warning p {
+      color: #888;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .warning-hidden { display: none; }
+
+    @media (max-width: 768px) {
+      .title { font-size: 18px; }
+      .bottom-left { left: 10px; right: 10px; max-width: none; }
+      .bottom-right { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="warning" class="warning">
+    <h2>Content Warning</h2>
+    <p>This generative art piece explores human anatomical forms in an abstract, artistic context. It contains stylized representations of genitalia.</p>
+    <button class="btn btn-primary" onclick="dismissWarning()">I Understand - Enter</button>
+  </div>
+
+  <div id="sketch-holder"></div>
+
+  <div class="overlay top-left">
+    <div class="title">Genital Forms</div>
+    <div class="subtitle">Procedural anatomical sculptures</div>
+    <div id="hash-display" onclick="navigator.clipboard.writeText(getHash()).then(() => this.textContent = 'Copied!')">0x...</div>
+  </div>
+
+  <div class="overlay top-right">
+    <div id="status">Ready</div>
+  </div>
+
+  <div class="overlay bottom-left">
+    <div class="features-panel">
+      <div class="features-title">Features</div>
+      <table id="features-table">
+        <tr><td>Loading...</td><td></td><td></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="overlay bottom-right">
+    <div class="controls">
+      <button class="btn btn-primary" onclick="regenerate()">Regenerate</button>
+      <button class="btn btn-secondary" onclick="saveImage()">Save</button>
+    </div>
+    <div class="controls">
+      <button class="btn btn-secondary btn-small" onclick="togglePhysics()">Physics</button>
+      <button class="btn btn-secondary btn-small" onclick="toggleAutoRotate()">Rotate</button>
+    </div>
+    <div class="shortcuts">
+      <kbd>R</kbd> Regenerate &nbsp;
+      <kbd>S</kbd> Save<br>
+      <kbd>P</kbd> Physics &nbsp;
+      <kbd>A</kbd> Auto-rotate<br>
+      Drag to rotate &nbsp; Scroll to zoom
+    </div>
+  </div>
+
+  <div class="version">v1.0.0</div>
+
+  <script>
+    function dismissWarning() {
+      document.getElementById('warning').classList.add('warning-hidden');
+    }
+  </script>
+  <script src="sketch.js"></script>
+</body>
+</html>

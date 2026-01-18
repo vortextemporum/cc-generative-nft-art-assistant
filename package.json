@@ -1,0 +1,41 @@
+{
+  "name": "generative-art-assistant",
+  "version": "2.0.0",
+  "description": "AI assistant for generative art with semantic search, MCP server, and visual analysis",
+  "main": "scripts/art-assistant.js",
+  "scripts": {
+    "fetch:artblocks": "node scripts/artblocks-fetcher.js",
+    "fetch:artblocks:full": "node scripts/artblocks-fetcher.js --with-scripts",
+    "fetch:fxhash": "node scripts/fxhash-fetcher.js",
+    "process": "node scripts/process-dataset.js data/artblocks-dataset.json fxhash-dataset.json",
+    "embeddings": "node services/embeddings/embed.js generate",
+    "search": "node services/embeddings/embed.js search",
+    "render": "node services/renderer/render.js",
+    "mcp": "node mcp-server/src/index.js",
+    "assistant": "node scripts/art-assistant.js",
+    "start": "node scripts/art-assistant.js"
+  },
+  "keywords": [
+    "generative-art",
+    "art-blocks",
+    "fxhash",
+    "ai",
+    "claude",
+    "mcp",
+    "p5js",
+    "threejs",
+    "creative-coding",
+    "nft"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.17.0"
+  },
+  "optionalDependencies": {
+    "puppeteer": "^22.0.0"
+  }
+}

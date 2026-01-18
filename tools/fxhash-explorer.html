@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fx(hash) Explorer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #0a0a12;
+      color: #eee;
+    }
+    h1 { color: #7b61ff; margin-bottom: 5px; }
+    h2 { color: #ff6b9d; margin-top: 30px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    .subtitle { color: #888; margin-bottom: 20px; }
+    
+    button {
+      background: #7b61ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    button:hover { background: #6b4fe0; }
+    button:disabled { background: #444; color: #888; cursor: not-allowed; }
+    button.secondary { background: #ff6b9d; }
+    button.success { background: #10b981; }
+    
+    select {
+      padding: 12px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #151520;
+      color: #fff;
+      font-size: 14px;
+      min-width: 500px;
+      max-width: 100%;
+    }
+    
+    input {
+      padding: 12px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #151520;
+      color: #fff;
+      font-size: 14px;
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    
+    #output {
+      background: #0d0d18;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #222;
+    }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .info { color: #60a5fa; }
+    
+    #preview-frame {
+      width: 100%;
+      height: 700px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      background: #000;
+      margin-top: 20px;
+    }
+    
+    .project-info {
+      background: #151520;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      display: none;
+    }
+    .project-info.visible { display: block; }
+    .project-info h3 { color: #7b61ff; margin: 0 0 5px 0; }
+    .project-info .artist { color: #ff6b9d; font-size: 16px; }
+    .project-info .desc { color: #888; margin-top: 10px; font-size: 14px; }
+    
+    .or-divider {
+      color: #666;
+      margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎲 fx(hash) Explorer</h1>
+  <p class="subtitle">Preview generative art from fxhash - no API needed!</p>
+
+  <h2>1. Select Project or Enter Custom IPFS</h2>
+  
+  <div class="control-row">
+    <select id="project-select" onchange="onProjectSelect()">
+      <option value="">-- Select a project --</option>
+    </select>
+  </div>
+  
+  <div class="control-row">
+    <span class="or-divider">— OR enter custom IPFS hash —</span>
+  </div>
+  
+  <div class="control-row">
+    <input type="text" id="custom-ipfs" placeholder="IPFS hash (e.g. QmXxx... or ipfs://...)">
+    <button onclick="loadCustomIPFS()">Load Custom</button>
+  </div>
+
+  <div id="project-info" class="project-info">
+    <h3 id="info-name">Project Name</h3>
+    <div class="artist" id="info-artist">by Artist</div>
+    <div class="desc" id="info-desc"></div>
+  </div>
+
+  <h2>2. Generate Preview</h2>
+  <div class="control-row">
+    <button onclick="generatePreview()" id="preview-btn" class="success">▶️ Generate Random</button>
+    <button onclick="generatePreview()" class="success">🔄 New Output</button>
+    <button onclick="downloadHtml()" class="secondary">💾 Download HTML</button>
+  </div>
+  
+  <div class="control-row">
+    <input type="text" id="custom-hash" placeholder="Custom fxhash (oo...)">
+    <button onclick="useCustomHash()">Use This Hash</button>
+  </div>
+
+  <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <h2>3. Log</h2>
+  <div id="output">Select a project or enter a custom IPFS hash to begin.</div>
+
+  <script>
+    // =========================================================================
+    // HARDCODED POPULAR FXHASH PROJECTS - NO API NEEDED!
+    // =========================================================================
+    
+    const PROJECTS = [
+      {
+        id: 0,
+        name: "Gazers",
+        artist: "Matt Kane",
+        ipfs: "QmWcqnrGqMvbPbSfqvNTi5kFaWkMWzrCNM9umgCZSMQWvT",
+        desc: "Generative celestial art"
+      },
+      {
+        id: 1,
+        name: "Skulptuur",
+        artist: "Piter Pasma",
+        ipfs: "QmPEuGS9xrLjLFvKuZEjZV3xQfKv3N4A8NbLJHhqVbEijE",
+        desc: "3D generative sculptures"
+      },
+      {
+        id: 2,
+        name: "Horizontes",
+        artist: "Iskra Velitchkova",
+        ipfs: "QmPUWR3AYDzWPFhrkpyLMv4gnbZCBPygPQLtJBEYhQSFKq",
+        desc: "Horizon landscapes"
+      },
+      {
+        id: 4,
+        name: "Ecumenopolis",
+        artist: "ciphrd",
+        ipfs: "QmVuJLk2WBvqZTXb9yJbvMPwDRQWY5ERBJJTJHfCBNbQKV",
+        desc: "Infinite city generator"
+      },
+      {
+        id: 6,
+        name: "A Bugged Forest",
+        artist: "Aleksandra Jovanić",
+        ipfs: "QmRqRXFVRcmKKHhuuEMqe9Y1JpGTk1Nhfq3pPCLcWPJHTX",
+        desc: "Glitched nature"
+      },
+      {
+        id: 21,
+        name: "Construction Token",
+        artist: "Jeff Davis",
+        ipfs: "QmZdADHhzfUZcfsYpfqXrjLEbmnfN2bhTddWUkKXMBqQrn",
+        desc: "Architectural generative art"
+      },
+      {
+        id: 25,
+        name: "Unfolding",
+        artist: "bjornsteffens",
+        ipfs: "QmYPSJEVhnpR2wv9pCzDEAXpAzpTkBBa3Jb3dMbQVYiX7P",
+        desc: "Unfolding geometric patterns"
+      },
+      {
+        id: 27,
+        name: "Radio Silence",
+        artist: "stranger_lights",
+        ipfs: "QmVK7AKfGdCwQs8knj8RdVxMCwrJXeB5RY8n1VAcYF24jD",
+        desc: "Abstract radio waves"
+      },
+      {
+        id: 103,
+        name: "Ekaitza",
+        artist: "mrkswcz",
+        ipfs: "QmWV6xP3fBP2PdhRV9Nwaq1PtW28Umu7dVP8AfT5Pm9VAd",
+        desc: "Storm patterns"
+      },
+      {
+        id: 213,
+        name: "Smooth Steps",
+        artist: "ertdfgcvb",
+        ipfs: "QmbuFRF83rKcMFkb2a8HQqxwBiFLqm8bRD8nw2jMKXpb9k",
+        desc: "Smooth gradient steps"
+      },
+      {
+        id: 394,
+        name: "Strands of Solitude",
+        artist: "William Tan",
+        ipfs: "Qmbuh3dJFZrCBNKg2rTbnfNaRZpnP1FAn96mFLMHrqYwen",
+        desc: "Flowing strands"
+      },
+      {
+        id: 912,
+        name: "haiku",
+        artist: "zancan",
+        ipfs: "QmQxfC8CpgmXsHdxMpT2r2svRwXwLw4Qoc2CjBrCdPDqfj",
+        desc: "Poetic generative art"
+      },
+      {
+        id: 2184,
+        name: "Nordic Runes",
+        artist: "jeres",
+        ipfs: "QmYnPaZBHWJnvxKgj1ueVbJMxg5QTvCr8M7qmYf4zHH4JZ",
+        desc: "Ancient rune patterns"
+      },
+      {
+        id: 4318,
+        name: "Void",
+        artist: "Shvembldr",
+        ipfs: "QmbJXJLnG1mq3z7DpQLDpLqxGJA2kVfHkLNdEdg8ycgRhN",
+        desc: "Into the void"
+      },
+      {
+        id: 6597,
+        name: "Memory of Water",
+        artist: "Helena Sarin",
+        ipfs: "QmXPY6gP7j7tqVwVj5CYXPKB8EyLQX4Y6WkZL8LVaQzmRb",
+        desc: "Water memories in art"
+      }
+    ];
+
+    const IPFS_GATEWAYS = [
+      "https://gateway.fxhash.xyz/ipfs/",
+      "https://ipfs.io/ipfs/",
+      "https://cloudflare-ipfs.com/ipfs/",
+      "https://dweb.link/ipfs/"
+    ];
+    
+    let currentProject = null;
+    let currentIpfs = null;
+    let gatewayIndex = 0;
+
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    
+    function init() {
+      const select = document.getElementById('project-select');
+      PROJECTS.forEach((p, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `#${p.id} - ${p.name} by ${p.artist}`;
+        select.appendChild(opt);
+      });
+      log("Loaded " + PROJECTS.length + " projects. Select one to preview!", 'success');
+    }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+    
+    function log(msg, type = '') {
+      const output = document.getElementById('output');
+      const span = document.createElement('span');
+      if (type) span.className = type;
+      span.textContent = msg + '\n';
+      output.appendChild(span);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('output').innerHTML = '';
+    }
+
+    function ipfsToHttp(hash) {
+      // Clean up the hash
+      if (hash.startsWith('ipfs://')) {
+        hash = hash.slice(7);
+      }
+      if (hash.startsWith('/ipfs/')) {
+        hash = hash.slice(6);
+      }
+      return IPFS_GATEWAYS[gatewayIndex % IPFS_GATEWAYS.length] + hash;
+    }
+
+    function generateFxhash() {
+      const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+      let hash = 'oo';
+      for (let i = 0; i < 49; i++) {
+        hash += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return hash;
+    }
+
+    // =========================================================================
+    // PROJECT SELECTION
+    // =========================================================================
+    
+    function onProjectSelect() {
+      const idx = document.getElementById('project-select').value;
+      
+      if (idx === '') {
+        currentProject = null;
+        currentIpfs = null;
+        document.getElementById('project-info').classList.remove('visible');
+        return;
+      }
+      
+      currentProject = PROJECTS[parseInt(idx)];
+      currentIpfs = currentProject.ipfs;
+      
+      document.getElementById('info-name').textContent = currentProject.name;
+      document.getElementById('info-artist').textContent = 'by ' + currentProject.artist;
+      document.getElementById('info-desc').textContent = currentProject.desc;
+      document.getElementById('project-info').classList.add('visible');
+      
+      // Clear custom IPFS input
+      document.getElementById('custom-ipfs').value = '';
+      
+      log("Selected: " + currentProject.name + " - " + currentProject.ipfs.slice(0, 20) + "...", 'success');
+    }
+
+    function loadCustomIPFS() {
+      const input = document.getElementById('custom-ipfs').value.trim();
+      if (!input) {
+        log("Enter an IPFS hash", 'error');
+        return;
+      }
+      
+      currentProject = null;
+      currentIpfs = input;
+      
+      // Clear dropdown
+      document.getElementById('project-select').value = '';
+      
+      document.getElementById('info-name').textContent = 'Custom Project';
+      document.getElementById('info-artist').textContent = 'IPFS: ' + input.slice(0, 30) + '...';
+      document.getElementById('info-desc').textContent = '';
+      document.getElementById('project-info').classList.add('visible');
+      
+      log("Loaded custom IPFS: " + input.slice(0, 40) + "...", 'success');
+    }
+
+    // =========================================================================
+    // PREVIEW
+    // =========================================================================
+    
+    function generatePreview(customHash = null) {
+      if (!currentIpfs) {
+        log("Select a project or enter IPFS hash first", 'error');
+        return;
+      }
+      
+      const hash = customHash || generateFxhash();
+      const url = ipfsToHttp(currentIpfs);
+      const liveUrl = url + '?fxhash=' + hash;
+      
+      document.getElementById('preview-frame').src = liveUrl;
+      log("▶ Loading: " + hash.slice(0, 20) + "...", 'info');
+      log("  Gateway: " + IPFS_GATEWAYS[gatewayIndex % IPFS_GATEWAYS.length], 'info');
+    }
+
+    function useCustomHash() {
+      const hash = document.getElementById('custom-hash').value.trim();
+      if (!hash) {
+        log("Enter a hash first", 'error');
+        return;
+      }
+      generatePreview(hash);
+    }
+
+    function tryNextGateway() {
+      gatewayIndex++;
+      log("Switched to gateway: " + IPFS_GATEWAYS[gatewayIndex % IPFS_GATEWAYS.length], 'info');
+      if (currentIpfs) {
+        generatePreview();
+      }
+    }
+
+    // =========================================================================
+    // DOWNLOAD
+    // =========================================================================
+    
+    function downloadHtml() {
+      if (!currentIpfs) {
+        log("Select a project first", 'error');
+        return;
+      }
+      
+      const hash = generateFxhash();
+      const url = ipfsToHttp(currentIpfs);
+      const name = currentProject ? currentProject.name : 'fxhash-custom';
+      
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${name}</title>
+  <style>*{margin:0;padding:0}html,body{width:100%;height:100%;overflow:hidden}iframe{width:100%;height:100%;border:none}</style>
+</head>
+<body>
+  <!-- Hash: ${hash} - Change fxhash param for different output -->
+  <iframe src="${url}?fxhash=${hash}"></iframe>
+</body>
+</html>`;
+      
+      const blob = new Blob([html], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name.replace(/[^a-z0-9]/gi, '_') + '.html';
+      a.click();
+      log("💾 Downloaded: " + a.download, 'success');
+    }
+
+    // Init on load
+    init();
+  </script>
+</body>
+</html>

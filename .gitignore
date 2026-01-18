@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Data files (large, fetch yourself)
+data/*.json
+!data/.gitkeep
+fxhash-dataset.json
+
+# Processed outputs (regenerate with scripts)
+processed/*.json
+processed/*.md
+!processed/.gitkeep
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
