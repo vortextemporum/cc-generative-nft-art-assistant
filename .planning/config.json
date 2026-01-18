@@ -1,0 +1,20 @@
+{
+  "project": "generative-art-platform",
+  "version": "1.0.0",
+  "workflow_mode": "interactive",
+  "gates": {
+    "require_plan_approval": true,
+    "require_verification": true,
+    "auto_commit": true
+  },
+  "planning": {
+    "depth": "standard",
+    "max_tasks_per_plan": 3,
+    "parallel_agents": true
+  },
+  "domain": {
+    "type": "generative-art-platform",
+    "frameworks": ["p5js", "threejs", "solidity", "nextjs"],
+    "datasets": ["artblocks", "fxhash"]
+  }
+}
