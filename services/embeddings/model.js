@@ -27,14 +27,14 @@ export class EmbeddingModel {
    */
   static async getInstance(progressCallback = null) {
     if (this.instance === null) {
-      console.log(`Loading embedding model: ${this.MODEL_ID}`);
-      console.log('First run will download ~33MB model...\n');
+      console.error(`Loading embedding model: ${this.MODEL_ID}`);
+      console.error('First run will download ~33MB model...\n');
 
       this.instance = await pipeline('feature-extraction', this.MODEL_ID, {
         progress_callback: progressCallback || this.defaultProgressCallback
       });
 
-      console.log('\nModel loaded successfully.');
+      console.error('\nModel loaded successfully.');
     }
     return this.instance;
   }
@@ -47,9 +47,9 @@ export class EmbeddingModel {
       const pct = progress.total > 0
         ? ((progress.loaded / progress.total) * 100).toFixed(1)
         : '?';
-      process.stdout.write(`\rDownloading ${progress.file}: ${pct}%`);
+      process.stderr.write(`\rDownloading ${progress.file}: ${pct}%`);
     } else if (progress.status === 'ready') {
-      console.log(`\n${progress.file} ready`);
+      console.error(`\n${progress.file} ready`);
     }
   }
 
@@ -95,7 +95,7 @@ export class EmbeddingModel {
         onProgress(processed, texts.length);
       } else {
         const pct = ((processed / texts.length) * 100).toFixed(1);
-        console.log(`Embedded ${processed}/${texts.length} (${pct}%)`);
+        console.error(`Embedded ${processed}/${texts.length} (${pct}%)`);
       }
     }
 

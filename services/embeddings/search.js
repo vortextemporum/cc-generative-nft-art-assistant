@@ -42,11 +42,11 @@ export async function ensureIndex() {
     );
   }
 
-  console.log('Loading embedding index...');
+  console.error('Loading embedding index...');
   const startTime = Date.now();
   cachedIndex = loadIndex();
   const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
-  console.log(`Loaded ${cachedIndex.vectors.length.toLocaleString()} vectors in ${loadTime}s`);
+  console.error(`Loaded ${cachedIndex.vectors.length.toLocaleString()} vectors in ${loadTime}s`);
 
   return cachedIndex;
 }
