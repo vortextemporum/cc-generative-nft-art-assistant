@@ -20,7 +20,7 @@ Build a comprehensive generative art platform from foundation to deployment. Sta
 ## Phase Details
 
 ### Phase 1: Semantic Search
-**Goal**: Enable semantic search across the combined 28k+ project knowledge base
+**Goal**: Enable semantic search across the combined 28k+ project knowledge base using bge-small-en-v1.5 embeddings with filtering and multiple output formats
 **Depends on**: Nothing (first phase)
 **Requirements**: REQ-01
 **Success Criteria** (what must be TRUE):
@@ -28,11 +28,11 @@ Build a comprehensive generative art platform from foundation to deployment. Sta
   2. Search returns relevant results ranked by similarity
   3. Embeddings persist between sessions (no regeneration needed)
   4. Search works offline (no external API calls)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 01-01: Generate embeddings for all projects
-- [ ] 01-02: Implement search CLI and API
+- [ ] 01-01-PLAN.md - Generate embeddings for all 28k projects (model, chunker, storage, generator)
+- [ ] 01-02-PLAN.md - Implement search CLI and API (search service, CLI with formats, incremental updates)
 
 ### Phase 2: Developer Tools
 **Goal**: Provide Claude Desktop integration and visual analysis capabilities
@@ -114,11 +114,11 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Semantic Search | 0/2 | Not started | - |
+| 1. Semantic Search | 0/2 | Planned | - |
 | 2. Developer Tools | 0/2 | Not started | - |
 | 3. Smart Contracts | 0/2 | Not started | - |
 | 4. Frontend Core | 0/3 | Not started | - |
