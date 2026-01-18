@@ -197,6 +197,167 @@ Document implementation:
 - **Viewer**: Dark theme with features display
 - **Controls**: R = regenerate, S = save (minimum)
 
+## Versioning Requirements (MANDATORY)
+
+### Before Making Changes
+**ALWAYS archive the current version before making significant updates:**
+
+```bash
+# Archive current version before changes
+cp sketch.js versions/v{CURRENT_VERSION}-sketch.js
+cp shaders/*.frag versions/v{CURRENT_VERSION}-wavelet.frag  # if shaders exist
+```
+
+### Version Numbering
+- **Major** (2.0.0): Breaking changes to hash→output mapping (different visual for same hash)
+- **Minor** (1.1.0): New features, backward compatible (same hash still produces same output)
+- **Patch** (1.0.1): Bug fixes, performance optimizations, no visual changes
+
+### CHANGELOG.md Updates
+**Every version change MUST update CHANGELOG.md:**
+
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### Added
+- New features
+
+### Changed
+- Modified behavior
+
+### Fixed
+- Bug fixes
+
+### Note
+(Optional) Any versioning notes
+```
+
+### versions/ Folder Structure
+```
+versions/
+├── .gitkeep
+├── v1.0.0-sketch.js
+├── v1.1.0-sketch.js
+├── v2.0.0-sketch.js
+└── v2.0.0-wavelet.frag    # if shaders exist
+```
+
+## Development Mode Features
+
+For exploration/iteration, include these development features:
+
+### 1. Parameter Sliders Panel
+Allow real-time parameter adjustment while keeping hash-derived defaults:
+
+```javascript
+function setParameter(name, value) {
+    hasOverrides = true;
+    features[name] = value;
+    return features;
+}
+
+function resetToOriginal() {
+    features = { ...originalFeatures };
+    hasOverrides = false;
+    return features;
+}
+
+function hasModifications() { return hasOverrides; }
+```
+
+### 2. Like/Dislike Feedback System
+Store user preferences in localStorage for analysis:
+
+```javascript
+const FEEDBACK_KEY = 'sketch-name-feedback';
+
+function recordFeedback(isLike) {
+    const feedback = loadFeedback();
+    const entry = {
+        timestamp: Date.now(),
+        hash,
+        features: { ...features },
+        hadOverrides: hasOverrides,
+        currentState: { /* all current parameter values */ }
+    };
+    if (isLike) feedback.liked.push(entry);
+    else feedback.disliked.push(entry);
+    saveFeedback(feedback);
+    console.log(isLike ? 'LIKED:' : 'DISLIKED:', entry);
+}
+
+function getFeedbackStats() { /* aggregate stats */ }
+function exportFeedback() { return loadFeedback(); }
+```
+
+### 3. Rarity Curves Visualization
+Display probability distributions in UI:
+
+```javascript
+const RARITY_CURVES = {
+    featureName: {
+        probabilities: [0.3, 0.3, 0.25, 0.15],
+        labels: ["common", "uncommon", "rare", "legendary"]
+    }
+};
+
+function getRarityCurves() { return RARITY_CURVES; }
+```
+
+### 4. Dev Mode UI Elements
+```html
+<!-- Stats summary bar -->
+<div class="stats-summary">
+    <span>Patterns: 10</span>
+    <span>Palettes: 24</span>
+    <!-- etc -->
+</div>
+
+<!-- Sliders panel with Reset button -->
+<div class="sliders-panel">
+    <h2>Parameters <button id="btn-reset">Reset</button></h2>
+    <!-- select dropdowns for discrete features -->
+    <!-- range sliders for continuous features -->
+</div>
+
+<!-- Rarity curves panel -->
+<div class="rarity-panel">
+    <h2>Rarity Curves</h2>
+    <!-- Bar charts showing probability distributions -->
+    <!-- Highlight current selection -->
+</div>
+
+<!-- Feedback panel -->
+<div class="feedback-panel">
+    <button class="like">Like (L)</button>
+    <button class="dislike">Dislike (D)</button>
+    <button id="export-stats">Export to Console</button>
+</div>
+```
+
+### 5. Keyboard Shortcuts for Dev Mode
+| Key | Action |
+|-----|--------|
+| R | Regenerate with new hash |
+| S | Save PNG |
+| Space | Pause/resume animation |
+| L | Like current output |
+| D | Dislike current output |
+
+## Sub-Collection Planning
+
+When expanding a sketch for multiple themed sub-collections:
+
+1. **Expand feature counts** (e.g., 4 wavelets → 24 wavelets)
+2. **Categorize features** (e.g., "mathematical" vs "glitch effects")
+3. **Define collection themes** in docs/FEATURES.md:
+   - Mathematical: specific feature combinations
+   - Glitch Art: different combinations
+   - Minimal: constrained parameter ranges
+   - Chaos: extreme parameter values
+
+3. **Rarity tiers per collection**: Different probability curves for different drops
+
 ## Framework CDNs
 
 ```html

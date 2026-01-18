@@ -12,7 +12,8 @@
     "build:embeddings": "node ../services/embeddings/generate.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2"
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "puppeteer": "^24.35.0"
   },
   "peerDependencies": {
     "zod": "^3.25.0"

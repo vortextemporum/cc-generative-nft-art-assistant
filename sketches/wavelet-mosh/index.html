@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wavelet-mosh</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0d0d14;
+            color: #e0e0e0;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            font-size: 13px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .version {
+            color: #666;
+            font-size: 11px;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .content-row {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        #canvas-container {
+            background: #000;
+            border: 1px solid #222;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+        }
+
+        #sketch-canvas {
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: #1a1a24;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        button:hover {
+            background: #252535;
+            border-color: #444;
+        }
+
+        button:active {
+            background: #333;
+        }
+
+        button.primary {
+            background: #2a4a3a;
+            border-color: #3a6a4a;
+        }
+
+        button.primary:hover {
+            background: #3a5a4a;
+        }
+
+        button.danger {
+            background: #4a2a2a;
+            border-color: #6a3a3a;
+        }
+
+        button.danger:hover {
+            background: #5a3a3a;
+        }
+
+        button.like {
+            background: #1a3a2a;
+            border-color: #2a5a3a;
+        }
+
+        button.like:hover {
+            background: #2a4a3a;
+        }
+
+        button.dislike {
+            background: #3a2a2a;
+            border-color: #5a3a3a;
+        }
+
+        button.dislike:hover {
+            background: #4a3a3a;
+        }
+
+        .kbd {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 6px;
+        }
+
+        .hash-display {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #888;
+            word-break: break-all;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .hash-display.modified {
+            border-color: #5a4a2a;
+            color: #c9a227;
+        }
+
+        /* Sliders Panel */
+        .sliders-panel {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 16px;
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        .sliders-panel h2 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .slider-group label span:first-child {
+            color: #888;
+        }
+
+        .slider-group label span:last-child {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #222;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #666;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #888;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #666;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        select {
+            width: 100%;
+            padding: 6px 10px;
+            background: #1a1a24;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        select:hover {
+            border-color: #444;
+        }
+
+        /* Rarity Panel */
+        .rarity-panel {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 16px;
+            width: 280px;
+            flex-shrink: 0;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .rarity-panel h2 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .rarity-section {
+            margin-bottom: 20px;
+        }
+
+        .rarity-section h3 {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .rarity-bar-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+
+        .rarity-label {
+            width: 90px;
+            color: #888;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rarity-bar-wrapper {
+            flex: 1;
+            height: 8px;
+            background: #1a1a24;
+            border-radius: 2px;
+            margin: 0 6px;
+            overflow: hidden;
+        }
+
+        .rarity-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4a8a6a, #6aca8a);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .rarity-bar.active {
+            background: linear-gradient(90deg, #8a6a4a, #caaa6a);
+        }
+
+        .rarity-percent {
+            width: 35px;
+            text-align: right;
+            color: #666;
+        }
+
+        /* Feedback Panel */
+        .feedback-panel {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 16px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .feedback-panel h2 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .feedback-buttons button {
+            flex: 1;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        .feedback-stats {
+            font-size: 11px;
+            color: #666;
+            border-top: 1px solid #222;
+            padding-top: 12px;
+        }
+
+        .feedback-stats .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2a4a3a;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .toast.dislike-toast {
+            background: #4a2a2a;
+        }
+
+        .shortcuts {
+            color: #555;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .shortcuts span {
+            margin: 0 10px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 700px;
+            height: 700px;
+            background: #0a0a10;
+            color: #444;
+        }
+
+        .error {
+            background: #1a0a0a;
+            color: #f87171;
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* Stats summary */
+        .stats-summary {
+            background: #0a0a10;
+            border: 1px solid #1a1a24;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-item {
+            display: flex;
+            gap: 6px;
+        }
+
+        .stat-item .label {
+            color: #555;
+        }
+
+        .stat-item .value {
+            color: #8a8a8a;
+            font-weight: 500;
+        }
+
+        @media (max-width: 1200px) {
+            .content-row {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .sliders-panel,
+            .rarity-panel {
+                width: 100%;
+                max-width: 500px;
+            }
+        }
+
+        @media (max-width: 740px) {
+            body {
+                padding: 10px;
+            }
+
+            #canvas-container,
+            .loading {
+                width: 100%;
+                max-width: 100vw;
+            }
+
+            #sketch-canvas {
+                width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>wavelet-mosh</h1>
+        <div class="version">v2.0.0 - Dev Mode</div>
+    </header>
+
+    <main>
+        <div class="stats-summary">
+            <div class="stat-item"><span class="label">Patterns:</span><span class="value">10</span></div>
+            <div class="stat-item"><span class="label">Wavelets:</span><span class="value">24</span></div>
+            <div class="stat-item"><span class="label">Palettes:</span><span class="value">24</span></div>
+            <div class="stat-item"><span class="label">Decomp Levels:</span><span class="value">1-8</span></div>
+            <div class="stat-item"><span class="label">Speeds:</span><span class="value">6</span></div>
+        </div>
+
+        <div class="content-row">
+            <div class="sliders-panel" id="sliders-panel">
+                <h2>
+                    Parameters
+                    <button id="btn-reset" style="padding: 4px 8px; font-size: 10px;">Reset</button>
+                </h2>
+
+                <div class="slider-group">
+                    <label>
+                        <span>Pattern</span>
+                        <span id="pattern-value">-</span>
+                    </label>
+                    <select id="pattern-select"></select>
+                </div>
+
+                <div class="slider-group">
+                    <label>
+                        <span>Wavelet</span>
+                        <span id="wavelet-value">-</span>
+                    </label>
+                    <select id="wavelet-select"></select>
+                </div>
+
+                <div class="slider-group">
+                    <label>
+                        <span>Palette</span>
+                        <span id="palette-value">-</span>
+                    </label>
+                    <select id="palette-select"></select>
+                </div>
+
+                <div class="slider-group">
+                    <label>
+                        <span>Speed</span>
+                        <span id="speed-value">-</span>
+                    </label>
+                    <input type="range" id="speed-slider" min="0.1" max="3.0" step="0.1" value="0.7">
+                </div>
+
+                <div class="slider-group">
+                    <label>
+                        <span>Decomp Levels</span>
+                        <span id="levels-value">-</span>
+                    </label>
+                    <input type="range" id="levels-slider" min="1" max="8" step="1" value="2">
+                </div>
+
+                <div class="slider-group">
+                    <label>
+                        <span>Glitch Amount</span>
+                        <span id="glitch-value">-</span>
+                    </label>
+                    <input type="range" id="glitch-slider" min="0" max="1" step="0.01" value="0.5">
+                </div>
+
+                <div class="slider-group">
+                    <label>
+                        <span>Seed</span>
+                        <span id="seed-value">-</span>
+                    </label>
+                    <input type="range" id="seed-slider" min="0" max="1" step="0.001" value="0.5">
+                </div>
+            </div>
+
+            <div id="canvas-container">
+                <div class="loading" id="loading">Loading shaders...</div>
+            </div>
+
+            <div class="rarity-panel" id="rarity-panel">
+                <h2>Rarity Curves</h2>
+                <div id="rarity-content"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="btn-regenerate">Regenerate <span class="kbd">R</span></button>
+            <button id="btn-pause">Pause <span class="kbd">Space</span></button>
+            <button id="btn-save">Save PNG <span class="kbd">S</span></button>
+        </div>
+
+        <div class="hash-display" id="hash-display"></div>
+
+        <div class="feedback-panel">
+            <h2>Feedback</h2>
+            <div class="feedback-buttons">
+                <button class="like" id="btn-like">Like <span class="kbd">L</span></button>
+                <button class="dislike" id="btn-dislike">Dislike <span class="kbd">D</span></button>
+            </div>
+            <div class="feedback-stats" id="feedback-stats">
+                <div class="stat-row">
+                    <span>Liked:</span>
+                    <span id="stat-liked">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Disliked:</span>
+                    <span id="stat-disliked">0</span>
+                </div>
+                <div class="stat-row" style="margin-top: 8px;">
+                    <span></span>
+                    <button id="btn-export-stats" style="padding: 4px 8px; font-size: 10px;">Export to Console</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="shortcuts">
+            <span>R = regenerate</span>
+            <span>Space = pause</span>
+            <span>S = save</span>
+            <span>L = like</span>
+            <span>D = dislike</span>
+        </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="sketch.js"></script>
+    <script>
+        const container = document.getElementById('canvas-container');
+        const loading = document.getElementById('loading');
+        const hashDisplay = document.getElementById('hash-display');
+        const toast = document.getElementById('toast');
+        const rarityContent = document.getElementById('rarity-content');
+
+        // Buttons
+        const btnRegenerate = document.getElementById('btn-regenerate');
+        const btnPause = document.getElementById('btn-pause');
+        const btnSave = document.getElementById('btn-save');
+        const btnReset = document.getElementById('btn-reset');
+        const btnLike = document.getElementById('btn-like');
+        const btnDislike = document.getElementById('btn-dislike');
+        const btnExportStats = document.getElementById('btn-export-stats');
+
+        // Sliders and selects
+        const patternSelect = document.getElementById('pattern-select');
+        const waveletSelect = document.getElementById('wavelet-select');
+        const paletteSelect = document.getElementById('palette-select');
+        const speedSlider = document.getElementById('speed-slider');
+        const levelsSlider = document.getElementById('levels-slider');
+        const glitchSlider = document.getElementById('glitch-slider');
+        const seedSlider = document.getElementById('seed-slider');
+
+        // Value displays
+        const patternValue = document.getElementById('pattern-value');
+        const waveletValue = document.getElementById('wavelet-value');
+        const paletteValue = document.getElementById('palette-value');
+        const speedValue = document.getElementById('speed-value');
+        const levelsValue = document.getElementById('levels-value');
+        const glitchValue = document.getElementById('glitch-value');
+        const seedValue = document.getElementById('seed-value');
+
+        // Stats
+        const statLiked = document.getElementById('stat-liked');
+        const statDisliked = document.getElementById('stat-disliked');
+
+        let constants = null;
+        let rarityCurves = null;
+
+        function showToast(message, isDislike = false) {
+            toast.textContent = message;
+            toast.className = 'toast show' + (isDislike ? ' dislike-toast' : '');
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 2000);
+        }
+
+        function populateSelects() {
+            constants = WaveletMosh.getConstants();
+            rarityCurves = WaveletMosh.getRarityCurves();
+
+            // Pattern select
+            constants.PATTERN_TYPES.forEach((name, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = name.replace(/_/g, ' ');
+                patternSelect.appendChild(opt);
+            });
+
+            // Wavelet select
+            constants.WAVELET_TYPES.forEach((name, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = name.replace(/_/g, ' ');
+                waveletSelect.appendChild(opt);
+            });
+
+            // Palette select
+            constants.PALETTE_NAMES.forEach((name, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = name.replace(/_/g, ' ');
+                paletteSelect.appendChild(opt);
+            });
+        }
+
+        function renderRarityCurves(features) {
+            const sections = [
+                { key: 'pattern', title: 'Pattern', current: features.patternType },
+                { key: 'wavelet', title: 'Wavelet', current: features.waveletType },
+                { key: 'palette', title: 'Palette', current: features.paletteIndex },
+                { key: 'speed', title: 'Speed', current: features.speedIndex },
+                { key: 'decompLevels', title: 'Decomp Levels', current: features.decompLevels - 1 },
+                { key: 'glitchAmount', title: 'Glitch Amount', current: Math.min(Math.floor(features.glitchAmount * 10), 8) }
+            ];
+
+            let html = '';
+            sections.forEach(section => {
+                const curve = rarityCurves[section.key];
+                if (!curve) return;
+
+                html += `<div class="rarity-section">
+                    <h3>${section.title}</h3>`;
+
+                curve.probabilities.forEach((prob, i) => {
+                    const percent = (prob * 100).toFixed(1);
+                    const barWidth = Math.max(prob * 100 * 5, 2); // Scale for visibility
+                    const isActive = i === section.current;
+                    const label = curve.labels[i] || i.toString();
+
+                    html += `<div class="rarity-bar-container">
+                        <span class="rarity-label" title="${label}">${label}</span>
+                        <div class="rarity-bar-wrapper">
+                            <div class="rarity-bar${isActive ? ' active' : ''}" style="width: ${barWidth}%"></div>
+                        </div>
+                        <span class="rarity-percent">${percent}%</span>
+                    </div>`;
+                });
+
+                html += '</div>';
+            });
+
+            rarityContent.innerHTML = html;
+        }
+
+        function updateUI(features) {
+            // Update hash display
+            hashDisplay.textContent = WaveletMosh.getHash();
+            hashDisplay.className = 'hash-display' + (WaveletMosh.hasModifications() ? ' modified' : '');
+
+            // Update selects
+            patternSelect.value = features.patternType;
+            waveletSelect.value = features.waveletType;
+            paletteSelect.value = features.paletteIndex;
+
+            // Update sliders
+            speedSlider.value = features.animSpeed;
+            levelsSlider.value = features.decompLevels;
+            glitchSlider.value = features.glitchAmount;
+            seedSlider.value = features.seed;
+
+            // Update value displays
+            patternValue.textContent = features.patternName.replace(/_/g, ' ');
+            waveletValue.textContent = features.waveletName.replace(/_/g, ' ');
+            paletteValue.textContent = features.paletteName.replace(/_/g, ' ');
+            speedValue.textContent = features.animSpeed.toFixed(2);
+            levelsValue.textContent = features.decompLevels;
+            glitchValue.textContent = (features.glitchAmount * 100).toFixed(0) + '%';
+            seedValue.textContent = features.seed.toFixed(3);
+
+            // Update feedback stats
+            const stats = WaveletMosh.getFeedbackStats();
+            statLiked.textContent = stats.totalLiked;
+            statDisliked.textContent = stats.totalDisliked;
+
+            // Update rarity curves
+            renderRarityCurves(features);
+        }
+
+        // Event handlers
+        function handleRegenerate() {
+            const features = WaveletMosh.regenerate();
+            updateUI(features);
+            btnPause.innerHTML = 'Pause <span class="kbd">Space</span>';
+        }
+
+        function handlePause() {
+            const isPaused = WaveletMosh.togglePause();
+            btnPause.innerHTML = isPaused
+                ? 'Resume <span class="kbd">Space</span>'
+                : 'Pause <span class="kbd">Space</span>';
+        }
+
+        function handleSave() {
+            WaveletMosh.save('wavelet-mosh');
+        }
+
+        function handleReset() {
+            const features = WaveletMosh.resetToOriginal();
+            updateUI(features);
+            showToast('Reset to original');
+        }
+
+        function handleLike() {
+            WaveletMosh.recordFeedback(true);
+            updateUI(WaveletMosh.getFeatures());
+            showToast('Liked! Check console for details.');
+        }
+
+        function handleDislike() {
+            WaveletMosh.recordFeedback(false);
+            updateUI(WaveletMosh.getFeatures());
+            showToast('Disliked! Check console for details.', true);
+        }
+
+        function handleExportStats() {
+            const stats = WaveletMosh.getFeedbackStats();
+            const raw = WaveletMosh.exportFeedback();
+            console.log('=== FEEDBACK STATS ===');
+            console.log('Total Liked:', stats.totalLiked);
+            console.log('Total Disliked:', stats.totalDisliked);
+            console.log('');
+            console.log('Liked Wavelets:', stats.likedWavelets);
+            console.log('Disliked Wavelets:', stats.dislikedWavelets);
+            console.log('');
+            console.log('Liked Palettes:', stats.likedPalettes);
+            console.log('Disliked Palettes:', stats.dislikedPalettes);
+            console.log('');
+            console.log('Liked Patterns:', stats.likedPatterns);
+            console.log('Disliked Patterns:', stats.dislikedPatterns);
+            console.log('');
+            console.log('Avg Glitch (Liked):', stats.avgLikedGlitch.toFixed(2));
+            console.log('Avg Glitch (Disliked):', stats.avgDislikedGlitch.toFixed(2));
+            console.log('');
+            console.log('Avg Decomp (Liked):', stats.avgLikedDecomp.toFixed(2));
+            console.log('Avg Decomp (Disliked):', stats.avgDislikedDecomp.toFixed(2));
+            console.log('');
+            console.log('Raw Data:', raw);
+            showToast('Stats exported to console');
+        }
+
+        // Slider handlers
+        patternSelect.addEventListener('change', () => {
+            const features = WaveletMosh.setParameter('patternType', parseInt(patternSelect.value));
+            updateUI(features);
+        });
+
+        waveletSelect.addEventListener('change', () => {
+            const features = WaveletMosh.setParameter('waveletType', parseInt(waveletSelect.value));
+            updateUI(features);
+        });
+
+        paletteSelect.addEventListener('change', () => {
+            const features = WaveletMosh.setParameter('paletteIndex', parseInt(paletteSelect.value));
+            updateUI(features);
+        });
+
+        speedSlider.addEventListener('input', () => {
+            const features = WaveletMosh.setParameter('animSpeed', parseFloat(speedSlider.value));
+            updateUI(features);
+        });
+
+        levelsSlider.addEventListener('input', () => {
+            const features = WaveletMosh.setParameter('decompLevels', parseInt(levelsSlider.value));
+            updateUI(features);
+        });
+
+        glitchSlider.addEventListener('input', () => {
+            const features = WaveletMosh.setParameter('glitchAmount', parseFloat(glitchSlider.value));
+            updateUI(features);
+        });
+
+        seedSlider.addEventListener('input', () => {
+            const features = WaveletMosh.setParameter('seed', parseFloat(seedSlider.value));
+            updateUI(features);
+        });
+
+        // Button handlers
+        btnRegenerate.addEventListener('click', handleRegenerate);
+        btnPause.addEventListener('click', handlePause);
+        btnSave.addEventListener('click', handleSave);
+        btnReset.addEventListener('click', handleReset);
+        btnLike.addEventListener('click', handleLike);
+        btnDislike.addEventListener('click', handleDislike);
+        btnExportStats.addEventListener('click', handleExportStats);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+            switch (e.key.toLowerCase()) {
+                case 'r':
+                    handleRegenerate();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    handlePause();
+                    break;
+                case 's':
+                    e.preventDefault();
+                    handleSave();
+                    break;
+                case 'l':
+                    handleLike();
+                    break;
+                case 'd':
+                    handleDislike();
+                    break;
+            }
+        });
+
+        // Calculate responsive size
+        function getCanvasSize() {
+            const maxSize = Math.min(550, window.innerWidth - 620);
+            return Math.max(400, maxSize);
+        }
+
+        // Initialize
+        async function init() {
+            try {
+                populateSelects();
+
+                const size = getCanvasSize();
+                const features = await WaveletMosh.setup(container, size);
+
+                loading.remove();
+                updateUI(features);
+
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        const newSize = getCanvasSize();
+                        WaveletMosh.resize(newSize);
+                    }, 100);
+                });
+
+            } catch (err) {
+                loading.className = 'error';
+                loading.textContent = 'Error: ' + err.message + '. WebGL may not be supported.';
+                console.error(err);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
