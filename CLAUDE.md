@@ -447,6 +447,38 @@ Art Blocks: tokenData.features object. fxhash: $fx.features({ name: value }) cal
 ### fxhash Specifics
 fxhash projects are stored on IPFS. Scripts may include HTML wrapper. Call fxpreview() when ready for thumbnail capture.
 
+### p5.brush Library
+p5.brush (by Alejandro Campos Uribe) adds natural media simulation to p5.js. Used in Art Blocks projects like Hatches by Rob Dixon.
+
+**Setup:**
+```javascript
+brush.load();                           // Call in setup()
+brush.set("pencil", "#333333", 1);      // Select brush, color, weight
+```
+
+**Hatching:**
+```javascript
+brush.hatch(distance, angle, options);  // Enable cross-hatching
+// distance: line spacing in pixels
+// angle: rotation in radians
+// options: { curve: 0-1, rand: 0-1, continuous: bool }
+brush.rect(x, y, w, h);                 // Draw hatched rectangle
+brush.noHatch();                        // Disable hatching
+```
+
+**Watercolor Bleed:**
+```javascript
+brush.bleed(0.0002, "in");              // Pigment bleeds inward at edges
+brush.fill(color, 240);                 // Semi-transparent watercolor fill
+brush.fillTexture(0.2, 0.2);            // Add grain texture (amount, intensity)
+brush.rect(x, y, w, h);                 // Draw with watercolor effect
+```
+
+**Brush Types:** pencil, pen, marker, spray, cpencil (colored pencil), and custom brushes via brush.add(name, config).
+
+### Spectral Color Mixing
+Physically-based color mixing using spectral reflectance curves instead of RGB blending. Produces realistic pigment behavior (blue + yellow = green, not gray). Implemented via WebGL shaders. Used in projects like Hatches for watercolor blending effects.
+
 ## Notable Projects
 
 ### Art Blocks
