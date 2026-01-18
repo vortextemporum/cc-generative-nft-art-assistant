@@ -10,8 +10,8 @@
  *
  * Usage:
  *   node process-dataset.js data/artblocks-dataset.json
- *   node process-dataset.js fxhash-dataset.json
- *   node process-dataset.js data/artblocks-dataset.json fxhash-dataset.json
+ *   node process-dataset.js data/fxhash-dataset.json
+ *   node process-dataset.js data/artblocks-dataset.json data/fxhash-dataset.json
  *
  * Token-efficient processing:
  *   - Filters out scripts > MAX_SCRIPT_SIZE
@@ -73,18 +73,79 @@ function loadDataset(path) {
   const raw = fs.readFileSync(path, 'utf8');
   const data = JSON.parse(raw);
   const source = detectSource(data);
-  console.log(`Loaded ${data.projects?.length || 0} projects from ${source}`);
+
+  // Normalize different dataset formats to projects array
+  if (source === 'dwitter' && data.dweets) {
+    data.projects = data.dweets.map(normalizeDweet);
+    console.log(`Loaded ${data.projects.length} dweets from ${source}`);
+  } else if (source === 'highlight' && data.collections) {
+    data.projects = data.collections.flatMap(normalizeHighlightCollection);
+    console.log(`Loaded ${data.projects.length} tokens from ${source}`);
+  } else {
+    console.log(`Loaded ${data.projects?.length || 0} projects from ${source}`);
+  }
+
   return { data, source };
 }
 
 function detectSource(data) {
-  // Detect if Art Blocks or fxhash based on metadata or project structure
+  // Detect source based on metadata or structure
+  if (data.platform === 'dwitter.net') return 'dwitter';
+  if (data.platform === 'highlight.xyz') return 'highlight';
   if (data.metadata?.source === 'fxhash') return 'fxhash';
   if (data.metadata?.source === 'artblocks') return 'artblocks';
   // Fallback: check first project
   const first = data.projects?.[0];
   if (first?.generative_uri || first?.tags) return 'fxhash';
   return 'artblocks';
+}
+
+function normalizeDweet(dweet) {
+  // Convert Dwitter dweet to project format
+  return {
+    id: `dwitter-${dweet.id}`,
+    project_id: String(dweet.id),
+    name: `Dweet #${dweet.id}`,
+    artist_name: dweet.author || 'unknown',
+    description: `140-char JS demo. Likes: ${dweet.likes || 0}`,
+    script: dweet.code || '',
+    script_type: 'dwitter',
+    invocations: dweet.likes || 0,
+    max_invocations: 0,
+    source: 'dwitter',
+    tags: ['dwitter', 'code-golf', '140-chars'],
+    license: null,
+    link: dweet.link
+  };
+}
+
+function normalizeHighlightCollection(collection) {
+  // Convert Highlight collection to project format (one project per collection)
+  const code = collection.code || {};
+  const mainScript = code['sketch.js'] || code['script.min.js'] || code['main.min.js'] || code['index.html'] || '';
+
+  return [{
+    id: collection.id || `highlight-${collection.contract_address}`,
+    project_id: collection.contract_address,
+    name: collection.collection_name || collection.contract_name || 'Unknown',
+    artist_name: extractArtistFromName(collection.collection_name || collection.contract_name),
+    description: `Highlight.xyz generative collection on ${collection.chain}. ${collection.total_supply} tokens.`,
+    script: mainScript,
+    script_type: collection.code_type === 'onchain' ? 'js' : 'p5js',
+    invocations: collection.total_supply || 0,
+    max_invocations: collection.total_supply || 0,
+    source: 'highlight',
+    tags: ['highlight', collection.chain, collection.code_type || 'arweave'],
+    license: null,
+    code_files: Object.keys(code)
+  }];
+}
+
+function extractArtistFromName(name) {
+  // Extract artist from "Title by Artist" format
+  if (!name) return 'unknown';
+  const match = name.match(/by\s+(.+)$/i);
+  return match ? match[1].trim() : 'unknown';
 }
 
 function normalizeProject(project, source) {
@@ -113,6 +174,14 @@ function normalizeProject(project, source) {
       // Keep as-is for now, but note it's wrapped
       normalized.is_html_wrapped = true;
     }
+  } else if (source === 'dwitter') {
+    normalized.script_type = 'dwitter';
+    normalized.tags = project.tags || ['dwitter', 'code-golf'];
+    normalized.link = project.link;
+  } else if (source === 'highlight') {
+    normalized.script_type = project.script_type || 'p5js';
+    normalized.tags = project.tags || ['highlight'];
+    normalized.code_files = project.code_files || [];
   } else {
     // Art Blocks
     normalized.script_type = project.script_type_and_version || null;
@@ -572,7 +641,7 @@ function generateCodeExamples(projects) {
 async function main() {
   // Support multiple dataset files as arguments
   const args = process.argv.slice(2);
-  const inputPaths = args.length > 0 ? args : ['data/artblocks-dataset.json', 'fxhash-dataset.json'];
+  const inputPaths = args.length > 0 ? args : ['data/artblocks-dataset.json', 'data/fxhash-dataset.json'];
 
   // Check at least one file exists
   const existingPaths = inputPaths.filter(p => fs.existsSync(p));

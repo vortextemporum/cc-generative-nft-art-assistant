@@ -18,7 +18,7 @@ const https = require('https');
 const http = require('http');
 
 const FXHASH_ENDPOINT = "https://api.fxhash.xyz/graphql";
-const DEFAULT_OUTPUT = "fxhash-dataset.json";
+const DEFAULT_OUTPUT = "data/fxhash-dataset.json";
 
 // IPFS gateways to try (in order of preference)
 const IPFS_GATEWAYS = [
