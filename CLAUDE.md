@@ -64,12 +64,15 @@ generative-art-assistant/
 │   └── scripts/                 # Deployment utilities
 │
 ├── .claude/
-│   └── commands/
-│       ├── new_sketch.md        # /new_sketch - Create artwork
-│       ├── fxhash_project.md    # /fxhash_project - fxhash-ready project
-│       ├── analyze_artwork.md   # /analyze_artwork - Code analysis
-│       ├── art_inspiration.md   # /art_inspiration - Ideas from dataset
-│       └── platform_research.md # /platform_research - Platform building
+│   ├── commands/
+│   │   ├── new_sketch.md        # /new_sketch - Create artwork
+│   │   ├── edit_sketch.md       # /edit_sketch - Edit existing sketch
+│   │   ├── fxhash_project.md    # /fxhash_project - fxhash-ready project
+│   │   ├── analyze_artwork.md   # /analyze_artwork - Code analysis
+│   │   ├── art_inspiration.md   # /art_inspiration - Ideas from dataset
+│   │   └── platform_research.md # /platform_research - Platform building
+│   ├── sketch-session.json      # Current sketch focus tracking
+│   └── edit-history.json        # Edit history across sketches
 │
 └── docs/
     ├── TRAINING-GUIDE.md        # How to use data with Claude
@@ -167,6 +170,7 @@ All sketches in `sketches/` follow this structure:
 | Command | Description |
 |---------|-------------|
 | `/new_sketch` | Create new generative art sketch with full project structure |
+| `/edit_sketch [name]` | Edit existing sketch with versioning & knowledge capture |
 | `/fxhash_project` | Create fxhash-compatible project with boilerplate |
 | `/analyze_artwork` | Analyze code for techniques, patterns, aesthetics |
 | `/art_inspiration` | Get ideas from 28k+ project dataset |

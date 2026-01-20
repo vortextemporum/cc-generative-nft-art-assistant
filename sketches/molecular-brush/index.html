@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Molecular Brush</title>
+  <script src="lib/p5.min.js"></script>
+  <script>
+    // Only load p5.brush for v2.x versions (they use WEBGL)
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const version = params.get('version') || 'sketch.js';
+      const needsBrush = !version.includes('/v1.') && !version.includes('v1.');
+      if (needsBrush) {
+        document.write('<script src="lib/p5.brush.min.js"><\/script>');
+      }
+    })();
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0d14;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { font-size: 1.5rem; font-weight: 400; letter-spacing: 0.2em; color: #fff; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 11px; }
+    main { display: flex; gap: 20px; max-width: 1000px; justify-content: center; flex-wrap: wrap; }
+
+    .canvas-container {
+      background: #000;
+      border: 1px solid #222;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    #sketch-holder { display: block; width: 700px; height: 700px; }
+    #sketch-holder canvas { display: block; }
+
+    .progress-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #888; font-size: 12px;
+    }
+    .progress-overlay.hidden { display: none; }
+
+    .features-panel {
+      background: #111118;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 16px;
+      width: 260px;
+    }
+    .version-select {
+      width: 100%;
+      background: #1a1a24;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 11px;
+      margin-bottom: 14px;
+      cursor: pointer;
+    }
+    .version-select:hover { border-color: #444; }
+    .panel-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #888;
+      margin-bottom: 14px; text-transform: uppercase;
+      border-bottom: 1px solid #222; padding-bottom: 8px;
+    }
+    .features-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .features-table td { padding: 6px 0; border-bottom: 1px solid #1a1a24; }
+    .features-table td:first-child { color: #666; width: 70px; }
+    .features-table td:nth-child(2) { color: #ddd; }
+    .features-table td:last-child { text-align: right; }
+    .rarity-badge { font-size: 9px; padding: 2px 6px; border-radius: 8px; text-transform: uppercase; font-weight: 600; }
+    .rarity-common { background: #222; color: #777; }
+    .rarity-uncommon { background: rgba(76, 175, 80, 0.15); color: #66bb6a; }
+    .rarity-rare { background: rgba(33, 150, 243, 0.15); color: #42a5f5; }
+    .rarity-legendary { background: rgba(255, 193, 7, 0.15); color: #ffca28; }
+    .color-swatches { display: flex; gap: 3px; margin-top: 4px; }
+    .swatch { width: 14px; height: 14px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.1); }
+
+    .controls { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    button {
+      background: #1a1a24; border: 1px solid #333; color: #e0e0e0;
+      padding: 8px 14px; border-radius: 6px; font-family: inherit; font-size: 11px; cursor: pointer;
+    }
+    button:hover { background: #252535; border-color: #444; }
+    button.primary { background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; }
+    button.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+    .hash-display {
+      font-size: 10px; color: #4ecdc4; background: rgba(78, 205, 196, 0.08);
+      border: 1px solid rgba(78, 205, 196, 0.15); padding: 8px 10px;
+      border-radius: 6px; word-break: break-all; margin-top: 12px;
+    }
+    .shortcuts { font-size: 10px; color: #555; margin-top: 12px; }
+    .shortcuts kbd { background: #1a1a24; padding: 2px 5px; border-radius: 3px; margin: 0 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MOLECULAR BRUSH</h1>
+    <p class="subtitle">p5.brush flow fields with molecular physics</p>
+  </header>
+
+  <main>
+    <div class="canvas-container">
+      <div id="sketch-holder"></div>
+      <div class="progress-overlay" id="progress-overlay">
+        <span>Rendering...</span>
+      </div>
+    </div>
+
+    <div class="features-panel">
+      <select id="version-select" class="version-select">
+        <option value="sketch.js">v2.6.2 - Thin Frames (current)</option>
+        <option value="versions/v2.6.1-framed.js">v2.6.1 - Framed</option>
+        <option value="versions/v2.6.0-framed.js">v2.6.0 - Framed</option>
+        <option value="versions/v2.5.0-fast.js">v2.5.0 - Fast</option>
+        <option value="versions/v2.4.1-fast.js">v2.4.1 - Fast</option>
+        <option value="versions/v2.3.1-fast.js">v2.3.1 - Fast</option>
+        <option value="versions/v2.2.0-fast.js">v2.2.0 - Fast</option>
+        <option value="versions/v2.0.0-static.js">v2.0.0 - Static</option>
+        <option value="versions/v1.1.0-animated.js">v1.1.0 - Animated (boundary styles)</option>
+        <option value="versions/v1.0.2-animated.js">v1.0.2 - Animated</option>
+        <option value="versions/v1.0.1-animated.js">v1.0.1 - Animated</option>
+        <option value="versions/v1.0.0.js">v1.0.0 - Original</option>
+      </select>
+      <div class="panel-title">Features</div>
+      <table class="features-table">
+        <tbody id="features-body">
+          <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <div class="controls">
+        <button id="btn-regenerate" class="primary">New Hash (R)</button>
+        <button id="btn-save">Save PNG (S)</button>
+      </div>
+
+      <div class="hash-display" id="hash-display">0x...</div>
+      <div class="shortcuts"><kbd>R</kbd> regenerate <kbd>S</kbd> save</div>
+    </div>
+  </main>
+
+  <script>
+    const progressOverlay = document.getElementById('progress-overlay');
+    const hashDisplay = document.getElementById('hash-display');
+    const featuresBody = document.getElementById('features-body');
+
+    window.onFeaturesGenerated = function(features) {
+      hashDisplay.textContent = features.hash;
+      updateFeaturesTable(features);
+      // For animated v1.x versions, hide overlay when features load (no onRenderComplete)
+      progressOverlay.classList.add('hidden');
+    };
+
+    window.onRenderStart = function() {
+      progressOverlay.classList.remove('hidden');
+    };
+
+    window.onRenderComplete = function() {
+      progressOverlay.classList.add('hidden');
+    };
+
+    function updateFeaturesTable(features) {
+      const rows = [];
+
+      // Palette (both v1.x and v2.x)
+      if (features.palette) {
+        rows.push({ name: 'Palette', value: features.palette.name, rarity: features.palette.rarity, colors: features.palette.colors });
+      }
+      // Flow (v2.x)
+      if (features.flow) {
+        rows.push({ name: 'Flow', value: features.flow.style, rarity: features.flow.rarity });
+      }
+      // Density (both v1.x and v2.x)
+      if (features.density) {
+        const densityVal = features.density.name || (features.density.count + ' molecules');
+        rows.push({ name: 'Density', value: densityVal, rarity: features.density.rarity });
+      }
+      // Physics (v1.x)
+      if (features.physics) {
+        rows.push({ name: 'Physics', value: features.physics.mode, rarity: features.physics.rarity });
+      }
+      // Return Style (v1.x)
+      if (features.returnStyle) {
+        rows.push({ name: 'Boundary', value: features.returnStyle.name, rarity: features.returnStyle.rarity });
+      }
+      // Brush (v2.x)
+      if (features.brush) {
+        rows.push({ name: 'Brush', value: features.brush.style, rarity: features.brush.rarity });
+      }
+      // Brush Style (v1.x - different structure)
+      if (features.brushStyle) {
+        rows.push({ name: 'Brush', value: features.brushStyle.name, rarity: features.brushStyle.rarity });
+      }
+      // Strokes (v2.x)
+      if (features.strokes) {
+        rows.push({ name: 'Strokes', value: features.strokes.name, rarity: features.strokes.rarity });
+      }
+      // Trail (both v1.x and v2.x)
+      if (features.trail) {
+        rows.push({ name: 'Trail', value: features.trail.name, rarity: features.trail.rarity });
+      }
+      // Wetness (v1.x)
+      if (features.wetness) {
+        rows.push({ name: 'Wetness', value: features.wetness.name, rarity: features.wetness.rarity });
+      }
+      // Bleed (v2.x)
+      if (features.bleed) {
+        rows.push({ name: 'Bleed', value: features.bleed.name, rarity: features.bleed.rarity });
+      }
+      // Drops (v2.x)
+      if (features.drops) {
+        rows.push({ name: 'Drops', value: features.drops.name, rarity: features.drops.rarity });
+      }
+      // Frame (v2.x)
+      if (features.frame) {
+        const frameVal = features.frame.style === 'none' ? 'None' : features.frame.style + ' (' + features.frame.color + ')';
+        rows.push({ name: 'Frame', value: frameVal, rarity: features.frame.rarity });
+      }
+      // Paper (both v1.x and v2.x)
+      if (features.paper) {
+        rows.push({ name: 'Paper', value: features.paper.tone, rarity: 'common' });
+      }
+      // Special effect (v1.x)
+      if (features.special && features.special.active) {
+        rows.push({ name: 'Special', value: features.special.effect, rarity: 'legendary' });
+      }
+      // Composition/Layout (both v1.x and v2.x)
+      if (features.composition) {
+        rows.push({ name: 'Layout', value: features.composition, rarity: 'common' });
+      }
+
+      featuresBody.innerHTML = rows.map(row => {
+        let valueHtml = row.value.charAt(0).toUpperCase() + row.value.slice(1);
+        if (row.colors) {
+          valueHtml += '<div class="color-swatches">' +
+            row.colors.map(c => `<div class="swatch" style="background:rgb(${c[0]},${c[1]},${c[2]})"></div>`).join('') +
+            '</div>';
+        }
+        return `<tr>
+          <td>${row.name}</td>
+          <td>${valueHtml}</td>
+          <td><span class="rarity-badge rarity-${row.rarity}">${row.rarity}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    document.getElementById('btn-regenerate').addEventListener('click', () => {
+      if (window.regenerate) window.regenerate();
+    });
+
+    document.getElementById('btn-save').addEventListener('click', () => {
+      const features = window.getFeatures ? window.getFeatures() : { hash: 'unknown' };
+      saveCanvas('molecular-brush-' + features.hash.slice(2, 10), 'png');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      if (e.key.toLowerCase() === 'r') {
+        if (window.regenerate) window.regenerate();
+      } else if (e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        const features = window.getFeatures ? window.getFeatures() : { hash: 'unknown' };
+        saveCanvas('molecular-brush-' + features.hash.slice(2, 10), 'png');
+      }
+    });
+
+    // Version selector
+    const versionSelect = document.getElementById('version-select');
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentVersion = urlParams.get('version') || 'sketch.js';
+
+    // Set dropdown to current version
+    for (let opt of versionSelect.options) {
+      if (opt.value === currentVersion) {
+        opt.selected = true;
+        break;
+      }
+    }
+
+    versionSelect.addEventListener('change', (e) => {
+      const version = e.target.value;
+      if (version === 'sketch.js') {
+        window.location.href = window.location.pathname;
+      } else {
+        window.location.href = window.location.pathname + '?version=' + encodeURIComponent(version);
+      }
+    });
+  </script>
+  <script>
+    // Load version from URL param or default
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sketchSrc = urlParams.get('version') || 'sketch.js';
+      document.write('<script src="' + sketchSrc + '"><\/script>');
+    })();
+  </script>
+</body>
+</html>
