@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Sketch renders and test artifacts
+sketches/*/renders/
+sketches/*/test-*.png
+
 # Data files (large, fetch yourself)
 data/*.json
 !data/.gitkeep
