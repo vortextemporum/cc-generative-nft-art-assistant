@@ -108,6 +108,37 @@ Detailed knowledge is in `.claude/expertise/`:
 - `hash-randomness.md` - PRNG implementations for Art Blocks/fxhash
 - `p5-brush-techniques.md` - p5.brush library reference
 
+## Git Commit Guidelines
+
+**Always use atomic commits** - one logical change per commit:
+
+- Group related changes together (e.g., "add new agent" = agent file + any config updates)
+- Separate unrelated changes into distinct commits
+- Each commit should be independently revertable
+
+**Commit message format:**
+```
+type(scope): short description
+
+- Detail 1
+- Detail 2
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+```
+
+**Types:** `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf`
+
+**Examples:**
+```
+feat(agents): add sketch-playground-builder agent
+fix(sketch): correct hash derivation in molecular-brush
+refactor: reorganize commands into namespaced structure
+docs: add embeddings service README
+chore: remove test artifacts and update gitignore
+```
+
+**For multi-phase work:** Create one commit per phase/logical unit, not one giant commit at the end.
+
 ## Notes for Claude
 
 - Hash derivation is critical: `tokenData.hash` (Art Blocks) or `fxhash`/`fxrand()` (fxhash)
