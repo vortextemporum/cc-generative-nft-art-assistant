@@ -14,7 +14,7 @@ Edit sketches with automatic versioning, knowledge capture, and safe code practi
 
 ## Session State
 
-Track current sketch focus in `.claude/sketch-session.json`:
+Track current sketch focus in `.claude/state/sketch-session.json`:
 ```json
 {
   "currentSketch": "molecular-brush",
@@ -181,7 +181,7 @@ Use Context7 MCP for:
 
 ### 8. Update Tracking
 
-Track edits in `.claude/edit-history.json`:
+Track edits in `.claude/state/edit-history.json`:
 ```json
 {
   "molecular-brush": {
@@ -240,5 +240,5 @@ When first editing a sketch that lacks these files:
 
 1. **docs/LEARNINGS.md** - Create if missing
 2. **CHANGELOG.md** - Create if missing (reconstruct from versions/ if possible)
-3. **.claude/sketch-session.json** - Create/update for session tracking
-4. **.claude/edit-history.json** - Create/update for edit tracking
+3. **.claude/state/sketch-session.json** - Create/update for session tracking
+4. **.claude/state/edit-history.json** - Create/update for edit tracking
