@@ -5,17 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Molecular Brush</title>
   <script src="lib/p5.min.js"></script>
-  <script>
-    // Only load p5.brush for v2.x versions (they use WEBGL)
-    (function() {
-      const params = new URLSearchParams(window.location.search);
-      const version = params.get('version') || 'sketch.js';
-      const needsBrush = !version.includes('/v1.') && !version.includes('v1.');
-      if (needsBrush) {
-        document.write('<script src="lib/p5.brush.min.js"><\/script>');
-      }
-    })();
-  </script>
+  <script src="lib/p5.brush.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -38,10 +28,15 @@
       background: #000;
       border: 1px solid #222;
       border-radius: 8px;
-      overflow: hidden;
+      overflow: visible;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 720px;
+      min-height: 720px;
     }
-    #sketch-holder { display: block; width: 700px; height: 700px; }
+    #sketch-holder { display: block; }
     #sketch-holder canvas { display: block; }
 
     .progress-overlay {
@@ -105,6 +100,29 @@
     }
     .shortcuts { font-size: 10px; color: #555; margin-top: 12px; }
     .shortcuts kbd { background: #1a1a24; padding: 2px 5px; border-radius: 3px; margin: 0 2px; }
+
+    .batch-progress { margin-top: 12px; }
+    .batch-bar { height: 6px; background: #1a1a24; border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+    .batch-fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); width: 0%; transition: width 0.3s; }
+    #batch-text { font-size: 10px; color: #888; }
+
+    .note { font-size: 10px; color: #555; margin-bottom: 14px; }
+    .note a { color: #667eea; text-decoration: none; }
+    .note a:hover { text-decoration: underline; }
+
+    /* Rarity Curves */
+    .rarity-section { margin-top: 16px; border-top: 1px solid #222; padding-top: 14px; }
+    .rarity-curve { margin-bottom: 10px; }
+    .rarity-curve-label { font-size: 10px; color: #666; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .rarity-curve-bar { height: 8px; background: #1a1a24; border-radius: 4px; overflow: hidden; display: flex; }
+    .rarity-segment { height: 100%; transition: width 0.3s; }
+    .rarity-segment.common { background: #444; }
+    .rarity-segment.uncommon { background: #66bb6a; }
+    .rarity-segment.rare { background: #42a5f5; }
+    .rarity-segment.legendary { background: #ffca28; }
+    .rarity-legend { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .rarity-legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #666; }
+    .rarity-legend-dot { width: 8px; height: 8px; border-radius: 2px; }
   </style>
 </head>
 <body>
@@ -123,7 +141,9 @@
 
     <div class="features-panel">
       <select id="version-select" class="version-select">
-        <option value="sketch.js">v2.6.2 - Thin Frames (current)</option>
+        <option value="sketch.js">v2.7.1 - Rarity Curves (current)</option>
+        <option value="versions/v2.7.0-aspect.js">v2.7.0 - Variable Aspect Ratios</option>
+        <option value="versions/v2.6.2-framed.js">v2.6.2 - Thin Frames</option>
         <option value="versions/v2.6.1-framed.js">v2.6.1 - Framed</option>
         <option value="versions/v2.6.0-framed.js">v2.6.0 - Framed</option>
         <option value="versions/v2.5.0-fast.js">v2.5.0 - Fast</option>
@@ -131,11 +151,8 @@
         <option value="versions/v2.3.1-fast.js">v2.3.1 - Fast</option>
         <option value="versions/v2.2.0-fast.js">v2.2.0 - Fast</option>
         <option value="versions/v2.0.0-static.js">v2.0.0 - Static</option>
-        <option value="versions/v1.1.0-animated.js">v1.1.0 - Animated (boundary styles)</option>
-        <option value="versions/v1.0.2-animated.js">v1.0.2 - Animated</option>
-        <option value="versions/v1.0.1-animated.js">v1.0.1 - Animated</option>
-        <option value="versions/v1.0.0.js">v1.0.0 - Original</option>
       </select>
+      <div class="note">v1.x versions moved to <a href="../molecular-watercolor/">Molecular Watercolor</a></div>
       <div class="panel-title">Features</div>
       <table class="features-table">
         <tbody id="features-body">
@@ -143,13 +160,30 @@
         </tbody>
       </table>
 
+      <div class="rarity-section">
+        <div class="panel-title">Rarity Distribution</div>
+        <div id="rarity-curves"></div>
+        <div class="rarity-legend">
+          <div class="rarity-legend-item"><div class="rarity-legend-dot" style="background:#444"></div>Common</div>
+          <div class="rarity-legend-item"><div class="rarity-legend-dot" style="background:#66bb6a"></div>Uncommon</div>
+          <div class="rarity-legend-item"><div class="rarity-legend-dot" style="background:#42a5f5"></div>Rare</div>
+          <div class="rarity-legend-item"><div class="rarity-legend-dot" style="background:#ffca28"></div>Legendary</div>
+        </div>
+      </div>
+
       <div class="controls">
         <button id="btn-regenerate" class="primary">New Hash (R)</button>
         <button id="btn-save">Save PNG (S)</button>
+        <button id="btn-batch">Export 20 (B)</button>
+      </div>
+
+      <div id="batch-progress" class="batch-progress" style="display: none;">
+        <div class="batch-bar"><div class="batch-fill" id="batch-fill"></div></div>
+        <span id="batch-text">Exporting...</span>
       </div>
 
       <div class="hash-display" id="hash-display">0x...</div>
-      <div class="shortcuts"><kbd>R</kbd> regenerate <kbd>S</kbd> save</div>
+      <div class="shortcuts"><kbd>R</kbd> regenerate <kbd>S</kbd> save <kbd>B</kbd> batch export 20</div>
     </div>
   </main>
 
@@ -161,7 +195,7 @@
     window.onFeaturesGenerated = function(features) {
       hashDisplay.textContent = features.hash;
       updateFeaturesTable(features);
-      // For animated v1.x versions, hide overlay when features load (no onRenderComplete)
+      updateRarityCurves(features);
       progressOverlay.classList.add('hidden');
     };
 
@@ -176,69 +210,41 @@
     function updateFeaturesTable(features) {
       const rows = [];
 
-      // Palette (both v1.x and v2.x)
       if (features.palette) {
         rows.push({ name: 'Palette', value: features.palette.name, rarity: features.palette.rarity, colors: features.palette.colors });
       }
-      // Flow (v2.x)
       if (features.flow) {
         rows.push({ name: 'Flow', value: features.flow.style, rarity: features.flow.rarity });
       }
-      // Density (both v1.x and v2.x)
       if (features.density) {
         const densityVal = features.density.name || (features.density.count + ' molecules');
         rows.push({ name: 'Density', value: densityVal, rarity: features.density.rarity });
       }
-      // Physics (v1.x)
-      if (features.physics) {
-        rows.push({ name: 'Physics', value: features.physics.mode, rarity: features.physics.rarity });
-      }
-      // Return Style (v1.x)
-      if (features.returnStyle) {
-        rows.push({ name: 'Boundary', value: features.returnStyle.name, rarity: features.returnStyle.rarity });
-      }
-      // Brush (v2.x)
       if (features.brush) {
         rows.push({ name: 'Brush', value: features.brush.style, rarity: features.brush.rarity });
       }
-      // Brush Style (v1.x - different structure)
-      if (features.brushStyle) {
-        rows.push({ name: 'Brush', value: features.brushStyle.name, rarity: features.brushStyle.rarity });
-      }
-      // Strokes (v2.x)
       if (features.strokes) {
         rows.push({ name: 'Strokes', value: features.strokes.name, rarity: features.strokes.rarity });
       }
-      // Trail (both v1.x and v2.x)
       if (features.trail) {
         rows.push({ name: 'Trail', value: features.trail.name, rarity: features.trail.rarity });
       }
-      // Wetness (v1.x)
-      if (features.wetness) {
-        rows.push({ name: 'Wetness', value: features.wetness.name, rarity: features.wetness.rarity });
-      }
-      // Bleed (v2.x)
       if (features.bleed) {
         rows.push({ name: 'Bleed', value: features.bleed.name, rarity: features.bleed.rarity });
       }
-      // Drops (v2.x)
       if (features.drops) {
         rows.push({ name: 'Drops', value: features.drops.name, rarity: features.drops.rarity });
       }
-      // Frame (v2.x)
       if (features.frame) {
         const frameVal = features.frame.style === 'none' ? 'None' : features.frame.style + ' (' + features.frame.color + ')';
         rows.push({ name: 'Frame', value: frameVal, rarity: features.frame.rarity });
       }
-      // Paper (both v1.x and v2.x)
+      if (features.aspectRatio) {
+        rows.push({ name: 'Aspect', value: features.aspectRatio.displayName, rarity: features.aspectRatio.rarity });
+      }
       if (features.paper) {
         rows.push({ name: 'Paper', value: features.paper.tone, rarity: 'common' });
       }
-      // Special effect (v1.x)
-      if (features.special && features.special.active) {
-        rows.push({ name: 'Special', value: features.special.effect, rarity: 'legendary' });
-      }
-      // Composition/Layout (both v1.x and v2.x)
       if (features.composition) {
         rows.push({ name: 'Layout', value: features.composition, rarity: 'common' });
       }
@@ -258,6 +264,53 @@
       }).join('');
     }
 
+    // Rarity distribution percentages (from rollRarity calls in sketch.js)
+    const rarityDistributions = {
+      palette:   { common: 40, uncommon: 35, rare: 20, legendary: 5 },
+      flow:      { common: 40, uncommon: 30, rare: 20, legendary: 10 },
+      density:   { common: 50, uncommon: 30, rare: 15, legendary: 5 },
+      brush:     { common: 40, uncommon: 35, rare: 18, legendary: 7 },
+      strokes:   { common: 30, uncommon: 30, rare: 25, legendary: 15 },
+      bleed:     { common: 40, uncommon: 35, rare: 18, legendary: 7 },
+      drops:     { common: 35, uncommon: 30, rare: 25, legendary: 10 },
+      trail:     { common: 45, uncommon: 30, rare: 18, legendary: 7 },
+      frame:     { common: 40, uncommon: 35, rare: 20, legendary: 5 },
+      aspect:    { common: 35, uncommon: 35, rare: 22, legendary: 8 },
+    };
+
+    function updateRarityCurves(features) {
+      const container = document.getElementById('rarity-curves');
+      const traits = [
+        { key: 'palette', label: 'Palette', current: features.palette?.rarity },
+        { key: 'flow', label: 'Flow', current: features.flow?.rarity },
+        { key: 'brush', label: 'Brush', current: features.brush?.rarity },
+        { key: 'strokes', label: 'Strokes', current: features.strokes?.rarity },
+        { key: 'bleed', label: 'Bleed', current: features.bleed?.rarity },
+        { key: 'drops', label: 'Drops', current: features.drops?.rarity },
+        { key: 'frame', label: 'Frame', current: features.frame?.rarity },
+        { key: 'aspect', label: 'Aspect', current: features.aspectRatio?.rarity },
+      ];
+
+      container.innerHTML = traits.map(trait => {
+        const dist = rarityDistributions[trait.key] || { common: 50, uncommon: 30, rare: 15, legendary: 5 };
+        const current = trait.current || 'common';
+        return `
+          <div class="rarity-curve">
+            <div class="rarity-curve-label">
+              <span>${trait.label}</span>
+              <span class="rarity-badge rarity-${current}" style="font-size:8px">${current}</span>
+            </div>
+            <div class="rarity-curve-bar">
+              <div class="rarity-segment common" style="width:${dist.common}%"></div>
+              <div class="rarity-segment uncommon" style="width:${dist.uncommon}%"></div>
+              <div class="rarity-segment rare" style="width:${dist.rare}%"></div>
+              <div class="rarity-segment legendary" style="width:${dist.legendary}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     document.getElementById('btn-regenerate').addEventListener('click', () => {
       if (window.regenerate) window.regenerate();
     });
@@ -267,6 +320,47 @@
       saveCanvas('molecular-brush-' + features.hash.slice(2, 10), 'png');
     });
 
+    // Batch export button
+    const batchBtn = document.getElementById('btn-batch');
+    const batchProgressEl = document.getElementById('batch-progress');
+    const batchFill = document.getElementById('batch-fill');
+    const batchText = document.getElementById('batch-text');
+
+    batchBtn.addEventListener('click', async () => {
+      if (window.isBatchExporting && window.isBatchExporting()) return;
+
+      batchBtn.disabled = true;
+      batchBtn.textContent = 'Exporting...';
+      batchProgressEl.style.display = 'block';
+
+      // Start batch export
+      if (window.batchExport) {
+        await window.batchExport(20, 600);
+      }
+
+      batchBtn.disabled = false;
+      batchBtn.textContent = 'Export 20 (B)';
+      batchProgressEl.style.display = 'none';
+    });
+
+    // Update batch progress bar
+    setInterval(() => {
+      if (window.isBatchExporting && window.isBatchExporting()) {
+        const progress = window.getBatchProgress ? window.getBatchProgress() : 0;
+        batchFill.style.width = (progress * 100) + '%';
+        batchText.textContent = `Exporting... ${Math.round(progress * 100)}%`;
+      }
+    }, 100);
+
+    window.onBatchExportComplete = function(count) {
+      batchFill.style.width = '100%';
+      batchText.textContent = `Done! ${count} images saved`;
+      setTimeout(() => {
+        batchProgressEl.style.display = 'none';
+        batchFill.style.width = '0%';
+      }, 2000);
+    };
+
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
       if (e.key.toLowerCase() === 'r') {
@@ -275,6 +369,9 @@
         e.preventDefault();
         const features = window.getFeatures ? window.getFeatures() : { hash: 'unknown' };
         saveCanvas('molecular-brush-' + features.hash.slice(2, 10), 'png');
+      } else if (e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        batchBtn.click();
       }
     });
 

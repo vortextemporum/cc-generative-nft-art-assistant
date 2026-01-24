@@ -1,5 +1,5 @@
-// Molecular Brush v2.7.1 - Rarity Curves & Cleanup
-// Variable aspect ratios, batch export, rarity distribution visualization
+// Molecular Brush v2.7.0 - Variable Aspect Ratios
+// Each render has a different aspect ratio, batch export 20 PNGs
 // Art Blocks compatible with tokenData.hash
 
 // ============================================================================

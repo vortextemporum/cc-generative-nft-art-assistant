@@ -2,6 +2,49 @@
 
 All notable changes to Molecular Brush will be documented in this file.
 
+## [2.7.1] - 2026-01-24
+
+### Added
+- **Rarity Curves** - Visual distribution bars showing probability of each rarity tier per trait
+- **Link to Molecular Watercolor** - Note pointing to v1.x versions in their own project
+
+### Changed
+- **Moved v1.x versions** to `/sketches/molecular-watercolor/` (they use 2D canvas, not p5.brush)
+- Simplified p5.brush loading (no longer conditional, all v2.x versions need it)
+- Frame thickness now based on `Math.min(width, height)` for consistent proportions across aspect ratios
+- Canvas now centered in container
+
+### Removed
+- v1.x version options from dropdown (see Molecular Watercolor instead)
+
+## [2.7.0] - 2026-01-24
+
+### Added
+- **Variable Aspect Ratios** - Each render now has a hash-derived aspect ratio:
+  - **Square** (1:1) - common, classic format
+  - **Portrait 4:5** - common, Instagram feed
+  - **Portrait 3:4** - uncommon, traditional photo
+  - **Portrait 2:3** - uncommon, elegant tall format
+  - **Story 9:16** - rare, mobile stories format
+  - **Landscape 5:4** - common, slight horizontal
+  - **Landscape 4:3** - uncommon, classic monitor
+  - **Landscape 3:2** - uncommon, DSLR photo format
+  - **Cinematic 16:9** - rare, widescreen HD
+  - **Ultra-wide 21:9** - legendary, cinematic ultra-wide
+
+- **Batch Export** - Export 20 unique PNGs with one click:
+  - Press `B` key or click "Export 20" button
+  - Each image gets unique hash and aspect ratio
+  - Progress bar shows export status
+  - Files named: `molecular-brush-{n}-{aspect}-{hash}.png`
+
+### Technical
+- Canvas dimensions calculated from aspect ratio at setup
+- Base dimension (700px) applied to longer side
+- Shorter side calculated proportionally
+- Batch export uses async/await with delays to prevent browser issues
+- New exposed APIs: `batchExport()`, `getBatchProgress()`, `isBatchExporting()`
+
 ## [2.6.0] - 2026-01-20
 
 ### Added

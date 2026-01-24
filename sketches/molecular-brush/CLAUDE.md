@@ -4,14 +4,14 @@
 
 A p5.brush-powered generative art piece featuring Fidenza-inspired flow fields combined with molecular physics simulation. Produces high-quality static renders using the p5.brush library for authentic brush strokes, watercolor bleed, and hatching effects.
 
-**Current Version:** v2.2.0
+**Current Version:** v2.7.0
 
 ## File Structure
 
 ```
 molecular-brush/
 ├── index.html          # Viewer with sliders, version switcher, features table
-├── sketch.js           # Main v2.2.0 fast p5.brush sketch
+├── sketch.js           # Main v2.7.0 variable aspect ratios + batch export
 ├── CLAUDE.md           # This file - AI assistant guide
 ├── README.md           # Project documentation
 ├── CHANGELOG.md        # Version history
@@ -29,7 +29,9 @@ molecular-brush/
 
 | Version | Type | Description |
 |---------|------|-------------|
-| v2.2.0 | Static | Fast p5.brush with 14 palettes, drops, bleeds (current) |
+| v2.7.0 | Static | Variable aspect ratios + batch export 20 PNGs (current) |
+| v2.6.x | Static | Thin palette-derived frames, artwork scaled inside |
+| v2.2.0 | Static | Fast p5.brush with 14 palettes, drops, bleeds |
 | v2.0.0 | Static | Fidenza-inspired flow fields + p5.brush (basic palettes) |
 | v1.0.1 | Animated | Fast 2D rendering, no p5.brush |
 | v1.0.0 | Static | Initial p5.brush attempt (slow) |

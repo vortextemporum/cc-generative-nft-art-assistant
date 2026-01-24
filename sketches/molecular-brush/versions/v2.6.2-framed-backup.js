@@ -1,5 +1,5 @@
-// Molecular Brush v2.7.1 - Rarity Curves & Cleanup
-// Variable aspect ratios, batch export, rarity distribution visualization
+// Molecular Brush v2.6.2 - Framed Edition
+// Thin palette-derived frames, artwork scaled inside
 // Art Blocks compatible with tokenData.hash
 
 // ============================================================================
@@ -207,28 +207,6 @@ const frameStyles = {
   floating: { margin: 0.045, mat: 0.01, innerPadding: 0.02, rarity: "rare" },
 };
 
-// ============================================================================
-// ASPECT RATIOS - Different ratios for social media variety
-// ============================================================================
-
-const aspectRatios = {
-  // Square
-  square: { w: 1, h: 1, name: "Square", rarity: "common" },
-
-  // Portrait (tall) - great for mobile, Instagram stories
-  portrait_4_5: { w: 4, h: 5, name: "Portrait 4:5", rarity: "common" },
-  portrait_3_4: { w: 3, h: 4, name: "Portrait 3:4", rarity: "uncommon" },
-  portrait_2_3: { w: 2, h: 3, name: "Portrait 2:3", rarity: "uncommon" },
-  portrait_9_16: { w: 9, h: 16, name: "Story 9:16", rarity: "rare" },
-
-  // Landscape (wide) - great for desktop, Twitter
-  landscape_5_4: { w: 5, h: 4, name: "Landscape 5:4", rarity: "common" },
-  landscape_4_3: { w: 4, h: 3, name: "Landscape 4:3", rarity: "uncommon" },
-  landscape_3_2: { w: 3, h: 2, name: "Landscape 3:2", rarity: "uncommon" },
-  landscape_16_9: { w: 16, h: 9, name: "Cinematic 16:9", rarity: "rare" },
-  landscape_21_9: { w: 21, h: 9, name: "Ultra-wide 21:9", rarity: "legendary" },
-};
-
 // Generate palette-derived frame colors (always used now)
 function getPaletteFrameColors(paletteColors) {
   // Sort by luminance
@@ -401,20 +379,6 @@ function generateFeatures() {
   // Composition
   const composition = rndChoice(["full", "centered", "scattered", "flowing", "clustered"]);
 
-  // Aspect ratio selection
-  const aspectRarity = rollRarity(0.35, 0.35, 0.22, 0.08);
-  const aspectNames = Object.keys(aspectRatios);
-  let availableAspects = aspectNames.filter(name => {
-    const a = aspectRatios[name];
-    if (aspectRarity === "legendary") return a.rarity === "legendary";
-    if (aspectRarity === "rare") return a.rarity === "rare" || a.rarity === "legendary";
-    if (aspectRarity === "uncommon") return a.rarity === "uncommon" || a.rarity === "rare";
-    return true;
-  });
-  if (availableAspects.length === 0) availableAspects = aspectNames;
-  const aspectRatioName = rndChoice(availableAspects);
-  const aspectRatio = aspectRatios[aspectRatioName];
-
   // Store params - optimized for speed
   params.moleculeCount = moleculeCount;
   params.trailLength = trailLength;
@@ -454,13 +418,6 @@ function generateFeatures() {
     layers: layerCount,
     paper: { tone: palette.paper },
     composition,
-    aspectRatio: {
-      name: aspectRatioName,
-      displayName: aspectRatio.name,
-      w: aspectRatio.w,
-      h: aspectRatio.h,
-      rarity: aspectRarity
-    },
   };
 
   return features;
@@ -590,8 +547,8 @@ class FlowMolecule {
   isInBounds() {
     // Account for frame margin + inner padding - molecules stay inside content area
     const frame = features.frame;
-    const marginPx = frame ? Math.min(width, height) * frame.margin : 0;
-    const innerPaddingPx = frame ? Math.min(width, height) * (frame.innerPadding || 0) : 0;
+    const marginPx = frame ? width * frame.margin : 0;
+    const innerPaddingPx = frame ? width * (frame.innerPadding || 0) : 0;
     const totalInset = marginPx + innerPaddingPx;
     // Small buffer for smooth movement, but keep inside content
     const buffer = 10;
@@ -611,40 +568,19 @@ class FlowMolecule {
 let molecules = [];
 let isRendering = false;
 let renderProgress = 0;
-let baseSize = 700; // Base dimension for calculations
 
 function setup() {
   const holder = document.getElementById('sketch-holder');
+  const size = 700;
 
-  // Create canvas with default size first
-  let cnv = createCanvas(baseSize, baseSize, WEBGL);
+  let cnv = createCanvas(size, size, WEBGL);
   pixelDensity(2);
 
   if (holder) {
     cnv.parent('sketch-holder');
   }
 
-  // Now generate features (after canvas exists)
   generateFeatures();
-
-  // Resize canvas for aspect ratio
-  const ar = features.aspectRatio;
-  let canvasWidth, canvasHeight;
-
-  if (ar.w >= ar.h) {
-    canvasWidth = baseSize;
-    canvasHeight = Math.round(baseSize * ar.h / ar.w);
-  } else {
-    canvasHeight = baseSize;
-    canvasWidth = Math.round(baseSize * ar.w / ar.h);
-  }
-
-  resizeCanvas(canvasWidth, canvasHeight);
-
-  if (holder) {
-    holder.style.width = canvasWidth + 'px';
-    holder.style.height = canvasHeight + 'px';
-  }
 
   brush.seed(parseInt(hash.slice(2, 10), 16));
   brush.load();
@@ -671,8 +607,8 @@ function getStartPositions(count) {
 
   // Account for frame margin + inner padding - artwork lives inside the frame
   const frame = features.frame;
-  const marginPx = frame ? Math.min(width, height) * frame.margin : 0;
-  const innerPaddingPx = frame ? Math.min(width, height) * (frame.innerPadding || 0) : 0;
+  const marginPx = frame ? width * frame.margin : 0;
+  const innerPaddingPx = frame ? width * (frame.innerPadding || 0) : 0;
   const totalInset = marginPx + innerPaddingPx;
   const contentWidth = width - 2 * totalInset;
   const contentHeight = height - 2 * totalInset;
@@ -784,8 +720,8 @@ function drawFrame() {
   const frame = features.frame;
   if (frame.style === "none" || frame.margin === 0) return;
 
-  const marginPx = Math.min(width, height) * frame.margin;
-  const matPx = Math.min(width, height) * frame.mat;
+  const marginPx = width * frame.margin;
+  const matPx = width * frame.mat;
   const fc = frame.colors;
 
   // Use native p5 drawing for clean frame edges
@@ -836,9 +772,9 @@ function drawFrame() {
 // Get content area bounds (inside frame + inner padding for artwork)
 function getContentBounds() {
   const frame = features.frame;
-  const marginPx = frame ? Math.min(width, height) * frame.margin : 0;
+  const marginPx = frame ? width * frame.margin : 0;
   // Inner padding ensures artwork doesn't touch frame edge
-  const innerPaddingPx = frame ? Math.min(width, height) * (frame.innerPadding || 0) : 0;
+  const innerPaddingPx = frame ? width * (frame.innerPadding || 0) : 0;
   const totalInset = marginPx + innerPaddingPx;
   return {
     x: totalInset,
@@ -977,7 +913,7 @@ function renderSplattersSync() {
   const splatterCount = floor(params.splatterAmount * 20);
 
   // Constrain splatters to inside frame
-  const frameMarginPx = features.frame ? Math.min(width, height) * features.frame.margin : 0;
+  const frameMarginPx = features.frame ? width * features.frame.margin : 0;
   const contentLeft = -width/2 + frameMarginPx;
   const contentTop = -height/2 + frameMarginPx;
   const contentW = width - 2 * frameMarginPx;
@@ -1010,32 +946,7 @@ function keyPressed() {
 function setHash(newHash) {
   hash = newHash;
   generateFeatures();
-
-  // Resize canvas for new aspect ratio
-  const ar = features.aspectRatio;
-  let canvasWidth, canvasHeight;
-
-  if (ar.w >= ar.h) {
-    canvasWidth = baseSize;
-    canvasHeight = Math.round(baseSize * ar.h / ar.w);
-  } else {
-    canvasHeight = baseSize;
-    canvasWidth = Math.round(baseSize * ar.w / ar.h);
-  }
-
-  resizeCanvas(canvasWidth, canvasHeight);
-
-  // Update holder size if present
-  const holder = document.getElementById('sketch-holder');
-  if (holder) {
-    holder.style.width = canvasWidth + 'px';
-    holder.style.height = canvasHeight + 'px';
-  }
-
-  // Reinitialize p5.brush after resize
   brush.seed(parseInt(hash.slice(2, 10), 16));
-  brush.load();
-
   if (window.onFeaturesGenerated) {
     window.onFeaturesGenerated(features);
   }
@@ -1065,56 +976,6 @@ function rerender() {
   }
 }
 
-// ============================================================================
-// BATCH EXPORT - Generate and save 20 unique PNGs
-// ============================================================================
-
-let batchExporting = false;
-let batchProgress = 0;
-
-function generateUniqueHash() {
-  return "0x" + Array(64).fill(0).map(() => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
-}
-
-async function batchExport(count = 20, delayMs = 500) {
-  if (batchExporting) {
-    console.log("Batch export already in progress...");
-    return;
-  }
-
-  batchExporting = true;
-  batchProgress = 0;
-
-  console.log(`Starting batch export of ${count} images...`);
-
-  for (let i = 0; i < count; i++) {
-    // Generate new hash and render
-    const newHash = generateUniqueHash();
-    setHash(newHash);
-
-    // Wait for render to complete
-    await new Promise(resolve => setTimeout(resolve, delayMs));
-
-    // Save with descriptive filename
-    const ar = features.aspectRatio;
-    const filename = `molecular-brush-${i + 1}-${ar.name.replace(/[^a-zA-Z0-9]/g, '')}-${newHash.slice(2, 10)}`;
-    saveCanvas(filename, 'png');
-
-    batchProgress = (i + 1) / count;
-    console.log(`Exported ${i + 1}/${count}: ${filename}.png (${ar.displayName})`);
-
-    // Small delay between saves to prevent browser issues
-    await new Promise(resolve => setTimeout(resolve, 200));
-  }
-
-  batchExporting = false;
-  console.log(`Batch export complete! ${count} images saved.`);
-
-  if (window.onBatchExportComplete) {
-    window.onBatchExportComplete(count);
-  }
-}
-
 // Expose API
 window.setHash = setHash;
 window.regenerate = regenerate;
@@ -1125,6 +986,3 @@ window.resetParams = resetParams;
 window.rerender = rerender;
 window.isRendering = () => isRendering;
 window.getRenderProgress = () => renderProgress;
-window.batchExport = batchExport;
-window.getBatchProgress = () => batchProgress;
-window.isBatchExporting = () => batchExporting;
