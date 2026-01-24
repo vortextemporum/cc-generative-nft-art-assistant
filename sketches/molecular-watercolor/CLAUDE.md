@@ -22,7 +22,11 @@ molecular-watercolor/
 
 ## Current Version
 
-**v1.0.0** - Initial release
+**v1.1.0** - Boundary return styles, 16 physics modes
+
+## Related Project
+
+**Molecular Brush** (`../molecular-brush/`) - p5.brush version with WEBGL rendering, frames, and aspect ratios
 
 ## Key Concepts
 

@@ -1,19 +1,16 @@
-// Molecular Watercolor - Hash-Based Generative Art
-// Art Blocks compatible with tokenData.hash
+// Molecular Brush - Watercolor with p5.brush accents
+// Uses fast custom rendering + p5.brush for static texture elements
 
 // ============================================================================
 // HASH-BASED RANDOM (Art Blocks style)
 // ============================================================================
 
-// Default hash for testing (will be overridden by tokenData or UI)
 let hash = "0x" + Array(64).fill(0).map(() => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
 
-// Check for Art Blocks tokenData
 if (typeof tokenData !== "undefined" && tokenData.hash) {
   hash = tokenData.hash;
 }
 
-// sfc32 PRNG - fast, high quality
 function sfc32(a, b, c, d) {
   return function() {
     a |= 0; b |= 0; c |= 0; d |= 0;
@@ -27,9 +24,8 @@ function sfc32(a, b, c, d) {
   };
 }
 
-// Initialize PRNG from hash
 function initRandom(hashStr) {
-  const h = hashStr.slice(2); // Remove '0x'
+  const h = hashStr.slice(2);
   const seeds = [];
   for (let i = 0; i < 4; i++) {
     seeds.push(parseInt(h.slice(i * 8, (i + 1) * 8), 16));
@@ -37,9 +33,8 @@ function initRandom(hashStr) {
   return sfc32(seeds[0], seeds[1], seeds[2], seeds[3]);
 }
 
-let R; // Our seeded random function
+let R;
 
-// Utility functions using seeded random
 function rnd(min = 0, max = 1) {
   if (max === undefined) { max = min; min = 0; }
   return min + R() * (max - min);
@@ -57,7 +52,6 @@ function rndBool(probability = 0.5) {
   return R() < probability;
 }
 
-// Rarity helper - returns true based on rarity tier
 function rollRarity(common = 0.6, uncommon = 0.25, rare = 0.12, legendary = 0.03) {
   const roll = R();
   if (roll < legendary) return "legendary";
@@ -67,7 +61,7 @@ function rollRarity(common = 0.6, uncommon = 0.25, rare = 0.12, legendary = 0.03
 }
 
 // ============================================================================
-// FEATURE GENERATION (derived from hash)
+// FEATURE GENERATION
 // ============================================================================
 
 let features = {};
@@ -75,43 +69,43 @@ let features = {};
 function generateFeatures() {
   R = initRandom(hash);
 
-  // === PALETTE (Rare: monochrome, Legendary: inverted) ===
+  // === PALETTE ===
   const paletteRarity = rollRarity(0.55, 0.28, 0.14, 0.03);
   const palettes = {
     watercolor: [
-      [45, 85, 150],   // Prussian blue
-      [180, 60, 50],   // Burnt sienna
-      [65, 130, 110],  // Viridian
-      [200, 140, 60],  // Yellow ochre
-      [130, 50, 80],   // Alizarin crimson
+      [45, 85, 150],
+      [180, 60, 50],
+      [65, 130, 110],
+      [200, 140, 60],
+      [130, 50, 80],
     ],
     ocean: [
-      [20, 60, 100],   // Deep sea
-      [40, 120, 140],  // Teal
-      [80, 160, 180],  // Aqua
-      [150, 200, 210], // Foam
-      [30, 80, 90],    // Abyss
+      [20, 60, 100],
+      [40, 120, 140],
+      [80, 160, 180],
+      [150, 200, 210],
+      [30, 80, 90],
     ],
     autumn: [
-      [180, 70, 40],   // Rust
-      [200, 120, 50],  // Amber
-      [150, 50, 50],   // Crimson
-      [100, 80, 50],   // Umber
-      [220, 160, 80],  // Gold
+      [180, 70, 40],
+      [200, 120, 50],
+      [150, 50, 50],
+      [100, 80, 50],
+      [220, 160, 80],
     ],
     forest: [
-      [40, 80, 50],    // Deep forest
-      [70, 120, 60],   // Moss
-      [90, 140, 80],   // Fern
-      [50, 90, 70],    // Pine
-      [110, 100, 60],  // Bark
+      [40, 80, 50],
+      [70, 120, 60],
+      [90, 140, 80],
+      [50, 90, 70],
+      [110, 100, 60],
     ],
     sunset: [
-      [220, 100, 80],  // Coral
-      [240, 150, 100], // Peach
-      [180, 80, 100],  // Mauve
-      [140, 60, 90],   // Plum
-      [250, 180, 120], // Apricot
+      [220, 100, 80],
+      [240, 150, 100],
+      [180, 80, 100],
+      [140, 60, 90],
+      [250, 180, 120],
     ],
     monochrome: [
       [40, 40, 50],
@@ -121,11 +115,11 @@ function generateFeatures() {
       [60, 55, 65],
     ],
     neon: [
-      [255, 50, 100],  // Hot pink
-      [50, 255, 150],  // Mint
-      [100, 50, 255],  // Purple
-      [255, 200, 50],  // Yellow
-      [50, 200, 255],  // Cyan
+      [255, 50, 100],
+      [50, 255, 150],
+      [100, 50, 255],
+      [255, 200, 50],
+      [50, 200, 255],
     ],
   };
 
@@ -140,7 +134,7 @@ function generateFeatures() {
     paletteName = rndChoice(["watercolor", "ocean", "autumn", "forest", "sunset"]);
   }
 
-  // === MOLECULE COUNT (Rare: swarm, Legendary: sparse) ===
+  // === MOLECULE COUNT ===
   const densityRarity = rollRarity(0.60, 0.25, 0.10, 0.05);
   let moleculeCount, densityName;
   if (densityRarity === "legendary") {
@@ -204,54 +198,36 @@ function generateFeatures() {
     wetnessName = "Normal";
   }
 
-  // === DROPS FREQUENCY ===
-  const dropsRarity = rollRarity(0.60, 0.25, 0.10, 0.05);
-  let dropFrequency, dropsName;
-  if (dropsRarity === "legendary") {
-    dropFrequency = 0.15;
-    dropsName = "Rain";
-  } else if (dropsRarity === "rare") {
-    dropFrequency = 0;
-    dropsName = "None";
-  } else if (dropsRarity === "uncommon") {
-    dropFrequency = 0.05;
-    dropsName = "Frequent";
+  // === BRUSH TEXTURE (p5.brush-inspired) ===
+  const brushRarity = rollRarity(0.50, 0.30, 0.15, 0.05);
+  let brushStyle, brushName;
+  if (brushRarity === "legendary") {
+    brushStyle = "heavy";
+    brushName = "Heavy";
+  } else if (brushRarity === "rare") {
+    brushStyle = "clean";
+    brushName = "Clean";
+  } else if (brushRarity === "uncommon") {
+    brushStyle = "textured";
+    brushName = "Textured";
   } else {
-    dropFrequency = rnd(0.01, 0.03);
-    dropsName = "Occasional";
-  }
-
-  // === PENCIL TEXTURE ===
-  const pencilRarity = rollRarity(0.55, 0.30, 0.12, 0.03);
-  let pencilIntensity, pencilName;
-  if (pencilRarity === "legendary") {
-    pencilIntensity = 3;
-    pencilName = "Heavy Sketch";
-  } else if (pencilRarity === "rare") {
-    pencilIntensity = 0;
-    pencilName = "None";
-  } else if (pencilRarity === "uncommon") {
-    pencilIntensity = 2;
-    pencilName = "Detailed";
-  } else {
-    pencilIntensity = 1;
-    pencilName = "Light";
+    brushStyle = "normal";
+    brushName = "Normal";
   }
 
   // === PAPER TONE ===
   const paperTone = rndChoice(["warm", "cool", "aged", "bright"]);
 
-  // === SPECIAL EFFECTS (Legendary only) ===
+  // === SPECIAL EFFECTS ===
   const hasSpecialEffect = rndBool(0.08);
   const specialEffect = hasSpecialEffect ? rndChoice(["chromatic", "glow", "scatter"]) : "none";
 
   // === COMPOSITION ===
   const composition = rndChoice(["centered", "scattered", "diagonal", "circular"]);
 
-  // === MOLECULE SIZE VARIANCE ===
+  // === SIZE VARIANCE ===
   const sizeVariance = rnd(0.3, 1.5);
 
-  // Store all features
   features = {
     hash: hash,
     palette: { name: paletteName, colors: palettes[paletteName], rarity: paletteRarity },
@@ -259,15 +235,13 @@ function generateFeatures() {
     physics: { mode: physicsMode, rarity: physicsRarity },
     trail: { length: trailLength, name: trailName, rarity: trailRarity },
     wetness: { value: wetness, name: wetnessName, rarity: wetnessRarity },
-    drops: { frequency: dropFrequency, name: dropsName, rarity: dropsRarity },
-    pencil: { intensity: pencilIntensity, name: pencilName, rarity: pencilRarity },
+    brushStyle: { style: brushStyle, name: brushName, rarity: brushRarity },
     paper: { tone: paperTone },
     special: { effect: specialEffect, active: hasSpecialEffect },
     composition: composition,
     sizeVariance: sizeVariance,
   };
 
-  // For Art Blocks feature display
   if (typeof tokenData !== "undefined") {
     tokenData.features = {
       "Palette": paletteName.charAt(0).toUpperCase() + paletteName.slice(1),
@@ -275,10 +249,9 @@ function generateFeatures() {
       "Physics": physicsMode.charAt(0).toUpperCase() + physicsMode.slice(1),
       "Trail": trailName,
       "Wetness": wetnessName,
-      "Drops": dropsName,
-      "Pencil": pencilName,
+      "Brush": brushName,
       "Paper": paperTone.charAt(0).toUpperCase() + paperTone.slice(1),
-      "Special Effect": specialEffect === "none" ? "None" : specialEffect.charAt(0).toUpperCase() + specialEffect.slice(1),
+      "Special": specialEffect === "none" ? "None" : specialEffect.charAt(0).toUpperCase() + specialEffect.slice(1),
       "Composition": composition.charAt(0).toUpperCase() + composition.slice(1),
     };
   }
@@ -293,16 +266,21 @@ function generateFeatures() {
 let molecules = [];
 let drops = [];
 let paperTexture;
-let canvas;
+let brushTexture;
 
 function setup() {
-  canvas = createCanvas(900, 900);
-  pixelDensity(1);
+  const holder = document.getElementById('sketch-holder');
+  const size = holder ? Math.min(holder.offsetWidth, 700) : 700;
 
-  // Generate features from hash
+  let cnv = createCanvas(size || 700, size || 700);
+  pixelDensity(min(2, window.devicePixelRatio || 1));
+
+  if (holder) {
+    cnv.parent('sketch-holder');
+  }
+
   generateFeatures();
 
-  // Notify HTML page of features
   if (window.onFeaturesGenerated) {
     window.onFeaturesGenerated(features);
   }
@@ -311,9 +289,7 @@ function setup() {
 }
 
 function initializeSketch() {
-  // Reset random to same state for consistent initialization
   R = initRandom(hash);
-  // Burn through feature generation randoms to sync state
   for (let i = 0; i < 100; i++) R();
 
   molecules = [];
@@ -323,7 +299,11 @@ function initializeSketch() {
   paperTexture = createGraphics(width, height);
   generatePaperTexture();
 
-  // Initialize molecules based on composition
+  // Create brush texture overlay
+  brushTexture = createGraphics(width, height);
+  generateBrushTexture();
+
+  // Initialize molecules
   const startPositions = getStartPositions(features.density.count);
 
   for (let i = 0; i < features.density.count; i++) {
@@ -361,7 +341,7 @@ function getStartPositions(count) {
       const t = rnd();
       x = t * width + rnd(-100, 100);
       y = t * height + rnd(-100, 100);
-    } else { // scattered
+    } else {
       x = rnd(width);
       y = rnd(height);
     }
@@ -377,7 +357,7 @@ function getPaperBackground() {
   if (tone === "warm") return { r: 252, g: 248, b: 240 };
   if (tone === "cool") return { r: 245, g: 248, b: 252 };
   if (tone === "aged") return { r: 245, g: 235, b: 220 };
-  return { r: 255, g: 253, b: 250 }; // bright
+  return { r: 255, g: 253, b: 250 };
 }
 
 function generatePaperTexture() {
@@ -402,6 +382,35 @@ function generatePaperTexture() {
   paperTexture.updatePixels();
 }
 
+function generateBrushTexture() {
+  // p5.brush-inspired hatching/texture overlay
+  const style = features.brushStyle.style;
+
+  brushTexture.clear();
+
+  if (style === "clean") return;
+
+  let density = style === "heavy" ? 800 : style === "textured" ? 400 : 200;
+  let alpha = style === "heavy" ? 25 : style === "textured" ? 15 : 8;
+
+  brushTexture.stroke(80, 70, 60, alpha);
+  brushTexture.strokeWeight(0.5);
+
+  for (let i = 0; i < density; i++) {
+    let x = rnd(width);
+    let y = rnd(height);
+    let angle = rnd(TWO_PI);
+    let len = rnd(5, 25);
+
+    // Hatching lines
+    brushTexture.line(
+      x, y,
+      x + cos(angle) * len,
+      y + sin(angle) * len
+    );
+  }
+}
+
 function draw() {
   // Subtle paper texture fade
   if (frameCount % 30 === 0) {
@@ -418,12 +427,11 @@ function draw() {
     mol.render();
   }
 
-  // Water drops based on feature
-  if (features.drops.frequency > 0 && R() < features.drops.frequency) {
+  // Water drops
+  if (R() < 0.02) {
     drops.push(new WaterDrop(rnd(width), rnd(height), rndChoice(features.palette.colors)));
   }
 
-  // Update drops
   for (let i = drops.length - 1; i >= 0; i--) {
     drops[i].update();
     drops[i].render();
@@ -432,9 +440,13 @@ function draw() {
     }
   }
 
-  // Pencil texture based on intensity
-  if (features.pencil.intensity > 0 && frameCount % (6 - features.pencil.intensity) === 0) {
-    addPencilTexture();
+  // Brush texture overlay (occasional)
+  if (frameCount % 60 === 0 && features.brushStyle.style !== "clean") {
+    push();
+    blendMode(MULTIPLY);
+    tint(255, 3);
+    image(brushTexture, 0, 0);
+    pop();
   }
 
   // Special effects
@@ -447,7 +459,6 @@ function applySpecialEffect() {
   const effect = features.special.effect;
 
   if (effect === "chromatic" && frameCount % 10 === 0) {
-    // Chromatic aberration on random molecule
     let mol = rndChoice(molecules);
     if (mol) {
       push();
@@ -460,7 +471,6 @@ function applySpecialEffect() {
       pop();
     }
   } else if (effect === "glow" && frameCount % 5 === 0) {
-    // Glow effect
     push();
     blendMode(SCREEN);
     for (let mol of molecules) {
@@ -470,7 +480,6 @@ function applySpecialEffect() {
     }
     pop();
   } else if (effect === "scatter" && frameCount % 15 === 0) {
-    // Scatter tiny dots
     for (let i = 0; i < 20; i++) {
       let col = rndChoice(features.palette.colors);
       fill(col[0], col[1], col[2], 30);
@@ -478,41 +487,6 @@ function applySpecialEffect() {
       ellipse(rnd(width), rnd(height), rnd(1, 3));
     }
   }
-}
-
-function addPencilTexture() {
-  let mol = rndChoice(molecules);
-  if (!mol) return;
-
-  let x = mol.pos.x + rnd(-30, 30);
-  let y = mol.pos.y + rnd(-30, 30);
-  let col = mol.baseColor;
-
-  push();
-  stroke(col[0], col[1], col[2], 15);
-  strokeWeight(0.5);
-
-  let angle = rnd(TWO_PI);
-  let len = rnd(5, 20);
-  let numLines = rndInt(3, 8) * features.pencil.intensity;
-
-  for (let i = 0; i < numLines; i++) {
-    let ox = rnd(-10, 10);
-    let oy = rnd(-10, 10);
-    let x1 = x + ox;
-    let y1 = y + oy;
-    let x2 = x1 + cos(angle) * len;
-    let y2 = y1 + sin(angle) * len;
-
-    beginShape();
-    for (let t = 0; t <= 1; t += 0.1) {
-      let px = lerp(x1, x2, t) + rnd(-0.5, 0.5);
-      let py = lerp(y1, y2, t) + rnd(-0.5, 0.5);
-      vertex(px, py);
-    }
-    endShape();
-  }
-  pop();
 }
 
 // ============================================================================
@@ -530,7 +504,10 @@ class Molecule {
     this.mass = this.size * 0.5;
     this.wetness = rnd(0.5, 1) * features.wetness.value;
     this.pigmentDensity = rnd(0.3, 0.8);
-    this.phase = rnd(TWO_PI); // For wave physics
+    this.phase = rnd(TWO_PI);
+
+    // Brush style variations
+    this.brushNoise = rnd(0.5, 1.5);
   }
 
   applyForces(others) {
@@ -538,7 +515,6 @@ class Molecule {
     const mode = features.physics.mode;
 
     if (mode === "molecular" || mode === "brownian") {
-      // Lennard-Jones potential
       for (let other of others) {
         if (other === this) continue;
         let diff = p5.Vector.sub(other.pos, this.pos);
@@ -556,66 +532,48 @@ class Molecule {
         totalForce.add(diff);
       }
 
-      // Brownian has more random motion
       let brownianStrength = mode === "brownian" ? 0.8 : 0.3;
       totalForce.add(createVector(rnd(-brownianStrength, brownianStrength), rnd(-brownianStrength, brownianStrength)));
 
     } else if (mode === "vortex") {
-      // Spiral toward center with tangential velocity
       let center = createVector(width/2, height/2);
       let toCenter = p5.Vector.sub(center, this.pos);
-      let dist = toCenter.mag();
       toCenter.normalize();
-
-      // Tangential component
       let tangent = createVector(-toCenter.y, toCenter.x);
       tangent.mult(0.5);
-
-      // Inward pull
       toCenter.mult(0.01);
-
       totalForce.add(toCenter);
       totalForce.add(tangent);
       totalForce.add(createVector(rnd(-0.1, 0.1), rnd(-0.1, 0.1)));
 
     } else if (mode === "explosion") {
-      // Outward from center
       let center = createVector(width/2, height/2);
       let fromCenter = p5.Vector.sub(this.pos, center);
-      let dist = fromCenter.mag();
       fromCenter.normalize();
       fromCenter.mult(0.05);
       totalForce.add(fromCenter);
       totalForce.add(createVector(rnd(-0.2, 0.2), rnd(-0.2, 0.2)));
 
     } else if (mode === "orbital") {
-      // Orbit around center
       let center = createVector(width/2, height/2);
       let toCenter = p5.Vector.sub(center, this.pos);
       let dist = toCenter.mag();
-
-      // Gravitational pull
       let gravity = toCenter.copy();
       gravity.normalize();
       gravity.mult(50 / (dist + 10));
-
-      // Orbital velocity
       let orbital = createVector(-toCenter.y, toCenter.x);
       orbital.normalize();
       orbital.mult(0.3);
-
       totalForce.add(gravity);
       totalForce.add(orbital);
 
     } else if (mode === "magnetic") {
-      // Attract to similar colors, repel different
       for (let other of others) {
         if (other === this) continue;
         let diff = p5.Vector.sub(other.pos, this.pos);
         let dist = diff.mag();
         if (dist < 1 || dist > 200) continue;
 
-        // Color similarity
         let similarity = 1 - (
           abs(this.baseColor[0] - other.baseColor[0]) +
           abs(this.baseColor[1] - other.baseColor[1]) +
@@ -630,7 +588,6 @@ class Molecule {
       totalForce.add(createVector(rnd(-0.2, 0.2), rnd(-0.2, 0.2)));
 
     } else if (mode === "flocking") {
-      // Boids-like behavior
       let separation = createVector(0, 0);
       let alignment = createVector(0, 0);
       let cohesion = createVector(0, 0);
@@ -657,26 +614,23 @@ class Molecule {
         alignment.div(neighbors);
         alignment.sub(this.vel);
         alignment.limit(0.05);
-
         cohesion.div(neighbors);
         cohesion.sub(this.pos);
         cohesion.limit(0.03);
       }
 
       separation.limit(0.1);
-
       totalForce.add(separation);
       totalForce.add(alignment);
       totalForce.add(cohesion);
 
     } else if (mode === "waves") {
-      // Sinusoidal motion
       let waveX = sin(this.pos.y * 0.02 + frameCount * 0.05 + this.phase) * 0.3;
       let waveY = cos(this.pos.x * 0.02 + frameCount * 0.03 + this.phase) * 0.2;
       totalForce.add(createVector(waveX, waveY));
     }
 
-    // Gentle gravity wells that shift
+    // Gravity well
     let wellX = width/2 + sin(frameCount * 0.01) * 200;
     let wellY = height/2 + cos(frameCount * 0.013) * 200;
     let toWell = createVector(wellX - this.pos.x, wellY - this.pos.y);
@@ -719,9 +673,17 @@ class Molecule {
     push();
     noFill();
 
-    for (let layer = 0; layer < 3; layer++) {
-      let alpha = map(layer, 0, 3, 8, 3) * this.pigmentDensity;
-      let weight = map(layer, 0, 3, this.size * 2, this.size * 4) * this.wetness;
+    const brushStyle = features.brushStyle.style;
+    const layers = brushStyle === "heavy" ? 4 : brushStyle === "textured" ? 3 : 3;
+
+    for (let layer = 0; layer < layers; layer++) {
+      let alpha = map(layer, 0, layers, 8, 3) * this.pigmentDensity;
+      let weight = map(layer, 0, layers, this.size * 2, this.size * 4) * this.wetness;
+
+      // Brush texture variation
+      if (brushStyle === "heavy" || brushStyle === "textured") {
+        weight *= this.brushNoise;
+      }
 
       let r = this.baseColor[0] + layer * 5;
       let g = this.baseColor[1] - layer * 3;
@@ -733,8 +695,9 @@ class Molecule {
       beginShape();
       for (let i = 0; i < this.trail.length; i++) {
         let p = this.trail[i];
-        let wobbleX = noise(p.x * 0.01, p.y * 0.01, frameCount * 0.01) * 5 - 2.5;
-        let wobbleY = noise(p.y * 0.01, p.x * 0.01, frameCount * 0.01) * 5 - 2.5;
+        let wobbleAmt = brushStyle === "heavy" ? 8 : brushStyle === "textured" ? 6 : 5;
+        let wobbleX = noise(p.x * 0.01, p.y * 0.01, frameCount * 0.01) * wobbleAmt - wobbleAmt/2;
+        let wobbleY = noise(p.y * 0.01, p.x * 0.01, frameCount * 0.01) * wobbleAmt - wobbleAmt/2;
         curveVertex(p.x + wobbleX * layer, p.y + wobbleY * layer);
       }
       endShape();
@@ -749,9 +712,12 @@ class Molecule {
     let x = this.pos.x;
     let y = this.pos.y;
 
-    for (let i = 5; i > 0; i--) {
+    const brushStyle = features.brushStyle.style;
+    const blobLayers = brushStyle === "heavy" ? 6 : 5;
+
+    for (let i = blobLayers; i > 0; i--) {
       let size = this.size * i * this.wetness;
-      let alpha = map(i, 5, 1, 5, 20) * this.pigmentDensity;
+      let alpha = map(i, blobLayers, 1, 5, 20) * this.pigmentDensity;
 
       let r = this.baseColor[0] + rnd(-10, 10);
       let g = this.baseColor[1] + rnd(-10, 10);
@@ -760,14 +726,15 @@ class Molecule {
       fill(r, g, b, alpha);
 
       beginShape();
-      for (let a = 0; a < TWO_PI; a += PI/8) {
-        let rad = size + noise(a * 2, frameCount * 0.02) * size * 0.5;
+      let vertices = brushStyle === "heavy" ? 12 : 8;
+      for (let a = 0; a < TWO_PI; a += TWO_PI / vertices) {
+        let rad = size + noise(a * 2, frameCount * 0.02) * size * 0.5 * this.brushNoise;
         curveVertex(x + cos(a) * rad, y + sin(a) * rad);
       }
       endShape(CLOSE);
     }
 
-    // Pigment settling
+    // Pigment settling (edge darkening)
     if (R() < 0.3) {
       let edgeAngle = rnd(TWO_PI);
       let edgeDist = this.size * this.wetness * 2;
@@ -817,6 +784,7 @@ class WaterDrop {
       endShape(CLOSE);
     }
 
+    // Edge definition
     if (this.life > 0.5) {
       stroke(this.col[0] - 30, this.col[1] - 30, this.col[2] - 30, 10 * this.life);
       strokeWeight(1);
@@ -828,13 +796,6 @@ class WaterDrop {
         curveVertex(this.pos.x + cos(a) * (edgeSize + wobble), this.pos.y + sin(a) * (edgeSize + wobble));
       }
       endShape(CLOSE);
-    }
-
-    if (this.life > 0.8 && R() < 0.3) {
-      let splatterAngle = rnd(TWO_PI);
-      let splatterDist = this.size * rnd(1.2, 2);
-      fill(this.col[0], this.col[1], this.col[2], 20);
-      ellipse(this.pos.x + cos(splatterAngle) * splatterDist, this.pos.y + sin(splatterAngle) * splatterDist, rnd(3, 8), rnd(3, 8));
     }
     pop();
   }
@@ -850,14 +811,13 @@ class WaterDrop {
 
 function keyPressed() {
   if (key === 's' || key === 'S') {
-    saveCanvas('molecular-watercolor-' + hash.slice(2, 10), 'png');
+    saveCanvas('molecular-brush-' + hash.slice(2, 10), 'png');
   }
   if (key === 'r' || key === 'R') {
     regenerate();
   }
 }
 
-// External function to set new hash and regenerate
 function setHash(newHash) {
   hash = newHash;
   generateFeatures();
@@ -872,7 +832,6 @@ function regenerate() {
   setHash(hash);
 }
 
-// Expose for HTML control
 window.setHash = setHash;
 window.regenerate = regenerate;
 window.getFeatures = () => features;

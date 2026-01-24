@@ -5,6 +5,36 @@ All notable changes to Molecular Watercolor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-24
+
+### Added
+- **Boundary Return Styles** - New trait controls how molecules return when going off-canvas:
+  - **Common**: Wrap (instant wrap), Teleport (gap in trail), Fade (fades out then reappears)
+  - **Uncommon**: Angle (returns at an angle), Bounce (reflects off edge), Wander (random walk back)
+  - **Rare**: Spiral (spirals to target), Retrace (follows trail backwards), Arc (curved bezier path)
+  - **Legendary**: Mixed (each molecule picks its own random style)
+- **8 New Physics Modes**:
+  - Legendary: Blackhole (strong pull to center), Tornado (outward spiral)
+  - Rare: Pulse (periodic expansion/contraction), Gravity (molecules attract each other)
+  - Uncommon: Drift (noise-based directional flow), Swirl (multiple rotating centers)
+  - Common: Gentle (soft noise movement), Chaos (high-frequency random forces)
+- Physics modes expanded from 8 to 16 total options
+- Version selector dropdown in UI
+- Link to Molecular Brush (p5.brush v2.x version)
+
+### Changed
+- Return style now displayed in features table
+- Updated to use local p5.js library
+
+---
+
+## [1.0.2] - 2026-01-20
+
+### Fixed
+- **No more brightness at top** - Removed SOFT_LIGHT blend mode that caused uneven brightness accumulation over time
+
+---
+
 ## [1.0.1] - 2025-01-17
 
 ### Fixed

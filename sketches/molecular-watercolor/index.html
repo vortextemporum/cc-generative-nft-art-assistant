@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Molecular Watercolor</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="lib/p5.min.js"></script>
   <style>
     :root {
       --canvas-size: 700px;
@@ -329,6 +329,26 @@
       color: var(--text-muted);
     }
 
+    .version-select {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+    .version-select:hover { border-color: var(--accent); }
+
+    .note-link {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    .note-link a { color: var(--accent); text-decoration: none; }
+    .note-link a:hover { text-decoration: underline; }
+
     /* Responsive */
     @media (max-width: 1100px) {
       :root {
@@ -406,8 +426,15 @@
           <div class="shortcuts">
             <kbd>R</kbd> new <kbd>S</kbd> save
           </div>
-          <div class="version">v1.0.1</div>
+          <select id="version-select" class="version-select">
+            <option value="sketch.js">v1.1.0 - Boundary Styles (current)</option>
+            <option value="versions/v1.0.2-animated.js">v1.0.2 - Animated</option>
+            <option value="versions/v1.0.1-animated.js">v1.0.1 - Animated</option>
+            <option value="versions/v1.0.1.js">v1.0.1 - Original</option>
+            <option value="versions/v1.0.0.js">v1.0.0 - Initial</option>
+          </select>
         </div>
+        <div class="note-link">p5.brush version: <a href="../molecular-brush/">Molecular Brush</a></div>
       </div>
     </div>
   </div>
@@ -424,11 +451,11 @@
       const rows = [
         { name: 'Palette', value: features.palette.name, rarity: features.palette.rarity, colors: features.palette.colors },
         { name: 'Physics', value: features.physics.mode, rarity: features.physics.rarity },
+        { name: 'Boundary', value: features.returnStyle?.name || 'wrap', rarity: features.returnStyle?.rarity || 'common' },
         { name: 'Density', value: features.density.name, rarity: features.density.rarity },
         { name: 'Trail', value: features.trail.name, rarity: features.trail.rarity },
         { name: 'Wetness', value: features.wetness.name, rarity: features.wetness.rarity },
-        { name: 'Drops', value: features.drops.name, rarity: features.drops.rarity },
-        { name: 'Pencil', value: features.pencil.name, rarity: features.pencil.rarity },
+        { name: 'Brush', value: features.brushStyle?.name || 'normal', rarity: features.brushStyle?.rarity || 'common' },
         { name: 'Paper', value: features.paper.tone, rarity: 'common' },
         { name: 'Layout', value: features.composition, rarity: 'common' },
         { name: 'Special', value: features.special.effect, rarity: features.special.active ? 'legendary' : 'common' },
@@ -476,7 +503,36 @@
       const features = window.getFeatures ? window.getFeatures() : { hash: 'unknown' };
       saveCanvas('molecular-watercolor-' + features.hash.slice(2, 10), 'png');
     }
+
+    // Version selector
+    const versionSelect = document.getElementById('version-select');
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentVersion = urlParams.get('version') || 'sketch.js';
+
+    // Set dropdown to current version
+    for (let opt of versionSelect.options) {
+      if (opt.value === currentVersion) {
+        opt.selected = true;
+        break;
+      }
+    }
+
+    versionSelect.addEventListener('change', (e) => {
+      const version = e.target.value;
+      if (version === 'sketch.js') {
+        window.location.href = window.location.pathname;
+      } else {
+        window.location.href = window.location.pathname + '?version=' + encodeURIComponent(version);
+      }
+    });
   </script>
-  <script src="sketch.js"></script>
+  <script>
+    // Load version from URL param or default
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sketchSrc = urlParams.get('version') || 'sketch.js';
+      document.write('<script src="' + sketchSrc + '"><\/script>');
+    })();
+  </script>
 </body>
 </html>
