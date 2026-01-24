@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.7.0
+ * Graphical Score v3.8.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,12 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.8.0: Major enhancement to Treatise (Cardew) mode with 18 new elements:
+ *         - Lifeline, tree structures, dot clouds, parallel lines
+ *         - Curved paths, solid shapes, nested shapes, zigzags
+ *         - Wedges, scattered dots, grids, angular constructions
+ *         - Abstract symbols, dense masses, connectors, brackets
+ *         - Small spirals, rectangular blocks
  * v3.7.0: Major enhancement to Spectral (Murail/Grisey) mode with 16 new elements:
  *         - Harmonic partials, inharmonicity, beating patterns
  *         - Spectral interpolation, difference tones, ring modulation
@@ -389,9 +395,14 @@ const MODES = {
   treatise: {
     name: "Treatise",
     composer: "Cardew",
-    description: "Abstract geometric shapes, lines, circles, number sequences",
+    description: "Abstract geometric shapes, lifeline, tree structures, grids, angular constructions",
     weight: 0.08,
-    elements: ["geometricAbstract", "numberSequences", "thickLines", "circleFormations"],
+    elements: [
+      "geometricAbstract", "numberSequences", "thickLines", "circleFormations",
+      "lifeline", "tree", "clouds", "parallelLines", "curvedPath", "solids",
+      "nests", "zigzag", "wedge", "scatteredDots", "grid", "angle",
+      "symbols", "mass", "connectors", "brackets", "smallSpiral", "blocks"
+    ],
     prefersPalette: ["treatiseBlack", "manuscript"]
   },
   openform: {
@@ -6206,6 +6217,497 @@ function drawTreatiseThickLines(voice, section) {
   }
 }
 
+// New Treatise functions v3.8.0
+
+function drawTreatiseLifeline(voice, section) {
+  // The central horizontal lifeline (a key Treatise element)
+  const y = voice.yStart + voice.height * rnd(0.4, 0.6);
+
+  stroke(features.palette.ink);
+  strokeWeight(rnd(1, 3) * scaleFactor);
+  line(section.xStart, y, section.xEnd, y);
+
+  // Small marks along the lifeline
+  if (rndBool(0.5)) {
+    const numMarks = rndInt(3, 8);
+    for (let i = 0; i < numMarks; i++) {
+      const mx = section.xStart + rnd(0.1, 0.9) * section.width;
+      const markType = rndInt(0, 3);
+
+      if (markType === 0) {
+        line(mx, y - 5 * scaleFactor, mx, y + 5 * scaleFactor);
+      } else if (markType === 1) {
+        ellipse(mx, y, 4 * scaleFactor, 4 * scaleFactor);
+      } else {
+        triangle(mx, y - 5 * scaleFactor, mx - 3 * scaleFactor, y + 3 * scaleFactor, mx + 3 * scaleFactor, y + 3 * scaleFactor);
+      }
+    }
+  }
+}
+
+function drawTreatiseTree(voice, section) {
+  // Tree/branching structures (common in Treatise)
+  const numTrees = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let t = 0; t < numTrees; t++) {
+    const rootX = rnd(section.xStart + 30, section.xEnd - 30);
+    const rootY = rnd(voice.yStart + voice.height * 0.3, voice.yEnd - 10);
+    const treeH = rnd(30, 60) * scaleFactor;
+    const isUpward = rndBool(0.5);
+    const direction = isUpward ? -1 : 1;
+
+    strokeWeight(rnd(2, 4) * scaleFactor);
+
+    // Main trunk
+    line(rootX, rootY, rootX, rootY + direction * treeH);
+
+    // Branches
+    const numBranches = rndInt(2, 5);
+    for (let b = 0; b < numBranches; b++) {
+      const branchY = rootY + direction * (b + 1) * (treeH / (numBranches + 1));
+      const branchLen = rnd(15, 40) * scaleFactor;
+      const branchDir = rndBool(0.5) ? 1 : -1;
+
+      strokeWeight(rnd(1, 2) * scaleFactor);
+      line(rootX, branchY, rootX + branchDir * branchLen, branchY + direction * rnd(-10, 10) * scaleFactor);
+    }
+  }
+}
+
+function drawTreatiseClouds(voice, section) {
+  // Dense clusters of small marks
+  const numClouds = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let c = 0; c < numClouds; c++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const cloudW = rnd(30, 70) * scaleFactor;
+    const cloudH = rnd(20, 40) * scaleFactor;
+    const numMarks = rndInt(20, 50);
+
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+
+    for (let m = 0; m < numMarks; m++) {
+      const mx = cx + rndGaussian(0, cloudW / 3);
+      const my = cy + rndGaussian(0, cloudH / 3);
+      const markType = rndInt(0, 4);
+
+      if (markType === 0) {
+        point(mx, my);
+      } else if (markType === 1) {
+        line(mx, my, mx + rnd(-3, 3) * scaleFactor, my + rnd(-3, 3) * scaleFactor);
+      } else if (markType === 2) {
+        noFill();
+        ellipse(mx, my, 2 * scaleFactor, 2 * scaleFactor);
+      } else {
+        line(mx - 2 * scaleFactor, my, mx + 2 * scaleFactor, my);
+      }
+    }
+  }
+}
+
+function drawTreatiseParallelLines(voice, section) {
+  // Groups of parallel lines (staff-like but not musical)
+  const numGroups = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+
+  for (let g = 0; g < numGroups; g++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 80);
+    const baseY = rnd(voice.yStart + 15, voice.yEnd - 30);
+    const groupW = rnd(50, 120) * scaleFactor;
+    const numLines = rndInt(3, 7);
+    const spacing = rnd(4, 8) * scaleFactor;
+
+    strokeWeight(rnd(0.5, 1.5) * scaleFactor);
+
+    for (let l = 0; l < numLines; l++) {
+      const y = baseY + l * spacing;
+      line(startX, y, startX + groupW, y);
+    }
+  }
+}
+
+function drawTreatiseCurvedPath(voice, section) {
+  // Flowing curved paths
+  const numPaths = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let p = 0; p < numPaths; p++) {
+    strokeWeight(rnd(1, 4) * scaleFactor);
+
+    const startX = rnd(section.xStart + 10, section.xStart + section.width * 0.3);
+    const endX = rnd(section.xEnd - section.width * 0.3, section.xEnd - 10);
+    const startY = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const endY = rnd(voice.yStart + 10, voice.yEnd - 10);
+
+    const cx1 = rnd(startX, endX);
+    const cy1 = rnd(voice.yStart, voice.yEnd);
+    const cx2 = rnd(startX, endX);
+    const cy2 = rnd(voice.yStart, voice.yEnd);
+
+    bezier(startX, startY, cx1, cy1, cx2, cy2, endX, endY);
+  }
+}
+
+function drawTreatiseSolids(voice, section) {
+  // Solid filled shapes
+  const numSolids = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let s = 0; s < numSolids; s++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const size = rnd(8, 25) * scaleFactor;
+    const shapeType = rndInt(0, 4);
+
+    if (shapeType === 0) {
+      ellipse(x, y, size, size);
+    } else if (shapeType === 1) {
+      rect(x - size / 2, y - size / 2, size, size);
+    } else if (shapeType === 2) {
+      triangle(x, y - size / 2, x - size / 2, y + size / 2, x + size / 2, y + size / 2);
+    } else {
+      rect(x - size, y - size / 4, size * 2, size / 2);
+    }
+  }
+}
+
+function drawTreatiseNests(voice, section) {
+  // Nested shapes (circles within circles)
+  const numNests = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let n = 0; n < numNests; n++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 30, voice.yEnd - 30);
+    const maxSize = rnd(25, 50) * scaleFactor;
+    const numRings = rndInt(2, 5);
+
+    for (let r = 0; r < numRings; r++) {
+      const ringSize = maxSize * (1 - r * 0.2);
+      strokeWeight(rnd(0.5, 2) * scaleFactor);
+      ellipse(cx, cy, ringSize, ringSize * rnd(0.7, 1));
+    }
+  }
+}
+
+function drawTreatiseZigzag(voice, section) {
+  // Zigzag patterns
+  const numZigzags = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let z = 0; z < numZigzags; z++) {
+    strokeWeight(rnd(1, 3) * scaleFactor);
+
+    const startX = rnd(section.xStart + 10, section.xEnd - 80);
+    const baseY = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const amplitude = rnd(10, 25) * scaleFactor;
+    const numPeaks = rndInt(3, 8);
+    const segmentW = rnd(10, 20) * scaleFactor;
+
+    beginShape();
+    for (let i = 0; i <= numPeaks; i++) {
+      const x = startX + i * segmentW;
+      const y = baseY + (i % 2 === 0 ? -amplitude : amplitude);
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawTreatiseWedge(voice, section) {
+  // Wedge shapes (triangular)
+  const numWedges = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let w = 0; w < numWedges; w++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const wedgeW = rnd(40, 80) * scaleFactor;
+    const wedgeH = rnd(15, 35) * scaleFactor;
+    const isFilled = rndBool(0.4);
+    const pointsLeft = rndBool(0.5);
+
+    if (isFilled) {
+      fill(features.palette.ink);
+      noStroke();
+    } else {
+      noFill();
+      stroke(features.palette.ink);
+      strokeWeight(rnd(1, 2) * scaleFactor);
+    }
+
+    beginShape();
+    if (pointsLeft) {
+      vertex(x, y);
+      vertex(x + wedgeW, y - wedgeH / 2);
+      vertex(x + wedgeW, y + wedgeH / 2);
+    } else {
+      vertex(x, y - wedgeH / 2);
+      vertex(x, y + wedgeH / 2);
+      vertex(x + wedgeW, y);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawTreatiseScatteredDots(voice, section) {
+  // Scattered dots
+  const numDots = Math.floor(rnd(15, 50) * features.densityValue);
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let d = 0; d < numDots; d++) {
+    const x = rnd(section.xStart + 5, section.xEnd - 5);
+    const y = rnd(voice.yStart + 5, voice.yEnd - 5);
+    const size = rnd(1, 4) * scaleFactor;
+    ellipse(x, y, size, size);
+  }
+}
+
+function drawTreatiseGrid(voice, section) {
+  // Grid-like patterns
+  const x = rnd(section.xStart + 20, section.xEnd - 80);
+  const y = rnd(voice.yStart + 15, voice.yEnd - 40);
+  const gridW = rnd(40, 80) * scaleFactor;
+  const gridH = rnd(25, 45) * scaleFactor;
+  const cols = rndInt(3, 6);
+  const rows = rndInt(2, 4);
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  const cellW = gridW / cols;
+  const cellH = gridH / rows;
+
+  // Draw grid
+  for (let c = 0; c <= cols; c++) {
+    line(x + c * cellW, y, x + c * cellW, y + gridH);
+  }
+  for (let r = 0; r <= rows; r++) {
+    line(x, y + r * cellH, x + gridW, y + r * cellH);
+  }
+
+  // Random marks in some cells
+  fill(features.palette.ink);
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      if (rndBool(0.3)) {
+        const cx = x + (c + 0.5) * cellW;
+        const cy = y + (r + 0.5) * cellH;
+        ellipse(cx, cy, 3 * scaleFactor, 3 * scaleFactor);
+      }
+    }
+  }
+}
+
+function drawTreatiseAngle(voice, section) {
+  // Angular constructions
+  const numAngles = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let a = 0; a < numAngles; a++) {
+    strokeWeight(rnd(1, 3) * scaleFactor);
+
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const len1 = rnd(15, 40) * scaleFactor;
+    const len2 = rnd(15, 40) * scaleFactor;
+    const angle1 = rnd(0, TWO_PI);
+    const angle2 = angle1 + rnd(PI / 4, PI);
+
+    line(cx, cy, cx + cos(angle1) * len1, cy + sin(angle1) * len1);
+    line(cx, cy, cx + cos(angle2) * len2, cy + sin(angle2) * len2);
+  }
+}
+
+function drawTreatiseSymbols(voice, section) {
+  // Small abstract symbols
+  const numSymbols = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+
+  for (let s = 0; s < numSymbols; s++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const size = rnd(5, 12) * scaleFactor;
+    const symbolType = rndInt(0, 6);
+
+    noFill();
+
+    switch (symbolType) {
+      case 0: // Plus
+        line(x - size, y, x + size, y);
+        line(x, y - size, x, y + size);
+        break;
+      case 1: // X
+        line(x - size, y - size, x + size, y + size);
+        line(x - size, y + size, x + size, y - size);
+        break;
+      case 2: // Small arc
+        arc(x, y, size * 2, size * 2, 0, PI);
+        break;
+      case 3: // Asterisk
+        for (let i = 0; i < 3; i++) {
+          const angle = i * PI / 3;
+          line(x + cos(angle) * size, y + sin(angle) * size, x - cos(angle) * size, y - sin(angle) * size);
+        }
+        break;
+      case 4: // Arrow
+        line(x - size, y, x + size, y);
+        line(x + size * 0.5, y - size * 0.5, x + size, y);
+        line(x + size * 0.5, y + size * 0.5, x + size, y);
+        break;
+      case 5: // Square with dot
+        rect(x - size, y - size, size * 2, size * 2);
+        fill(features.palette.ink);
+        ellipse(x, y, 2 * scaleFactor, 2 * scaleFactor);
+        noFill();
+        break;
+    }
+  }
+}
+
+function drawTreatiseMass(voice, section) {
+  // Dense black mass areas
+  const numMasses = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let m = 0; m < numMasses; m++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 50);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 25);
+    const w = rnd(25, 60) * scaleFactor;
+    const h = rnd(15, 35) * scaleFactor;
+
+    // Irregular shape
+    beginShape();
+    const numVertices = rndInt(6, 10);
+    for (let v = 0; v < numVertices; v++) {
+      const angle = (v / numVertices) * TWO_PI;
+      const r = (v % 2 === 0 ? w / 2 : w / 3) + rnd(-5, 5) * scaleFactor;
+      vertex(x + w / 2 + cos(angle) * r, y + h / 2 + sin(angle) * r * (h / w));
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawTreatiseConnectors(voice, section) {
+  // Connecting lines between elements
+  const numConnectors = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let c = 0; c < numConnectors; c++) {
+    strokeWeight(rnd(0.5, 2) * scaleFactor);
+
+    const x1 = rnd(section.xStart + 10, section.xEnd - 80);
+    const y1 = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const x2 = x1 + rnd(40, 100) * scaleFactor;
+    const y2 = rnd(voice.yStart + 10, voice.yEnd - 10);
+
+    // Straight or curved connector
+    if (rndBool(0.5)) {
+      line(x1, y1, x2, y2);
+    } else {
+      const midY = Math.min(y1, y2) - rnd(10, 30) * scaleFactor;
+      bezier(x1, y1, x1, midY, x2, midY, x2, y2);
+    }
+
+    // End markers
+    fill(features.palette.ink);
+    ellipse(x1, y1, 4 * scaleFactor, 4 * scaleFactor);
+    ellipse(x2, y2, 4 * scaleFactor, 4 * scaleFactor);
+  }
+}
+
+function drawTreatiseBrackets(voice, section) {
+  // Bracket-like shapes
+  const numBrackets = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(rnd(1, 3) * scaleFactor);
+  noFill();
+
+  for (let b = 0; b < numBrackets; b++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 40);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const h = rnd(20, 50) * scaleFactor;
+    const hookW = rnd(8, 15) * scaleFactor;
+    const isLeft = rndBool(0.5);
+
+    // Bracket shape [ or ]
+    if (isLeft) {
+      line(x + hookW, y - h / 2, x, y - h / 2);
+      line(x, y - h / 2, x, y + h / 2);
+      line(x, y + h / 2, x + hookW, y + h / 2);
+    } else {
+      line(x, y - h / 2, x + hookW, y - h / 2);
+      line(x + hookW, y - h / 2, x + hookW, y + h / 2);
+      line(x + hookW, y + h / 2, x, y + h / 2);
+    }
+  }
+}
+
+function drawTreatiseSmallSpiral(voice, section) {
+  // Small spiral elements
+  const numSpirals = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let s = 0; s < numSpirals; s++) {
+    const cx = rnd(section.xStart + 20, section.xEnd - 20);
+    const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const maxR = rnd(8, 18) * scaleFactor;
+    const turns = rnd(1.5, 3);
+
+    beginShape();
+    for (let a = 0; a <= turns * TWO_PI; a += 0.1) {
+      const r = (a / (turns * TWO_PI)) * maxR;
+      vertex(cx + cos(a) * r, cy + sin(a) * r);
+    }
+    endShape();
+  }
+}
+
+function drawTreatiseBlocks(voice, section) {
+  // Rectangular blocks (like December 1952)
+  const numBlocks = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let b = 0; b < numBlocks; b++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 30);
+    const y = rnd(voice.yStart + 5, voice.yEnd - 15);
+    const w = rnd(5, 30) * scaleFactor;
+    const h = rnd(3, 15) * scaleFactor;
+
+    rect(x, y, w, h);
+  }
+}
+
 // ============================================================
 // MODE-SPECIFIC DRAWING: OPENFORM (Earle Brown)
 // ============================================================
@@ -6918,9 +7420,33 @@ function drawModeElements(mode, voice, section) {
 
     // New modes (v3.0.0)
     case "treatise":
-      drawTreatiseGeometric(voice, section);
-      if (rndBool(0.5)) drawTreatiseNumbers(voice, section);
-      if (rndBool(0.4)) drawTreatiseThickLines(voice, section);
+      // Enhanced Treatise mode v3.8.0 - Cardew's 193-page graphic score
+      // Primary structural element (choose one)
+      const treatisePrimary = rndInt(0, 6);
+      switch (treatisePrimary) {
+        case 0: drawTreatiseGeometric(voice, section); break;
+        case 1: drawTreatiseThickLines(voice, section); break;
+        case 2: drawTreatiseLifeline(voice, section); break;
+        case 3: drawTreatiseTree(voice, section); break;
+        case 4: drawTreatiseMass(voice, section); break;
+        case 5: drawTreatiseBlocks(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.4)) drawTreatiseNumbers(voice, section);
+      if (rndBool(0.35)) drawTreatiseClouds(voice, section);
+      if (rndBool(0.3)) drawTreatiseParallelLines(voice, section);
+      if (rndBool(0.3)) drawTreatiseCurvedPath(voice, section);
+      if (rndBool(0.35)) drawTreatiseSolids(voice, section);
+      if (rndBool(0.25)) drawTreatiseNests(voice, section);
+      if (rndBool(0.3)) drawTreatiseZigzag(voice, section);
+      if (rndBool(0.25)) drawTreatiseWedge(voice, section);
+      if (rndBool(0.35)) drawTreatiseScatteredDots(voice, section);
+      if (rndBool(0.25)) drawTreatiseGrid(voice, section);
+      if (rndBool(0.3)) drawTreatiseAngle(voice, section);
+      if (rndBool(0.35)) drawTreatiseSymbols(voice, section);
+      if (rndBool(0.3)) drawTreatiseConnectors(voice, section);
+      if (rndBool(0.25)) drawTreatiseBrackets(voice, section);
+      if (rndBool(0.3)) drawTreatiseSmallSpiral(voice, section);
       break;
 
     case "openform":
