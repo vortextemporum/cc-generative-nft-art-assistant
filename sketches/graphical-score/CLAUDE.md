@@ -1,11 +1,11 @@
-# Graphical Score v3.1.1 - AI Assistant Guide
+# Graphical Score v3.2.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.1.1
+**Current Version:** 3.2.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -102,6 +102,26 @@ graphical-score/
 - `drawSpiralWedges()` - Spirals within wedge sections
 - `drawCrumbEye()` - "Eye of the Whale" circular imagery
 - `drawSpiralBeaming()` - Beamed note groups along spiral curves
+
+### Enhanced Graph Mode (v3.2.0 - Feldman)
+- `drawIctusMarks()` - Attack indicators with accent marks
+- `drawRegisterBands()` - H/M/L register zones with labels
+- `drawTimeBrackets()` - Feldman-style [ ] time notation
+- `drawProportionalGrid()` - Variable-width columns
+- `drawDiamondNotes()` - Diamond noteheads for harmonics
+- `drawClusterBrackets()` - Curly brackets grouping pitches
+- `drawDynamicGradients()` - Hairpin crescendo/decrescendo
+- `drawSustainLines()` - Long horizontal ties
+- `drawTremoloMarks()` - Tremolo slashes on stems
+- `drawInstrumentLabels()` - Instrument abbreviations with techniques
+- `drawEmptyBoxes()` - Emphasized silence/tacet boxes
+- `drawConnectingLines()` - Voice-leading curves between notes
+- `drawSoftAttackMarks()` - Open circles for pianissimo
+- `drawDecayTrails()` - Fading resonance with opacity gradient
+- `drawDurationStacks()` - Vertical note stacks with numbers
+- `drawPedalMarkings()` - Piano pedal brackets
+- `drawBreathMarks()` - Commas, caesuras for pauses
+- `drawHarmonicHalos()` - Concentric overtone rings
 
 ### Mode Drawing (v3.0.0 New Modes)
 - **Treatise**: `drawTreatiseGeometric()`, `drawTreatiseNumbers()`, `drawTreatiseThickLines()`

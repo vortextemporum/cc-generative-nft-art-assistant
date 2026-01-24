@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Graph (Feldman) Mode** - 18 new elements inspired by Morton Feldman's Projections & Intersections:
+
+| Function | Description |
+|----------|-------------|
+| `drawIctusMarks()` | Attack indicators with optional accent marks |
+| `drawRegisterBands()` | H/M/L register zones with dashed dividers and labels |
+| `drawTimeBrackets()` | Feldman-style [ ] time brackets with duration text |
+| `drawProportionalGrid()` | Variable-width columns (proportional notation) |
+| `drawDiamondNotes()` | Diamond noteheads for harmonics with stems |
+| `drawClusterBrackets()` | Curly brackets grouping vertical pitch clusters |
+| `drawDynamicGradients()` | Hairpin crescendo/decrescendo with dynamics |
+| `drawSustainLines()` | Long horizontal ties (straight or wavy) |
+| `drawTremoloMarks()` | Notes with tremolo slashes on stems |
+| `drawInstrumentLabels()` | Abbreviated instrument names with techniques |
+| `drawEmptyBoxes()` | Emphasized silence boxes with tacet markers |
+| `drawConnectingLines()` | Curved voice-leading lines between notes |
+| `drawSoftAttackMarks()` | Open circles for Feldman's pianissimo attacks |
+| `drawDecayTrails()` | Fading resonance trails with opacity gradient |
+| `drawDurationStacks()` | Vertical note stacks with duration numbers |
+| `drawPedalMarkings()` | Piano pedal brackets (Ped. ———— *) |
+| `drawBreathMarks()` | Commas, apostrophes, caesuras for pauses |
+| `drawHarmonicHalos()` | Concentric rings showing overtone resonance |
+
+### Changed
+
+- Graph mode dispatcher now uses probabilistic layering with 5 primary structures
+- Mode elements list expanded from 4 to 20
+- Added `parchment` to Graph's preferred palettes
+
+### Technical
+
+- All functions use `Math.max(1, ...)` for minimum element counts
+- Opacity gradients in decay trails use hex string formatting
+- Register bands render dashed lines via loop segments
+
+---
+
 ## [3.1.1] - 2026-01-24
 
 ### Fixed
