@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Stripsody (Cathy Berberian) Mode** - 15 new elements inspired by Berberian's 1966 comic book vocal score:
+
+| Function | Description |
+|----------|-------------|
+| `drawStripsodyExplosions()` | Comic book explosion burst shapes |
+| `drawStripsodyStars()` | Impact stars (4-8 pointed) |
+| `drawStripsodySpeedLines()` | Speed/motion lines (horizontal streaks) |
+| `drawStripsodySwoosh()` | Swoosh movement curves with arrows |
+| `drawStripsodyFaces()` | Simple expressive faces (emoticons) |
+| `drawStripsodyExclamations()` | Exclamation marks of varying sizes |
+| `drawStripsodyQuestionMarks()` | Question marks |
+| `drawStripsodyHearts()` | Heart shapes |
+| `drawStripsodyMusicNotes()` | Floating music notes |
+| `drawStripsodyLightning()` | Lightning bolt shapes |
+| `drawStripsodySpirals()` | Dizzy spiral marks |
+| `drawStripsodyDroplets()` | Sweat/water droplets |
+| `drawStripsodyPuffs()` | Smoke/cloud puffs |
+| `drawStripsodyImpact()` | Impact radiating lines |
+| `drawStripsodyWobble()` | Wobble/vibration marks |
+
+### Changed
+
+- Stripsody mode dispatcher now uses probabilistic layering with 7 primary structures
+- Mode elements list expanded from 4 to 19
+- Updated composer attribution to "Cathy Berberian"
+- Updated mode description to include "impact stars, action symbols"
+
+### Technical
+
+- Explosion shapes use variable point count for burst effect
+- Faces include 4 expression types (happy, surprised, sad, neutral)
+- Lightning bolts use polygon shapes for sharp angles
+- Wobble marks use layered concentric wavy arcs
+
+---
+
 ## [3.11.0] - 2026-01-25
 
 ### Added

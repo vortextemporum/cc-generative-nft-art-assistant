@@ -1,4 +1,4 @@
-# Graphical Score v3.11.0 - AI Assistant Guide
+# Graphical Score v3.12.0 - AI Assistant Guide
 
 ## Project Overview
 
@@ -303,7 +303,25 @@ graphical-score/
 - `drawTextScoreNegation()` - Negation-based conceptual instructions
 - `drawTextScoreDuration()` - Duration indicator lines with text
 - `drawTextScoreWhisper()` - Small, quiet whispered instructions
-- **Stripsody**: `drawStripsodyOnomatopoeia()`, `drawStripsodyBubbles()`, `drawStripsodyActionLines()`
+### Enhanced Stripsody Mode (v3.12.0 - Cathy Berberian)
+- `drawStripsodyOnomatopoeia()` - Comic book sound words (BANG!, POW!)
+- `drawStripsodyBubbles()` - Speech/thought bubbles with tails
+- `drawStripsodyActionLines()` - Action/motion lines
+- `drawStripsodyExplosions()` - Explosion burst shapes
+- `drawStripsodyStars()` - Impact stars (4-8 pointed)
+- `drawStripsodySpeedLines()` - Speed/motion horizontal streaks
+- `drawStripsodySwoosh()` - Swoosh movement curves with arrows
+- `drawStripsodyFaces()` - Simple expressive emoticon faces
+- `drawStripsodyExclamations()` - Exclamation marks
+- `drawStripsodyQuestionMarks()` - Question marks
+- `drawStripsodyHearts()` - Heart shapes
+- `drawStripsodyMusicNotes()` - Floating music notes
+- `drawStripsodyLightning()` - Lightning bolt shapes
+- `drawStripsodySpirals()` - Dizzy spiral marks
+- `drawStripsodyDroplets()` - Sweat/water droplets
+- `drawStripsodyPuffs()` - Smoke/cloud puffs
+- `drawStripsodyImpact()` - Impact radiating lines
+- `drawStripsodyWobble()` - Wobble/vibration marks
 - **Ankhrasmation**: `drawAnkhrasmationDurations()`, `drawAnkhrasmationSymbols()`
 - **Braxton**: `drawBraxtonDiagrams()`, `drawBraxtonLanguageTypes()`
 
