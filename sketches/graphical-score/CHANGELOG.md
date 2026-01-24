@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Spectral (Murail/Grisey) Mode** - 16 new elements inspired by French spectral music and acoustic analysis:
+
+| Function | Description |
+|----------|-------------|
+| `drawSpectralPartials()` | Individual harmonic partials with natural intensity decay |
+| `drawSpectralInharmonicity()` | Inharmonic partial spreading (bell/piano string behavior) |
+| `drawSpectralBeating()` | Beating/interference patterns between close frequencies |
+| `drawSpectralInterpolation()` | Spectral interpolation between two different spectra |
+| `drawSpectralDifferenceTones()` | Combination/difference tone visualization (f₁, f₂, f₂-f₁) |
+| `drawSpectralRingMod()` | Ring modulation sidebands visualization |
+| `drawSpectralCompression()` | Spectral compression/expansion band transformations |
+| `drawSpectralFiltering()` | Spectral filter curves (low-pass, high-pass, band-pass) |
+| `drawSpectralEnvelopeTime()` | Time-varying spectral amplitude envelopes |
+| `drawSpectralGesture()` | Time-varying spectral gesture (Murail-style) |
+| `drawSpectralSonogram()` | Sonogram-like dense time-frequency display |
+| `drawSpectralMorphing()` | Smooth morphing between spectral states |
+| `drawSpectralFundamental()` | Emphasized fundamental with radiating overtones |
+| `drawSpectralGliss()` | Spectral glissando - all partials moving together |
+| `drawSpectralDecay()` | Natural spectral decay (higher partials decay faster) |
+| `drawSpectralAdditive()` | Additive synthesis visualization with component sum |
+
+### Changed
+
+- Spectral mode dispatcher now uses probabilistic layering with 8 primary structures
+- Mode elements list expanded from 4 to 23
+- Updated mode description to include "spectral transformations, sonograms"
+
+### Technical
+
+- Inharmonicity uses f_n = f_1 * n * sqrt(1 + B*n²) formula
+- Beating patterns show amplitude modulation between close frequencies
+- Spectral filtering supports LP, HP, and BP filter curves
+
+---
+
 ## [3.6.0] - 2026-01-25
 
 ### Added

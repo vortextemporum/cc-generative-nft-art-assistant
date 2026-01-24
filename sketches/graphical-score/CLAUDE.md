@@ -1,11 +1,11 @@
-# Graphical Score v3.6.0 - AI Assistant Guide
+# Graphical Score v3.7.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.6.0
+**Current Version:** 3.7.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -149,6 +149,24 @@ graphical-score/
 - `drawGraphBoxes()`, `drawSparsePoints()`
 - `drawChanceCurves()`, `drawChanceDots()`, `drawChanceIntersections()`
 - `drawSpectralBands()`, `drawSpectralWaterfall()`, `drawFormantContours()`, `drawAttackTransients()`, `drawResonanceBells()`, `drawHarmonicStacks()`
+
+### Enhanced Spectral Mode (v3.7.0 - Murail/Grisey)
+- `drawSpectralPartials()` - Individual harmonic partials with decay
+- `drawSpectralInharmonicity()` - Inharmonic partial spreading
+- `drawSpectralBeating()` - Beating/interference patterns
+- `drawSpectralInterpolation()` - Interpolation between spectra
+- `drawSpectralDifferenceTones()` - Combination/difference tones
+- `drawSpectralRingMod()` - Ring modulation sidebands
+- `drawSpectralCompression()` - Spectral compression/expansion
+- `drawSpectralFiltering()` - Filter curves (LP, HP, BP)
+- `drawSpectralEnvelopeTime()` - Time-varying amplitude envelopes
+- `drawSpectralGesture()` - Time-varying spectral gesture
+- `drawSpectralSonogram()` - Sonogram-like dense display
+- `drawSpectralMorphing()` - Morphing between spectral states
+- `drawSpectralFundamental()` - Fundamental with radiating overtones
+- `drawSpectralGliss()` - Spectral glissando
+- `drawSpectralDecay()` - Natural spectral decay curves
+- `drawSpectralAdditive()` - Additive synthesis visualization
 - `drawSpiralPaths()`, `drawCircularNotation()`, `drawRitualSymbols()`
 
 ### Enhanced Spiral Mode (v3.1.0)
