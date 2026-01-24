@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.1.0
+ * Graphical Score v3.1.1
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,7 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.1.1: Fixed empty score bug - raised density floor and added minimum element counts
  * v3.1.0: Major enhancement to Spiral mode with 10 new elements:
  *         - Multiple spiral types (logarithmic, double, arms, Fermat)
  *         - Text along spiral paths (Crumb-style poetic fragments)
@@ -26,7 +27,7 @@
  * v2.2.0: Refined paper aesthetics, fixed header layout, musical metadata
  * v2.1.0: Enhanced Spectral mode with engraved hatching, stippling
  *
- * @version 3.1.0
+ * @version 3.1.1
  */
 
 // ============================================================
@@ -482,7 +483,8 @@ function generateFeatures() {
     densityValue = rnd(0.12, 0.28);
   } else {
     density = "extreme";
-    densityValue = rndBool(0.5) ? rnd(0.03, 0.1) : rnd(0.88, 0.98);
+    // Raised minimum from 0.03 to 0.15 to prevent empty scores
+    densityValue = rndBool(0.5) ? rnd(0.15, 0.25) : rnd(0.88, 0.98);
   }
 
   // Palette selection
@@ -937,7 +939,7 @@ function drawVignette() {
 function drawArtikulationColorBlocks(voice, section) {
   const colors = features.palette.colors ||
     ["#cc3333", "#3366cc", "#33aa55", "#ffaa00", "#9944aa", "#ff6644"];
-  const numBlocks = Math.floor(rnd(3, 10) * features.densityValue * section.densityMod);
+  const numBlocks = Math.max(1, Math.floor(rnd(3, 10) * features.densityValue * section.densityMod));
 
   for (let i = 0; i < numBlocks; i++) {
     const c = rndChoice(colors);
@@ -1017,7 +1019,7 @@ function drawArtikulationClusters(voice, section) {
 // ============================================================
 
 function drawUpicArcs(voice, section) {
-  const numArcs = Math.floor(rnd(3, 12) * features.densityValue * section.densityMod);
+  const numArcs = Math.max(1, Math.floor(rnd(3, 12) * features.densityValue * section.densityMod));
 
   stroke(features.palette.ink);
   strokeWeight(features.lineWeight * scaleFactor);
@@ -1099,7 +1101,7 @@ function drawUpicRuledLines(voice, section) {
 // ============================================================
 
 function drawClusterWedges(voice, section) {
-  const numWedges = Math.floor(rnd(1, 4) * features.densityValue * section.densityMod);
+  const numWedges = Math.max(1, Math.floor(rnd(1, 4) * features.densityValue * section.densityMod));
 
   for (let i = 0; i < numWedges; i++) {
     const startX = rnd(section.xStart + 10, section.xEnd - 100);
@@ -1257,7 +1259,7 @@ function drawSparsePoints(voice, section) {
 // ============================================================
 
 function drawChanceCurves(voice, section) {
-  const numCurves = Math.floor(rnd(4, 12) * features.densityValue);
+  const numCurves = Math.max(1, Math.floor(rnd(4, 12) * features.densityValue));
 
   for (let i = 0; i < numCurves; i++) {
     stroke(features.palette.ink + "50");
@@ -1376,7 +1378,7 @@ function drawStippling(x, y, w, h, density, intensity) {
 
 // Spectral Waterfall - detailed frequency-time spectrogram
 function drawSpectralWaterfall(voice, section) {
-  const numBins = Math.floor(rnd(20, 40) * features.densityValue);
+  const numBins = Math.max(5, Math.floor(rnd(20, 40) * features.densityValue));
   const timeSteps = Math.floor(section.width / (4 * scaleFactor));
   const binHeight = voice.height / numBins;
 
@@ -1623,7 +1625,7 @@ function drawHarmonicStacks(voice, section) {
 
 // Original spectral bands with engraving enhancement
 function drawSpectralBands(voice, section) {
-  const numBands = Math.floor(rnd(8, 20) * features.densityValue);
+  const numBands = Math.max(3, Math.floor(rnd(8, 20) * features.densityValue));
 
   for (let i = 0; i < numBands; i++) {
     const bandY = voice.yStart + (i / numBands) * voice.height;
@@ -2442,7 +2444,7 @@ function drawSpiralBeaming(voice, section) {
 
 function drawTreatiseGeometric(voice, section) {
   // Abstract geometric shapes inspired by Cardew's Treatise
-  const numShapes = Math.floor(rnd(4, 12) * features.densityValue);
+  const numShapes = Math.max(1, Math.floor(rnd(4, 12) * features.densityValue));
 
   stroke(features.palette.ink);
   noFill();
@@ -2531,7 +2533,7 @@ function drawTreatiseThickLines(voice, section) {
 
 function drawOpenFormRects(voice, section) {
   // Floating rectangles inspired by December 1952
-  const numRects = Math.floor(rnd(5, 15) * features.densityValue);
+  const numRects = Math.max(1, Math.floor(rnd(5, 15) * features.densityValue));
 
   fill(features.palette.ink);
   noStroke();
@@ -2584,7 +2586,7 @@ function drawOpenFormSpatial(voice, section) {
 
 function drawBussottiCalligraphic(voice, section) {
   // Ornate calligraphic lines
-  const numStrokes = Math.floor(rnd(3, 8) * features.densityValue);
+  const numStrokes = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
 
   stroke(features.palette.ink);
   noFill();
@@ -2683,7 +2685,7 @@ function drawTextInstructions(voice, section) {
     "high", "low", "middle", "between", "beyond"
   ];
 
-  const numTexts = Math.floor(rnd(2, 5) * features.densityValue);
+  const numTexts = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
 
   fill(features.palette.ink);
   noStroke();
@@ -2743,7 +2745,7 @@ function drawStripsodyOnomatopoeia(voice, section) {
   const colors = features.palette.colors ||
     ["#dd2222", "#2255cc", "#ffcc00", "#22aa44"];
 
-  const numSounds = Math.floor(rnd(2, 5) * features.densityValue);
+  const numSounds = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
 
   noStroke();
 
@@ -2835,7 +2837,7 @@ function drawAnkhrasmationDurations(voice, section) {
   const colors = features.palette.colors ||
     ["#cc3300", "#0066cc", "#ffcc00", "#00aa55", "#9933cc"];
 
-  const numUnits = Math.floor(rnd(4, 10) * features.densityValue);
+  const numUnits = Math.max(1, Math.floor(rnd(4, 10) * features.densityValue));
 
   noStroke();
 
@@ -2908,7 +2910,7 @@ function drawAnkhrasmationSymbols(voice, section) {
 
 function drawBraxtonDiagrams(voice, section) {
   // Diagrammatic/schematic notation
-  const numDiagrams = Math.floor(rnd(2, 5) * features.densityValue);
+  const numDiagrams = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
 
   stroke(features.palette.ink);
   strokeWeight(1 * scaleFactor);

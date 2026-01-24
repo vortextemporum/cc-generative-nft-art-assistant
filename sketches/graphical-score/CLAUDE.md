@@ -1,11 +1,11 @@
-# Graphical Score v3.1.0 - AI Assistant Guide
+# Graphical Score v3.1.1 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.1.0
+**Current Version:** 3.1.1
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes

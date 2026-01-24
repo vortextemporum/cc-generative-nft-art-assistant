@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-01-24
+
+### Fixed
+
+**Empty Score Bug** - Prevented scores from rendering with no visual elements:
+
+- Raised "extreme sparse" density floor from 0.03-0.1 to 0.15-0.25
+- Added `Math.max(1, ...)` safety minimums to all primary drawing functions:
+  - `drawArtikulationColorBlocks()` - min 1 block
+  - `drawUpicArcs()` - min 1 arc
+  - `drawClusterWedges()` - min 1 wedge
+  - `drawChanceCurves()` - min 1 curve
+  - `drawSpectralWaterfall()` - min 5 bins
+  - `drawSpectralBands()` - min 3 bands
+  - `drawTreatiseGeometric()` - min 1 shape
+  - `drawOpenFormRects()` - min 1 rect
+  - `drawBussottiCalligraphic()` - min 1 stroke
+  - `drawTextInstructions()` - min 1 text
+  - `drawStripsodyOnomatopoeia()` - min 1 sound
+  - `drawAnkhrasmationDurations()` - min 1 unit
+  - `drawBraxtonDiagrams()` - min 1 diagram
+
+This ensures every score has visible content while preserving the "sparse" aesthetic for low-density variations.
+
+---
+
 ## [3.1.0] - 2026-01-24
 
 ### Added
