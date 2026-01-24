@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.4.0
+ * Graphical Score v3.5.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,13 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.5.0: Major enhancement to UPIC (Xenakis) mode with 18 new elements:
+ *         - Glissandi bands, density masses, graph paper grid
+ *         - Pressure strokes, stochastic points, mathematical curves
+ *         - Arborescences (tree structures), polytopes, granular clouds
+ *         - Probability bands, angular transforms, wave pages
+ *         - Rotational transforms, parallel streams, sifted patterns
+ *         - Architectural structures, logistic maps, harmonic series
  * v3.4.0: Major enhancement to Artikulation (Ligeti/Wehinger) mode with 18 new elements:
  *         - Call/response patterns, timbral stripes, glitch patterns
  *         - Speech-like fragments, density clouds, attack/decay envelopes
@@ -284,9 +291,15 @@ const MODES = {
   upic: {
     name: "UPIC",
     composer: "Xenakis",
-    description: "Freehand arcs, glissandi, architectural ruled lines",
+    description: "Freehand arcs, glissandi, stochastic masses, mathematical curves, architectural structures",
     weight: 0.15,
-    elements: ["arcs", "glissandi", "ruledLines", "sirenSweeps"],
+    elements: [
+      "arcs", "glissandi", "ruledLines", "sirenSweeps", "glissandiBands",
+      "densityMass", "graphPaper", "pressureStrokes", "stochasticPoints",
+      "mathCurves", "arborescences", "polytopes", "granularCloud",
+      "probabilityBands", "angularTransforms", "wavePages", "rotations",
+      "parallelStreams", "sifted", "architectural", "logisticMap", "harmonicSeries"
+    ],
     prefersPalette: ["upicBlue", "blueprint"]
   },
   cluster: {
@@ -1639,6 +1652,547 @@ function drawUpicRuledLines(voice, section) {
     line(startX, y - 5 * scaleFactor, startX, y + 5 * scaleFactor);
     line(endX, y - 5 * scaleFactor, endX, y + 5 * scaleFactor);
     strokeWeight(features.lineWeight * 1.5 * scaleFactor);
+  }
+}
+
+// New UPIC functions v3.5.0
+
+function drawUpicGlissandiBands(voice, section) {
+  // Multiple parallel glissandi (Metastaseis style)
+  const numBands = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let b = 0; b < numBands; b++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 120);
+    const endX = startX + rnd(80, 150) * scaleFactor;
+    const startY = rnd(voice.yStart + 10, voice.yEnd - 40);
+    const endY = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const numLines = rndInt(3, 8);
+    const spread = rnd(15, 35) * scaleFactor;
+
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+    noFill();
+
+    for (let i = 0; i < numLines; i++) {
+      const offset = (i / (numLines - 1) - 0.5) * spread;
+      beginShape();
+      for (let t = 0; t <= 1; t += 0.05) {
+        const x = lerp(startX, endX, t);
+        const y = lerp(startY + offset, endY + offset * rnd(0.5, 1.5), t);
+        vertex(x, y);
+      }
+      endShape();
+    }
+  }
+}
+
+function drawUpicDensityMass(voice, section) {
+  // Dense texture masses (stochastic clouds like Pithoprakta)
+  const numMasses = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let m = 0; m < numMasses; m++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const massW = rnd(60, 120) * scaleFactor;
+    const massH = rnd(30, 50) * scaleFactor;
+    const numStrokes = Math.floor(rnd(40, 100) * features.densityValue);
+
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * 0.5 * scaleFactor);
+
+    for (let i = 0; i < numStrokes; i++) {
+      const x1 = cx + rndGaussian(0, massW / 3);
+      const y1 = cy + rndGaussian(0, massH / 3);
+      const angle = rnd(0, TWO_PI);
+      const len = rnd(3, 15) * scaleFactor;
+      line(x1, y1, x1 + cos(angle) * len, y1 + sin(angle) * len);
+    }
+  }
+}
+
+function drawUpicGraphPaper(voice, section) {
+  // Grid overlay like original UPIC screen
+  stroke(features.palette.ink + "22");
+  strokeWeight(0.5 * scaleFactor);
+
+  const gridSize = rnd(15, 25) * scaleFactor;
+
+  // Vertical lines
+  for (let x = section.xStart; x <= section.xEnd; x += gridSize) {
+    line(x, voice.yStart, x, voice.yEnd);
+  }
+  // Horizontal lines
+  for (let y = voice.yStart; y <= voice.yEnd; y += gridSize) {
+    line(section.xStart, y, section.xEnd, y);
+  }
+
+  // Thicker lines at intervals
+  stroke(features.palette.ink + "44");
+  strokeWeight(1 * scaleFactor);
+  for (let x = section.xStart; x <= section.xEnd; x += gridSize * 4) {
+    line(x, voice.yStart, x, voice.yEnd);
+  }
+}
+
+function drawUpicPressureStrokes(voice, section) {
+  // Variable pressure/thickness strokes
+  const numStrokes = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  noFill();
+
+  for (let i = 0; i < numStrokes; i++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 80);
+    const endX = startX + rnd(40, 100) * scaleFactor;
+    const startY = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const endY = rnd(voice.yStart + 10, voice.yEnd - 10);
+
+    // Draw with varying thickness
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = lerp(startX, endX, t);
+      const y = lerp(startY, endY, t);
+      // Pressure varies along stroke
+      const pressure = sin(t * PI) * 3 + 1;
+      stroke(features.palette.ink);
+      strokeWeight(features.lineWeight * pressure * scaleFactor);
+      if (t === 0) {
+        beginShape();
+        vertex(x, y);
+      } else {
+        vertex(x, y);
+      }
+    }
+    endShape();
+  }
+}
+
+function drawUpicStochasticPoints(voice, section) {
+  // Probabilistically distributed points (Xenakis stochastic music)
+  const numPoints = Math.floor(rnd(30, 100) * features.densityValue);
+  const distribution = rndInt(0, 3); // 0=uniform, 1=gaussian, 2=exponential
+
+  noStroke();
+  fill(features.palette.ink);
+
+  for (let i = 0; i < numPoints; i++) {
+    let x, y;
+
+    if (distribution === 0) {
+      // Uniform
+      x = rnd(section.xStart, section.xEnd);
+      y = rnd(voice.yStart, voice.yEnd);
+    } else if (distribution === 1) {
+      // Gaussian (clustered)
+      const cx = (section.xStart + section.xEnd) / 2;
+      const cy = (voice.yStart + voice.yEnd) / 2;
+      x = cx + rndGaussian(0, section.width / 4);
+      y = cy + rndGaussian(0, voice.height / 4);
+    } else {
+      // Exponential (sparse to dense)
+      x = section.xStart + pow(rnd(0, 1), 2) * section.width;
+      y = rnd(voice.yStart, voice.yEnd);
+    }
+
+    const size = rnd(1, 4) * scaleFactor;
+    ellipse(x, y, size, size);
+  }
+}
+
+function drawUpicMathCurves(voice, section) {
+  // Mathematical curves (parabolas, hyperbolas, exponentials)
+  const numCurves = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let c = 0; c < numCurves; c++) {
+    const curveType = rndInt(0, 4);
+    const startX = rnd(section.xStart + 10, section.xEnd - 100);
+    const w = rnd(60, 120) * scaleFactor;
+    const baseY = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const amplitude = rnd(15, 35) * scaleFactor;
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      let y;
+
+      if (curveType === 0) {
+        // Parabola
+        y = baseY - amplitude * 4 * t * (1 - t);
+      } else if (curveType === 1) {
+        // Exponential growth
+        y = baseY - amplitude * (exp(t * 2) - 1) / (exp(2) - 1);
+      } else if (curveType === 2) {
+        // Logarithmic
+        y = baseY - amplitude * log(1 + t * 9) / log(10);
+      } else {
+        // Hyperbolic
+        y = baseY - amplitude / (t + 0.2);
+      }
+
+      vertex(x, constrain(y, voice.yStart, voice.yEnd));
+    }
+    endShape();
+  }
+}
+
+function drawUpicArborescences(voice, section) {
+  // Tree-like branching structures (Xenakis arborescences)
+  const numTrees = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let t = 0; t < numTrees; t++) {
+    const rootX = rnd(section.xStart + 30, section.xEnd - 30);
+    const rootY = rnd(voice.yStart + voice.height * 0.4, voice.yEnd - 10);
+    const maxDepth = rndInt(3, 5);
+
+    function drawBranch(x, y, angle, depth, len) {
+      if (depth > maxDepth || len < 3) return;
+
+      strokeWeight(features.lineWeight * (1 - depth * 0.15) * scaleFactor);
+      const endX = x + cos(angle) * len * scaleFactor;
+      const endY = y + sin(angle) * len * scaleFactor;
+
+      line(x, y, endX, endY);
+
+      // Branch splits
+      const numBranches = rndInt(2, 3);
+      for (let i = 0; i < numBranches; i++) {
+        const newAngle = angle + rnd(-PI / 3, PI / 3);
+        const newLen = len * rnd(0.5, 0.8);
+        drawBranch(endX, endY, newAngle, depth + 1, newLen);
+      }
+    }
+
+    drawBranch(rootX, rootY, -PI / 2, 0, rnd(20, 40));
+  }
+}
+
+function drawUpicPolytopes(voice, section) {
+  // Geometric spatial structures (inspired by Xenakis Polytopes)
+  const numPolytopes = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+  noFill();
+
+  for (let p = 0; p < numPolytopes; p++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const numVertices = rndInt(4, 8);
+    const radius = rnd(20, 40) * scaleFactor;
+    const vertices = [];
+
+    // Generate vertices
+    for (let i = 0; i < numVertices; i++) {
+      const angle = (i / numVertices) * TWO_PI + rnd(-0.2, 0.2);
+      const r = radius * rnd(0.7, 1.3);
+      vertices.push({
+        x: cx + cos(angle) * r,
+        y: cy + sin(angle) * r * 0.6
+      });
+    }
+
+    // Connect all vertices (complete graph style)
+    for (let i = 0; i < vertices.length; i++) {
+      for (let j = i + 1; j < vertices.length; j++) {
+        if (rndBool(0.6)) {
+          line(vertices[i].x, vertices[i].y, vertices[j].x, vertices[j].y);
+        }
+      }
+    }
+  }
+}
+
+function drawUpicGranularCloud(voice, section) {
+  // Dense granular synthesis representation
+  const cx = rnd(section.xStart + 50, section.xEnd - 50);
+  const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+  const cloudW = rnd(80, 150) * scaleFactor;
+  const cloudH = rnd(30, 50) * scaleFactor;
+  const numGrains = Math.floor(rnd(100, 300) * features.densityValue);
+
+  noStroke();
+
+  for (let i = 0; i < numGrains; i++) {
+    const gx = cx + rndGaussian(0, cloudW / 3);
+    const gy = cy + rndGaussian(0, cloudH / 3);
+    const size = rnd(0.5, 2) * scaleFactor;
+    const alpha = rnd(0.3, 0.8);
+
+    fill(features.palette.ink + hex(Math.floor(alpha * 255), 2));
+    ellipse(gx, gy, size, size);
+  }
+}
+
+function drawUpicProbabilityBands(voice, section) {
+  // Probability distribution bands
+  const numBands = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  for (let b = 0; b < numBands; b++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 100);
+    const endX = startX + rnd(60, 120) * scaleFactor;
+    const centerY = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const maxSpread = rnd(15, 30) * scaleFactor;
+
+    // Draw probability envelope
+    noStroke();
+    fill(features.palette.ink + "33");
+
+    beginShape();
+    // Top edge
+    for (let t = 0; t <= 1; t += 0.05) {
+      const x = lerp(startX, endX, t);
+      const spread = maxSpread * sin(t * PI);
+      vertex(x, centerY - spread);
+    }
+    // Bottom edge (reverse)
+    for (let t = 1; t >= 0; t -= 0.05) {
+      const x = lerp(startX, endX, t);
+      const spread = maxSpread * sin(t * PI);
+      vertex(x, centerY + spread);
+    }
+    endShape(CLOSE);
+
+    // Center line
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+    line(startX, centerY, endX, centerY);
+  }
+}
+
+function drawUpicAngularTransforms(voice, section) {
+  // Angular line transformations
+  const numTransforms = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+  noFill();
+
+  for (let t = 0; t < numTransforms; t++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 80);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const numSegments = rndInt(4, 8);
+    const segmentLen = rnd(10, 25) * scaleFactor;
+
+    let x = startX;
+    let currentY = y;
+    let angle = 0;
+
+    beginShape();
+    vertex(x, currentY);
+
+    for (let i = 0; i < numSegments; i++) {
+      angle += rnd(-PI / 3, PI / 3);
+      x += cos(angle) * segmentLen;
+      currentY += sin(angle) * segmentLen;
+      currentY = constrain(currentY, voice.yStart + 5, voice.yEnd - 5);
+      vertex(x, currentY);
+    }
+    endShape();
+  }
+}
+
+function drawUpicWavePages(voice, section) {
+  // UPIC "page" segments with waveforms
+  const numPages = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+  const pageW = section.width / (numPages + 1);
+
+  for (let p = 0; p < numPages; p++) {
+    const x = section.xStart + (p + 0.5) * pageW;
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = pageW * 0.6;
+    const h = rnd(15, 30) * scaleFactor;
+
+    // Page border
+    stroke(features.palette.ink + "44");
+    strokeWeight(0.5 * scaleFactor);
+    noFill();
+    rect(x - w / 2, y - h, w, h * 2, 2 * scaleFactor);
+
+    // Waveform inside
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.03) {
+      const px = x - w / 2 + t * w;
+      const py = y + sin(t * TWO_PI * rnd(2, 5)) * h * 0.7;
+      vertex(px, py);
+    }
+    endShape();
+  }
+}
+
+function drawUpicRotations(voice, section) {
+  // Rotational transformations
+  const cx = rnd(section.xStart + 50, section.xEnd - 50);
+  const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+  const numRotations = rndInt(3, 6);
+  const baseRadius = rnd(20, 35) * scaleFactor;
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 0.7 * scaleFactor);
+  noFill();
+
+  // Original shape
+  const shapePoints = [];
+  const numPoints = rndInt(3, 5);
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * TWO_PI;
+    const r = baseRadius * rnd(0.5, 1);
+    shapePoints.push({ angle, r });
+  }
+
+  // Draw rotated copies
+  for (let rot = 0; rot < numRotations; rot++) {
+    const rotAngle = (rot / numRotations) * TWO_PI;
+    const alpha = 1 - rot * 0.15;
+    stroke(features.palette.ink + hex(Math.floor(alpha * 255), 2));
+
+    beginShape();
+    for (const pt of shapePoints) {
+      const x = cx + cos(pt.angle + rotAngle) * pt.r;
+      const y = cy + sin(pt.angle + rotAngle) * pt.r * 0.6;
+      vertex(x, y);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawUpicParallelStreams(voice, section) {
+  // Multiple parallel voice streams
+  const numStreams = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+  const streamSpacing = voice.height / (numStreams + 1);
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let s = 0; s < numStreams; s++) {
+    const baseY = voice.yStart + (s + 1) * streamSpacing;
+    const startX = rnd(section.xStart + 10, section.xStart + 30);
+    const endX = rnd(section.xEnd - 30, section.xEnd - 10);
+
+    strokeWeight(features.lineWeight * rnd(0.5, 1.2) * scaleFactor);
+
+    beginShape();
+    for (let x = startX; x <= endX; x += 5 * scaleFactor) {
+      const y = baseY + rndGaussian(0, 3 * scaleFactor);
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawUpicSifted(voice, section) {
+  // "Sifted" or randomized note patterns (Xenakis sieves)
+  const numElements = Math.floor(rnd(20, 50) * features.densityValue);
+  const sievePattern = rndInt(2, 5); // Every nth element emphasized
+
+  noFill();
+
+  for (let i = 0; i < numElements; i++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 10);
+    const y = rnd(voice.yStart + 5, voice.yEnd - 5);
+    const isEmphasized = i % sievePattern === 0;
+
+    if (isEmphasized) {
+      stroke(features.palette.ink);
+      strokeWeight(features.lineWeight * 1.5 * scaleFactor);
+      const size = rnd(4, 8) * scaleFactor;
+      ellipse(x, y, size, size);
+    } else {
+      stroke(features.palette.ink + "66");
+      strokeWeight(features.lineWeight * 0.5 * scaleFactor);
+      const size = rnd(2, 4) * scaleFactor;
+      point(x, y);
+    }
+  }
+}
+
+function drawUpicArchitectural(voice, section) {
+  // Architectural/spatial structures (Polytope de Montréal influence)
+  const numStructures = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let s = 0; s < numStructures; s++) {
+    const baseX = rnd(section.xStart + 30, section.xEnd - 80);
+    const baseY = voice.yEnd - 10;
+    const structW = rnd(50, 100) * scaleFactor;
+    const structH = rnd(30, 50) * scaleFactor;
+
+    // Architectural frame
+    line(baseX, baseY, baseX, baseY - structH);
+    line(baseX + structW, baseY, baseX + structW, baseY - structH);
+    line(baseX, baseY - structH, baseX + structW / 2, baseY - structH - 15 * scaleFactor);
+    line(baseX + structW, baseY - structH, baseX + structW / 2, baseY - structH - 15 * scaleFactor);
+
+    // Interior lines (light beams)
+    strokeWeight(features.lineWeight * 0.5 * scaleFactor);
+    const numBeams = rndInt(3, 6);
+    for (let b = 0; b < numBeams; b++) {
+      const bx = baseX + rnd(5, structW - 5);
+      line(bx, baseY - structH * 0.2, baseX + structW / 2 + rnd(-10, 10), baseY - structH - 10 * scaleFactor);
+    }
+  }
+}
+
+function drawUpicLogisticMap(voice, section) {
+  // Chaos theory curves (logistic map visualization)
+  const startX = rnd(section.xStart + 10, section.xEnd - 120);
+  const w = rnd(80, 140) * scaleFactor;
+  const baseY = rnd(voice.yStart + 20, voice.yEnd - 20);
+  const amplitude = rnd(15, 30) * scaleFactor;
+  const r = rnd(3.5, 3.9); // Chaotic regime
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+  noFill();
+
+  let x_n = 0.5;
+  beginShape();
+  for (let i = 0; i < 100; i++) {
+    const px = startX + (i / 100) * w;
+    const py = baseY - x_n * amplitude;
+    vertex(px, py);
+    x_n = r * x_n * (1 - x_n); // Logistic map iteration
+  }
+  endShape();
+}
+
+function drawUpicHarmonicSeries(voice, section) {
+  // Overtone series visualization
+  const fundamental = rnd(voice.yEnd - 15, voice.yEnd - 5);
+  const startX = rnd(section.xStart + 20, section.xEnd - 100);
+  const w = rnd(60, 100) * scaleFactor;
+  const numPartials = rndInt(5, 10);
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let p = 1; p <= numPartials; p++) {
+    const y = fundamental - (voice.height - 20) * log(p) / log(numPartials + 1);
+    const alpha = 1 - (p - 1) * 0.08;
+    const thickness = features.lineWeight * (1 - (p - 1) * 0.08);
+
+    stroke(features.palette.ink + hex(Math.floor(alpha * 255), 2));
+    strokeWeight(thickness * scaleFactor);
+    line(startX, y, startX + w, y);
+
+    // Partial number
+    if (p <= 5) {
+      noStroke();
+      fill(features.palette.ink + "88");
+      textSize(5 * scaleFactor);
+      textAlign(RIGHT, CENTER);
+      text(p.toString(), startX - 5 * scaleFactor, y);
+    }
   }
 }
 
@@ -5101,8 +5655,32 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "upic":
-      drawUpicArcs(voice, section);
+      // Enhanced UPIC mode v3.5.0 - Xenakis stochastic/architectural notation
+      // Primary structural element (choose one)
+      const upicPrimary = rndInt(0, 6);
+      switch (upicPrimary) {
+        case 0: drawUpicArcs(voice, section); break;
+        case 1: drawUpicDensityMass(voice, section); break;
+        case 2: drawUpicGlissandiBands(voice, section); break;
+        case 3: drawUpicPolytopes(voice, section); break;
+        case 4: drawUpicGranularCloud(voice, section); break;
+        case 5: drawUpicMathCurves(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
       if (rndBool(0.4)) drawUpicRuledLines(voice, section);
+      if (rndBool(0.25)) drawUpicGraphPaper(voice, section);
+      if (rndBool(0.4)) drawUpicPressureStrokes(voice, section);
+      if (rndBool(0.35)) drawUpicStochasticPoints(voice, section);
+      if (rndBool(0.3)) drawUpicArborescences(voice, section);
+      if (rndBool(0.35)) drawUpicProbabilityBands(voice, section);
+      if (rndBool(0.3)) drawUpicAngularTransforms(voice, section);
+      if (rndBool(0.25)) drawUpicWavePages(voice, section);
+      if (rndBool(0.25)) drawUpicRotations(voice, section);
+      if (rndBool(0.35)) drawUpicParallelStreams(voice, section);
+      if (rndBool(0.3)) drawUpicSifted(voice, section);
+      if (rndBool(0.2)) drawUpicArchitectural(voice, section);
+      if (rndBool(0.25)) drawUpicLogisticMap(voice, section);
+      if (rndBool(0.2)) drawUpicHarmonicSeries(voice, section);
       break;
 
     case "cluster":
