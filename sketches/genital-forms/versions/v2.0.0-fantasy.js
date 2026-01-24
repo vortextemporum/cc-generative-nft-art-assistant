@@ -1,5 +1,5 @@
 /**
- * GENITAL FORMS v2.1.0 - Fantasy Variety Edition
+ * GENITAL FORMS v2.0.0 - Fantasy Variety Edition
  * Procedural generation of abstract anatomical & fantasy sculptures
  * Now with dragon scales, tentacles, multi-forms, and humorous touches!
  *
@@ -258,7 +258,7 @@ const BACKGROUNDS = {
 
 // ============ SPECIAL TRAITS ============
 const SPECIAL_TRAITS = {
-  googlyEyes: { name: 'Googly Eyes', probability: 0.03, description: 'Comically googly eyes added' },
+  googlyEyes: { name: 'Googly Eyes', probability: 0.08, description: 'Comically googly eyes added' },
   glitter: { name: 'Glitter Bomb', probability: 0.1, description: 'Sparkles everywhere' },
   rainbow: { name: 'Rainbow Mode', probability: 0.05, description: 'Full spectrum coloring' },
   veiny: { name: 'Extra Veiny', probability: 0.15, description: 'Pronounced surface veins' },
@@ -388,20 +388,15 @@ function generateTesticles(baseRadius, shaftLength, rng, params) {
 }
 
 function generateVulvicForm(params, rng) {
-  // Anatomically-informed vulvic form with labia majora, minora, clitoral hood
   const geometry = new THREE.BufferGeometry();
-  const segments = params.segments || 36;
-  const rings = params.rings || 28;
+  const segments = params.segments || 32;
+  const rings = params.rings || 20;
 
-  // Anatomical dimensions with natural variation
-  const overallHeight = 0.9 + rng() * 0.3;
-  const overallWidth = 0.5 + rng() * 0.2;
-  const labiaMajoraThickness = 0.12 + rng() * 0.06; // Outer lip fullness
-  const labiaMajoraSeparation = 0.08 + rng() * 0.04; // Gap between outer lips
-  const labiaMnoraProminence = 0.3 + rng() * 0.5; // How much inner lips protrude
-  const clitHoodSize = 0.06 + rng() * 0.04;
-  const vestibuleDepth = 0.1 + rng() * 0.08;
-  const asymmetry = (rng() - 0.5) * 0.15; // Natural asymmetry
+  const height = 0.8 + rng() * 0.4;
+  const width = 0.3 + rng() * 0.2;
+  const depth = 0.15 + rng() * 0.1;
+  const labiaSize = 0.5 + rng() * 0.5;
+  const clitSize = 0.05 + rng() * 0.05;
 
   const positions = [];
   const normals = [];
@@ -409,93 +404,36 @@ function generateVulvicForm(params, rng) {
   const indices = [];
 
   for (let ring = 0; ring <= rings; ring++) {
-    const t = ring / rings; // 0 = bottom, 1 = top
-    const y = (t - 0.5) * overallHeight;
-
-    // Vertical profile - diamond/almond shape
-    const verticalProfile = Math.sin(t * Math.PI); // Widest in middle
-    const topTaper = t > 0.7 ? Math.pow(1 - (t - 0.7) / 0.3, 0.7) : 1;
-    const bottomTaper = t < 0.2 ? Math.pow(t / 0.2, 0.8) : 1;
+    const t = ring / rings;
+    const y = (t - 0.5) * height;
 
     for (let seg = 0; seg <= segments; seg++) {
       const s = seg / segments;
       const theta = s * Math.PI * 2;
 
-      // Theta: 0 = front center, PI/2 = right, PI = back, 3PI/2 = left
-      const cosT = Math.cos(theta);
-      const sinT = Math.sin(theta);
+      let radius = width * (0.8 + 0.2 * Math.cos(theta * 2));
+      const taper = 1 - Math.pow(Math.abs(t - 0.5) * 2, 2) * 0.5;
+      radius *= taper;
 
-      // Base width varies around circumference
-      let baseWidth = overallWidth * 0.5;
+      const cleft = Math.max(0, Math.cos(theta)) * depth * labiaSize;
 
-      // Labia majora - two rounded outer mounds
-      // Create bilateral bulges on left and right sides
-      const rightBulge = Math.max(0, Math.sin(theta - Math.PI * 0.5)); // Peak at right
-      const leftBulge = Math.max(0, Math.sin(theta + Math.PI * 0.5));  // Peak at left
-      const labiaMajoraEffect = (rightBulge + leftBulge) * labiaMajoraThickness * verticalProfile;
-
-      // Central cleft - depression in front center
-      const frontness = Math.max(0, cosT); // 1 at front, 0 at back
-      const cleftDepth = frontness * (labiaMajoraSeparation + vestibuleDepth * 0.5);
-
-      // Labia minora - ruffled inner folds visible in the cleft
-      // Only visible from the front, creates the characteristic ruffled edge
-      let labiaminoraRuffle = 0;
-      if (frontness > 0.3 && t > 0.15 && t < 0.85) {
-        const ruffleT = (t - 0.15) / 0.7;
-        const ruffleProfile = Math.sin(ruffleT * Math.PI);
-        // Wavy ruffled edge
-        const ruffle = Math.sin(t * Math.PI * 6 + rng() * 2) * 0.3 + 0.7;
-        labiaminoraRuffle = frontness * labiaMnoraProminence * ruffleProfile * ruffle * 0.04;
-
-        // Asymmetric inner lips
-        if (sinT > 0) {
-          labiaminoraRuffle *= (1 + asymmetry);
-        } else {
-          labiaminoraRuffle *= (1 - asymmetry);
-        }
-      }
-
-      // Clitoral hood bulge at top front
-      let clitHoodBulge = 0;
-      if (t > 0.7 && frontness > 0.5) {
-        const hoodT = (t - 0.7) / 0.25;
-        const hoodProfile = Math.sin(hoodT * Math.PI);
-        clitHoodBulge = hoodProfile * clitHoodSize * frontness;
-      }
-
-      // Combine all effects
-      let radius = baseWidth * verticalProfile * topTaper * bottomTaper;
-      radius += labiaMajoraEffect;
-      radius += clitHoodBulge;
-
-      // Z offset for cleft and depth
-      let zOffset = -cleftDepth * verticalProfile;
-
-      // Add organic noise
       if (params.displacement) {
-        radius += fbm3D(theta * 2, t * 3, params.seed, params.seed, 3) * 0.015;
+        radius += fbm3D(theta, t * 2, params.seed, params.seed, 3) * 0.03;
       }
 
-      // Soft organic variation
-      radius += fbm3D(theta, t * 2, params.seed + 50, params.seed, 2) * 0.01;
-
-      const x = sinT * radius;
-      const z = cosT * radius + zOffset + labiaminoraRuffle;
+      const x = Math.cos(theta) * radius;
+      const z = Math.sin(theta) * radius * 0.5 - cleft;
 
       positions.push(x, y, z);
 
-      // Normal calculation
-      const nx = sinT;
-      const nz = cosT;
-      const nl = Math.sqrt(nx * nx + nz * nz) || 1;
-      normals.push(nx / nl, 0.1, nz / nl);
+      const nx = Math.cos(theta);
+      const nz = Math.sin(theta);
+      normals.push(nx, 0, nz);
 
       uvs.push(s, t);
     }
   }
 
-  // Generate indices
   for (let ring = 0; ring < rings; ring++) {
     for (let seg = 0; seg < segments; seg++) {
       const a = ring * (segments + 1) + seg;
@@ -514,33 +452,22 @@ function generateVulvicForm(params, rng) {
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
 
-  // Extra details
   const extras = [];
-
-  // Clitoris - small rounded bead under the hood
-  const clitSize = 0.025 + rng() * 0.015;
   extras.push({
-    position: [0, overallHeight * 0.38, vestibuleDepth * 0.3],
-    scale: [clitSize, clitSize * 0.7, clitSize * 0.8],
+    position: [0, height * 0.35, -depth * 0.5],
+    scale: [clitSize, clitSize * 0.8, clitSize],
     type: 'sphere'
   });
 
-  // Inner labia detail - soft curved shapes on each side
-  const innerLabiaHeight = overallHeight * 0.4;
-  const innerLabiaWidth = 0.015 + rng() * 0.01;
-
-  // Right inner labium
   extras.push({
-    position: [overallWidth * 0.08, 0, vestibuleDepth * 0.2],
-    scale: [innerLabiaWidth, innerLabiaHeight, innerLabiaWidth * 1.5],
-    type: 'sphere'
+    position: [width * 0.15, 0, -depth * 0.3],
+    scale: [0.02, height * 0.3, 0.03],
+    type: 'box'
   });
-
-  // Left inner labium (slightly different for asymmetry)
   extras.push({
-    position: [-overallWidth * 0.08, -overallHeight * 0.02, vestibuleDepth * 0.2],
-    scale: [innerLabiaWidth * (1 + asymmetry * 0.5), innerLabiaHeight * 1.05, innerLabiaWidth * 1.5],
-    type: 'sphere'
+    position: [-width * 0.15, 0, -depth * 0.3],
+    scale: [0.02, height * 0.3, 0.03],
+    type: 'box'
   });
 
   return { main: geometry, extras };
@@ -1232,125 +1159,74 @@ function generateAlienForm(params, rng) {
 }
 
 function generateEmojiForm(params, rng) {
-  // Humorous form with a cute cartoon face
+  // Humorous form with a face!
   // Start with a basic phallic form
   const base = generatePhallicForm(params, rng);
 
   // The eyes and smile will be added as extras
   const extras = [...(base.extras || [])];
 
-  // Smaller, cuter eyes proportional to the glans area
-  const eyeSize = 0.035 + rng() * 0.015;
-  const eyeSpread = 0.055 + rng() * 0.02;
-  const eyeHeight = 0.32 + rng() * 0.05; // On the glans
-  const eyeDepth = 0.14; // Front of form
+  // Add googly eyes near the top
+  const eyeSize = 0.05 + rng() * 0.03;
+  const eyeSpread = 0.08;
+  const eyeHeight = 0.3; // Near the "head"
 
-  // Expression type
-  const expressionType = Math.floor(rng() * 5);
-
-  // Left eye white - flattened for cartoon look
+  // Left eye white
   extras.push({
-    position: [-eyeSpread, eyeHeight, eyeDepth],
-    scale: [eyeSize, eyeSize, eyeSize * 0.4],
+    position: [-eyeSpread, eyeHeight, 0.12],
+    scale: [eyeSize, eyeSize, eyeSize * 0.5],
     type: 'sphere',
     isEyeWhite: true
   });
-
-  // Left pupil - centered or looking direction
-  const lookX = (rng() - 0.5) * eyeSize * 0.3;
-  const lookY = (rng() - 0.5) * eyeSize * 0.2;
+  // Left pupil
   extras.push({
-    position: [-eyeSpread + lookX, eyeHeight + lookY, eyeDepth + eyeSize * 0.3],
-    scale: [eyeSize * 0.4, eyeSize * 0.4, eyeSize * 0.2],
+    position: [-eyeSpread + rng() * 0.02, eyeHeight + rng() * 0.02, 0.14],
+    scale: [eyeSize * 0.5, eyeSize * 0.5, eyeSize * 0.3],
     type: 'sphere',
     isPupil: true
-  });
-
-  // Left highlight
-  extras.push({
-    position: [-eyeSpread + lookX + eyeSize * 0.12, eyeHeight + lookY + eyeSize * 0.1, eyeDepth + eyeSize * 0.4],
-    scale: [eyeSize * 0.12, eyeSize * 0.12, eyeSize * 0.1],
-    type: 'sphere',
-    isHighlight: true
   });
 
   // Right eye white
   extras.push({
-    position: [eyeSpread, eyeHeight, eyeDepth],
-    scale: [eyeSize, eyeSize, eyeSize * 0.4],
+    position: [eyeSpread, eyeHeight, 0.12],
+    scale: [eyeSize, eyeSize, eyeSize * 0.5],
     type: 'sphere',
     isEyeWhite: true
   });
-
-  // Right pupil - same look direction for coherence
+  // Right pupil
   extras.push({
-    position: [eyeSpread + lookX, eyeHeight + lookY, eyeDepth + eyeSize * 0.3],
-    scale: [eyeSize * 0.4, eyeSize * 0.4, eyeSize * 0.2],
+    position: [eyeSpread + rng() * 0.02, eyeHeight + rng() * 0.02, 0.14],
+    scale: [eyeSize * 0.5, eyeSize * 0.5, eyeSize * 0.3],
     type: 'sphere',
     isPupil: true
   });
 
-  // Right highlight
-  extras.push({
-    position: [eyeSpread + lookX + eyeSize * 0.12, eyeHeight + lookY + eyeSize * 0.1, eyeDepth + eyeSize * 0.4],
-    scale: [eyeSize * 0.12, eyeSize * 0.12, eyeSize * 0.1],
-    type: 'sphere',
-    isHighlight: true
-  });
-
-  // Expression variations
-  if (expressionType === 0) {
-    // Happy smile - curved arc of small spheres
-    const smileWidth = eyeSpread * 1.2;
-    const smileY = eyeHeight - eyeSize * 2.5;
-    for (let i = -3; i <= 3; i++) {
-      const t = i / 3;
+  // Smile/expression
+  const smileType = Math.floor(rng() * 4);
+  if (smileType === 0) {
+    // Happy smile - curved line represented by small boxes
+    for (let i = -2; i <= 2; i++) {
       extras.push({
-        position: [t * smileWidth, smileY - Math.abs(t) * 0.02, eyeDepth],
-        scale: [0.012, 0.01, 0.008],
-        type: 'sphere',
+        position: [i * 0.025, 0.15 - Math.abs(i) * 0.01, 0.13],
+        scale: [0.015, 0.008, 0.008],
+        type: 'box',
         isSmile: true
       });
     }
-  } else if (expressionType === 1) {
-    // Surprised O mouth
+  } else if (smileType === 1) {
+    // Surprised O
     extras.push({
-      position: [0, eyeHeight - eyeSize * 2.8, eyeDepth],
-      scale: [0.025, 0.03, 0.015],
+      position: [0, 0.12, 0.13],
+      scale: [0.03, 0.04, 0.02],
       type: 'sphere',
       isSmile: true
     });
-  } else if (expressionType === 2) {
-    // Wink - squish one eye
-    extras[0].scale[1] *= 0.25; // Left eye squished
-    extras[1].scale[1] *= 0.3;
-    extras[2].scale[1] *= 0.3;
-    // Add blush
-    extras.push({
-      position: [-eyeSpread * 1.3, eyeHeight - eyeSize * 0.8, eyeDepth - 0.01],
-      scale: [0.025, 0.012, 0.005],
-      type: 'sphere',
-      isBlush: true
-    });
-    extras.push({
-      position: [eyeSpread * 1.3, eyeHeight - eyeSize * 0.8, eyeDepth - 0.01],
-      scale: [0.025, 0.012, 0.005],
-      type: 'sphere',
-      isBlush: true
-    });
-  } else if (expressionType === 3) {
-    // Sleepy/content - half-closed eyes
-    extras[0].scale[1] *= 0.5;
-    extras[3].scale[1] *= 0.5;
-    // Small content smile
-    extras.push({
-      position: [0, eyeHeight - eyeSize * 2.5, eyeDepth],
-      scale: [0.03, 0.008, 0.006],
-      type: 'box',
-      isSmile: true
-    });
+  } else if (smileType === 2) {
+    // Wink - one eye closed
+    extras[0].scale[1] *= 0.3; // Squish left eye
+    extras[1].position[1] -= 0.02; // Move pupil
   }
-  // expressionType 4: neutral face (no mouth)
+  // Type 3: neutral/no mouth
 
   return { main: base.main, extras, isEmoji: true };
 }
@@ -1741,36 +1617,24 @@ function generateForm() {
       let geom;
       let extraMaterial = material.clone();
 
-      // Handle eye and face parts differently
+      // Handle eye parts differently
       if (extra.isEyeWhite) {
         extraMaterial = new THREE.MeshStandardMaterial({
-          color: 0xfafafa,
-          roughness: 0.2,
-          metalness: 0.05
+          color: 0xffffff,
+          roughness: 0.3,
+          metalness: 0
         });
       } else if (extra.isPupil) {
         extraMaterial = new THREE.MeshStandardMaterial({
           color: 0x111111,
-          roughness: 0.1,
+          roughness: 0.2,
           metalness: 0
-        });
-      } else if (extra.isHighlight) {
-        extraMaterial = new THREE.MeshBasicMaterial({
-          color: 0xffffff
         });
       } else if (extra.isSmile) {
         extraMaterial = new THREE.MeshStandardMaterial({
-          color: 0x222222,
-          roughness: 0.4,
+          color: 0x333333,
+          roughness: 0.5,
           metalness: 0
-        });
-      } else if (extra.isBlush) {
-        extraMaterial = new THREE.MeshStandardMaterial({
-          color: 0xff9999,
-          roughness: 0.8,
-          metalness: 0,
-          transparent: true,
-          opacity: 0.6
         });
       }
 
@@ -1797,14 +1661,13 @@ function generateForm() {
         mesh.castShadow = true;
         mesh.receiveShadow = true;
 
-        // Hide face parts if googly eyes disabled
-        const isFacePart = extra.isEyeWhite || extra.isPupil || extra.isSmile || extra.isHighlight || extra.isBlush;
-        if (isFacePart && !googlyEyesEnabled) {
+        // Hide eyes if not emoji form or googly eyes disabled
+        if ((extra.isEyeWhite || extra.isPupil || extra.isSmile) && !googlyEyesEnabled) {
           mesh.visible = false;
         }
 
         // Tag for toggling
-        if (isFacePart) {
+        if (extra.isEyeWhite || extra.isPupil || extra.isSmile) {
           mesh.userData.isGoogly = true;
         }
 
@@ -1844,76 +1707,56 @@ function generateForm() {
 }
 
 function addGooglyEyes(group, scale) {
-  // Get bounds to position eyes intelligently
+  const eyeSize = 0.06 * scale;
+  const eyeSpread = 0.1 * scale;
+  const eyeHeight = 0.25 * scale;
+
+  // Get bounds to position eyes
   const box = new THREE.Box3().setFromObject(group);
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
+  const frontZ = box.max.z;
 
-  // Scale eyes relative to form size - smaller and more proportional
-  const eyeSize = Math.min(size.x, size.z) * 0.15 * scale;
-  const eyeSpread = size.x * 0.2;
-  const eyeHeight = center.y + size.y * 0.25; // Upper third of form
-  const frontZ = box.max.z + eyeSize * 0.3; // Slightly in front
-
-  // White of eye with slight shine
   const whiteMat = new THREE.MeshStandardMaterial({
-    color: 0xfafafa,
-    roughness: 0.2,
-    metalness: 0.05
+    color: 0xffffff,
+    roughness: 0.3
   });
-
-  // Black pupil
   const pupilMat = new THREE.MeshStandardMaterial({
     color: 0x111111,
-    roughness: 0.1,
-    metalness: 0
+    roughness: 0.2
   });
 
-  // Create eye helper function
-  function createEye(xPos, lookDir) {
-    // Eye white - slightly flattened sphere
-    const white = new THREE.Mesh(
-      new THREE.SphereGeometry(eyeSize, 20, 20),
-      whiteMat
-    );
-    white.scale.z = 0.7; // Flatten
-    white.position.set(xPos, eyeHeight, frontZ);
-    white.userData.isGoogly = true;
-    group.add(white);
+  // Left eye
+  const leftWhite = new THREE.Mesh(
+    new THREE.SphereGeometry(eyeSize, 16, 16),
+    whiteMat
+  );
+  leftWhite.position.set(-eyeSpread, eyeHeight, frontZ);
+  leftWhite.userData.isGoogly = true;
+  group.add(leftWhite);
 
-    // Pupil - offset randomly for googly effect
-    const pupilOffsetX = (R() - 0.5) * eyeSize * 0.4;
-    const pupilOffsetY = (R() - 0.5) * eyeSize * 0.3;
-    const pupil = new THREE.Mesh(
-      new THREE.SphereGeometry(eyeSize * 0.45, 16, 16),
-      pupilMat
-    );
-    pupil.position.set(
-      xPos + pupilOffsetX,
-      eyeHeight + pupilOffsetY,
-      frontZ + eyeSize * 0.5
-    );
-    pupil.userData.isGoogly = true;
-    group.add(pupil);
+  const leftPupil = new THREE.Mesh(
+    new THREE.SphereGeometry(eyeSize * 0.5, 12, 12),
+    pupilMat
+  );
+  leftPupil.position.set(-eyeSpread + R() * 0.02, eyeHeight, frontZ + eyeSize * 0.7);
+  leftPupil.userData.isGoogly = true;
+  group.add(leftPupil);
 
-    // Tiny highlight dot for cartoonish look
-    const highlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const highlight = new THREE.Mesh(
-      new THREE.SphereGeometry(eyeSize * 0.12, 8, 8),
-      highlightMat
-    );
-    highlight.position.set(
-      xPos + pupilOffsetX + eyeSize * 0.15,
-      eyeHeight + pupilOffsetY + eyeSize * 0.15,
-      frontZ + eyeSize * 0.65
-    );
-    highlight.userData.isGoogly = true;
-    group.add(highlight);
-  }
+  // Right eye
+  const rightWhite = new THREE.Mesh(
+    new THREE.SphereGeometry(eyeSize, 16, 16),
+    whiteMat
+  );
+  rightWhite.position.set(eyeSpread, eyeHeight, frontZ);
+  rightWhite.userData.isGoogly = true;
+  group.add(rightWhite);
 
-  // Add both eyes
-  createEye(-eyeSpread, 1);
-  createEye(eyeSpread, -1);
+  const rightPupil = new THREE.Mesh(
+    new THREE.SphereGeometry(eyeSize * 0.5, 12, 12),
+    pupilMat
+  );
+  rightPupil.position.set(eyeSpread + R() * 0.02, eyeHeight, frontZ + eyeSize * 0.7);
+  rightPupil.userData.isGoogly = true;
+  group.add(rightPupil);
 }
 
 function setupEventListeners() {

@@ -4,7 +4,7 @@
 
 **Genital Forms** is a procedural 3D generative art piece exploring human anatomical forms across a full spectrum - phallic, vulvic, intersex, ambiguous, and abstract interpretations. Built with Three.js, it combines procedural geometry generation with soft-body physics simulation.
 
-**Current Version:** 1.0.0
+**Current Version:** 2.1.0
 
 ## File Structure
 
@@ -24,13 +24,27 @@ genital-forms/
 
 ## Key Concepts
 
-### 1. Form Types (6 categories)
-- **Phallic** (common) - Shaft, glans, testicles with anatomical variation
-- **Vulvic** (common) - Labia, clitoris, organic folds
-- **Intersex** (rare) - Blended characteristics
-- **Ambiguous** (rare) - Organic blobs with suggestive forms
-- **Abstract** (legendary) - Surreal twisted forms
-- **Morphic** (legendary) - Continuously morphing between types
+### 1. Form Types (12 categories!)
+
+**Anatomical:**
+- **Phallic** (common) - Classic Shaft with glans, testicles
+- **Vulvic** (common) - Bloom Fold with labia, clitoris
+- **Intersex** (rare) - Spectrum Blend of characteristics
+- **Ambiguous** (rare) - Suggestive Blob with organic forms
+
+**Surreal:**
+- **Abstract** (legendary) - Twisted Dream parametric forms
+- **Morphic** (legendary) - Shapeshifter between types
+
+**Fantasy:**
+- **Draconic** (rare) - Dragon's Pride with scales, ridges, knot
+- **Tentacular** (rare) - Kraken's Kiss with suckers
+- **Hydra** (legendary) - Many-Headed Beast branching form
+- **Knotted** (uncommon) - Love Knot at base
+- **Alien** (legendary) - Xenomorph Delight bio-organic
+
+**Humorous:**
+- **Emoji** (legendary) - Happy Ending with face expressions
 
 ### 2. Procedural Geometry
 Each form is generated from scratch using parametric equations:
@@ -41,11 +55,13 @@ Each form is generated from scratch using parametric equations:
 - `generateAbstractForm()` - Twisted parametric surface
 - `generateMorphicForm()` - Runtime interpolation
 
-### 3. Materials (20 types)
+### 3. Materials (25 types)
 Organized by category:
-- **Natural:** clay, ceramic, terracotta, marble, bronze, jade
-- **Synthetic:** plastic, rubber, silicone, chrome, neon
-- **Surreal:** glass, liquid, galaxy, iridescent, flesh
+- **Natural:** Clay, Ceramic, Terracotta, Marble, Bronze, Jade, Obsidian
+- **Synthetic:** Bubblegum Pink, Midnight Rubber, Body Safe Silicone, Chrome Stallion, Rave Ready
+- **Fantasy:** Dragon Scale, Deep Sea Purple, Xenomorph Slime, Molten Core, Frost Giant
+- **Surreal:** Glass Dildo, Mercury Dreams, Cosmic Void, Unicorn Horn, Realistic Flesh
+- **Humorous:** Pride Parade (rainbow), 24K Gold Member, Gummy Goodness
 
 ### 4. Soft-Body Physics
 Simple spring-mass system:
@@ -54,12 +70,23 @@ Simple spring-mass system:
 - Subtle wave motion adds life
 - Auto-enabled for soft materials (silicone, rubber, flesh, liquid)
 
-### 5. Rarity System
+### 5. Special Traits
+Random chance for additional features:
+- **Googly Eyes** (8%) - Comical googly eyes, toggle with G
+- **Glitter Bomb** (10%) - Sparkly metallic surface
+- **Rainbow Mode** (5%) - Full spectrum coloring
+- **Extra Veiny** (15%) - Pronounced surface veins
+- **Ribbed** (12%) - Pleasure ridges texture
+- **Glow in Dark** (7%) - Emissive glow effect
+- **Comically Large** (5%) - 50-100% oversized
+
+### 6. Rarity System
 Multi-factor scoring:
 - Form type rarity
 - Material rarity
 - Render style rarity
-- Composition (Paired = legendary)
+- Composition (Paired = rare, Triple Threat = legendary)
+- Special traits (+2 each)
 
 ## Controls
 
@@ -69,6 +96,7 @@ Multi-factor scoring:
 | S | Save PNG |
 | P | Toggle physics |
 | A | Toggle auto-rotate |
+| G | Toggle googly eyes |
 | Drag | Rotate view |
 | Scroll | Zoom |
 
