@@ -1,4 +1,4 @@
-// Molecular Brush v2.8.0 - New Palettes (neon, retro, desert, arctic, midnight)
+// Molecular Brush v2.7.1 - Rarity Curves & Cleanup
 // Variable aspect ratios, batch export, rarity distribution visualization
 // Art Blocks compatible with tokenData.hash
 
@@ -179,76 +179,6 @@ const palettes = {
     colors: [[200, 162, 200], [186, 85, 211], [218, 112, 214], [221, 160, 221], [238, 130, 238], [255, 182, 193]],
     accent: [148, 0, 211],
     paper: "warm",
-    rarity: "rare"
-  },
-
-  // Neon & Cyberpunk
-  neonCity: {
-    colors: [[255, 0, 255], [0, 255, 255], [255, 0, 128], [128, 0, 255], [0, 255, 128], [255, 255, 0]],
-    accent: [255, 0, 100],
-    paper: "cool",
-    rarity: "legendary"
-  },
-  electricDream: {
-    colors: [[0, 255, 200], [255, 0, 150], [100, 0, 255], [255, 100, 0], [0, 200, 255], [200, 255, 0]],
-    accent: [255, 50, 200],
-    paper: "cool",
-    rarity: "uncommon"
-  },
-
-  // Retro & Synthwave
-  retroSunset: {
-    colors: [[255, 95, 109], [255, 195, 113], [255, 154, 158], [250, 208, 196], [255, 128, 171], [255, 87, 51]],
-    accent: [255, 0, 80],
-    paper: "warm",
-    rarity: "uncommon"
-  },
-  synthwave: {
-    colors: [[180, 70, 180], [255, 100, 150], [100, 200, 255], [255, 180, 100], [150, 100, 200], [255, 150, 200]],
-    accent: [255, 50, 150],
-    paper: "cool",
-    rarity: "common"
-  },
-
-  // Desert & Earth
-  desertDusk: {
-    colors: [[210, 105, 80], [245, 180, 140], [180, 120, 90], [255, 210, 170], [160, 85, 60], [230, 160, 120]],
-    accent: [180, 60, 40],
-    paper: "aged",
-    rarity: "common"
-  },
-  terracotta: {
-    colors: [[200, 100, 80], [180, 80, 60], [220, 140, 100], [160, 70, 50], [240, 180, 140], [140, 60, 45]],
-    accent: [160, 50, 30],
-    paper: "aged",
-    rarity: "common"
-  },
-
-  // Arctic & Winter
-  arcticFrost: {
-    colors: [[200, 230, 255], [180, 210, 240], [220, 240, 255], [160, 200, 230], [240, 250, 255], [140, 180, 210]],
-    accent: [100, 180, 255],
-    paper: "cool",
-    rarity: "uncommon"
-  },
-  frozenBerry: {
-    colors: [[200, 180, 220], [180, 140, 200], [220, 200, 240], [160, 120, 180], [240, 220, 250], [140, 100, 160]],
-    accent: [180, 80, 180],
-    paper: "cool",
-    rarity: "rare"
-  },
-
-  // Midnight & Jewel Tones
-  midnightGarden: {
-    colors: [[40, 60, 100], [80, 50, 90], [50, 80, 70], [100, 60, 80], [60, 40, 80], [70, 90, 100]],
-    accent: [150, 100, 180],
-    paper: "cool",
-    rarity: "legendary"
-  },
-  jewelBox: {
-    colors: [[140, 20, 60], [20, 80, 140], [80, 140, 20], [140, 80, 20], [80, 20, 140], [20, 140, 80]],
-    accent: [200, 50, 100],
-    paper: "aged",
     rarity: "rare"
   }
 };

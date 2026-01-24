@@ -2,6 +2,32 @@
 
 All notable changes to Molecular Brush will be documented in this file.
 
+## [2.8.0] - 2026-01-24
+
+### Added
+- **10 New Palettes** with diverse aesthetics:
+  - **neonCity** (legendary) - Vibrant magenta, cyan, electric colors for cyberpunk feel
+  - **electricDream** (rare) - Bright neon mix of teal, magenta, purple, orange
+  - **retroSunset** (rare) - 80s synthwave sunset with coral, peach, pink tones
+  - **synthwave** (uncommon) - Softer retro wave colors, purple and pink dominant
+  - **desertDusk** (uncommon) - Warm southwestern terracotta, sand, rust
+  - **terracotta** (common) - Earthy clay reds and oranges
+  - **arcticFrost** (uncommon) - Icy light blues and pale whites
+  - **frozenBerry** (rare) - Cool lavender and purple winter tones
+  - **midnightGarden** (rare) - Deep jewel tones, dark and moody
+  - **jewelBox** (legendary) - Rich saturated jewel colors: ruby, sapphire, emerald
+
+### Changed
+- Total palette count: 14 → 24 palettes
+- Rebalanced rarity distribution for better gameplay:
+  - electricDream: rare → uncommon
+  - retroSunset: rare → uncommon
+  - synthwave: uncommon → common
+  - desertDusk: uncommon → common
+  - midnightGarden: rare → legendary
+  - jewelBox: legendary → rare
+- Final distribution: 2 legendary / 6 rare / 7 uncommon / 9 common
+
 ## [2.7.1] - 2026-01-24
 
 ### Added
