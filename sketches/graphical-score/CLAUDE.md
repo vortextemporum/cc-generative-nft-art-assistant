@@ -1,11 +1,11 @@
-# Graphical Score v3.0.0 - AI Assistant Guide
+# Graphical Score v3.1.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.0.1
+**Current Version:** 3.1.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -90,6 +90,18 @@ graphical-score/
 - `drawChanceCurves()`, `drawChanceDots()`, `drawChanceIntersections()`
 - `drawSpectralBands()`, `drawSpectralWaterfall()`, `drawFormantContours()`, `drawAttackTransients()`, `drawResonanceBells()`, `drawHarmonicStacks()`
 - `drawSpiralPaths()`, `drawCircularNotation()`, `drawRitualSymbols()`
+
+### Enhanced Spiral Mode (v3.1.0)
+- `drawSpiralVariants()` - Logarithmic, double, arm, and Fermat spirals
+- `drawSpiralText()` - Text along spiral path (Crumb-style poetic fragments)
+- `drawSegmentedSpiral()` - Broken spirals with rest gaps
+- `drawSpiralNoteheads()` - Musical noteheads (filled, open, diamond, X, triangle)
+- `drawMysticalSymbols()` - Zodiac, planetary, alchemical symbols
+- `drawMandalaPattern()` - Layered circular structures with rotational symmetry
+- `drawFibonacciSpiral()` - Golden ratio spiral with boxes
+- `drawSpiralWedges()` - Spirals within wedge sections
+- `drawCrumbEye()` - "Eye of the Whale" circular imagery
+- `drawSpiralBeaming()` - Beamed note groups along spiral curves
 
 ### Mode Drawing (v3.0.0 New Modes)
 - **Treatise**: `drawTreatiseGeometric()`, `drawTreatiseNumbers()`, `drawTreatiseThickLines()`

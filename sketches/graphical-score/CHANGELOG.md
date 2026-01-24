@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-01-24
+
+### Added
+
+**Major Enhancement to Spiral Mode** - 10 new Crumb-inspired elements:
+
+| Function | Description |
+|----------|-------------|
+| `drawSpiralVariants()` | Multiple spiral types: logarithmic, double, arms, Fermat/sunflower |
+| `drawSpiralText()` | Text along spiral path (poetic fragments like "vox balaenae") |
+| `drawSegmentedSpiral()` | Broken spirals with gaps representing rests |
+| `drawSpiralNoteheads()` | Musical noteheads (filled, open, diamond, X, triangle) along spiral |
+| `drawMysticalSymbols()` | Zodiac, planetary, and alchemical symbols arranged in circles |
+| `drawMandalaPattern()` | Layered circular structures with rotational symmetry |
+| `drawFibonacciSpiral()` | Golden ratio spiral with optional boxes (Crumb's numerology) |
+| `drawSpiralWedges()` | Spirals contained within pie-wedge sections |
+| `drawCrumbEye()` | "Eye of the Whale" imagery with iris, pupil, and notation |
+| `drawSpiralBeaming()` | Note groups connected by beams following spiral curves |
+
+### Changed
+
+- Spiral mode now uses probabilistic layering of primary + secondary elements
+- Updated mode dispatcher with enhanced selection logic
+- Mode weight increased from 0.10 to 0.12
+- Added `manuscript` to spiral's preferred palettes
+
+### Technical
+
+- All new functions respect `scaleFactor` for hi-res rendering
+- Text elements use proper `push()`/`pop()` for rotation transforms
+- Fibonacci spiral draws actual golden ratio boxes when enabled
+
+---
+
 ## [3.0.1] - 2026-01-24
 
 ### Changed
