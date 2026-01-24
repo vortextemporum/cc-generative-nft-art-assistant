@@ -28,6 +28,38 @@
         "to": "index.html",
         "description": "Local libraries (lib/), v1.x features support (physics, boundary, wetness, special effects)",
         "filesChanged": ["index.html", "lib/p5.min.js", "lib/p5.brush.min.js"]
+      },
+      {
+        "date": "2026-01-24",
+        "from": "v2.6.2",
+        "to": "v2.7.0",
+        "description": "Variable aspect ratios (10 options from square to ultra-wide), batch export 20 PNGs with B key",
+        "filesChanged": ["sketch.js", "index.html", "CHANGELOG.md", "CLAUDE.md"]
+      },
+      {
+        "date": "2026-01-24",
+        "from": "v2.7.0",
+        "to": "v2.7.1",
+        "description": "Rarity curves UI, moved v1.x to molecular-watercolor, consistent frame thickness across aspect ratios",
+        "filesChanged": ["sketch.js", "index.html", "CHANGELOG.md"]
+      }
+    ]
+  },
+  "genital-forms": {
+    "edits": [
+      {
+        "date": "2026-01-24",
+        "from": "v1.0.0",
+        "to": "v2.0.0",
+        "description": "Fantasy Variety Edition: 6 new form types (draconic, tentacular, hydra, knotted, alien, emoji), 8 new materials, 7 special traits, improved render quality with ACES tone mapping and shadows, humorous names throughout",
+        "filesChanged": ["sketch.js", "index.html", "CHANGELOG.md", "CLAUDE.md"]
+      },
+      {
+        "date": "2026-01-24",
+        "from": "v2.0.0",
+        "to": "v2.1.0",
+        "description": "Anatomically accurate vulvic form redesign (labia majora/minora, clitoral hood, vestibule), improved googly eyes (smaller, better positioned, reduced probability to 3%), better emoji expressions with highlights and blush",
+        "filesChanged": ["sketch.js", "index.html", "CHANGELOG.md", "CLAUDE.md"]
       }
     ]
   }
