@@ -1,11 +1,11 @@
-# Graphical Score v3.2.0 - AI Assistant Guide
+# Graphical Score v3.3.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.2.0
+**Current Version:** 3.3.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -122,6 +122,28 @@ graphical-score/
 - `drawPedalMarkings()` - Piano pedal brackets
 - `drawBreathMarks()` - Commas, caesuras for pauses
 - `drawHarmonicHalos()` - Concentric overtone rings
+
+### Enhanced Chance Mode (v3.3.0 - Cage)
+- `drawFontanaMixGrid()` - Measurement grid overlay with numbers
+- `drawTransparentOverlays()` - Layered translucent shapes (Variations)
+- `drawIChingHexagrams()` - The 64 I Ching symbols (Music of Changes)
+- `drawStarChartTracings()` - Star dots with connections (Atlas Eclipticalis)
+- `drawSilenceBoxes()` - Empty boxes with "TACET" (4'33")
+- `drawMesosticText()` - Vertical acrostic text patterns
+- `drawRyoanjiTracings()` - Rock-outline curves with multiple tracings
+- `drawPreparedPianoSymbols()` - Bolt, mute, screw notation
+- `drawCageTimeBrackets()` - Flexible time brackets (Number Pieces)
+- `drawChanceOperationMarks()` - Dice, trigrams, coins symbols
+- `drawCircusOverlays()` - Independent overlapping parts
+- `drawIndeterminacySymbols()` - "ad lib.", "?", "~" marks
+- `drawEventNotation()` - Action/event boxes (Happenings)
+- `drawNotationTypes()` - 8 symbol systems (Concert for Piano)
+- `drawMycologicalForms()` - Mushroom shapes (Cage was a mycologist)
+- `drawNumberPieceBrackets()` - Floating time windows
+- `drawRadioStaticDots()` - Dense varying-opacity dots
+- `drawWaterWalkSymbols()` - Object/action notation
+- `drawZenCircles()` - Incomplete Ensō circles
+- `drawAnarchySymbols()` - "free", "any", "∞" freedom marks
 
 ### Mode Drawing (v3.0.0 New Modes)
 - **Treatise**: `drawTreatiseGeometric()`, `drawTreatiseNumbers()`, `drawTreatiseThickLines()`

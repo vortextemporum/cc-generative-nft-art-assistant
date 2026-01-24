@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Chance (Cage) Mode** - 20 new elements inspired by John Cage's graphic scores:
+
+| Function | Inspiration | Description |
+|----------|-------------|-------------|
+| `drawFontanaMixGrid()` | Fontana Mix | Measurement grid overlay with numbered axes |
+| `drawTransparentOverlays()` | Variations | Layered translucent overlapping shapes |
+| `drawIChingHexagrams()` | Music of Changes | The 64 I Ching hexagram symbols |
+| `drawStarChartTracings()` | Atlas Eclipticalis | Star dots with constellation-like connections |
+| `drawSilenceBoxes()` | 4'33" | Empty duration markers with "TACET" labels |
+| `drawMesosticText()` | Mesostics | Vertical acrostic text with horizontal extensions |
+| `drawRyoanjiTracings()` | Ryoanji | Organic rock-outline curves with multiple tracings |
+| `drawPreparedPianoSymbols()` | Prepared Piano | Bolt, rubber, mute, screw notation symbols |
+| `drawCageTimeBrackets()` | Number Pieces | Flexible time brackets with duration notation |
+| `drawChanceOperationMarks()` | I Ching method | Dice, trigrams, coins, randomness symbols |
+| `drawCircusOverlays()` | Circus (1979) | Independent overlapping parts with varied content |
+| `drawIndeterminacySymbols()` | Indeterminacy | "ad lib.", "?", "~", "[optional]" marks |
+| `drawEventNotation()` | Happenings | Action/event boxes ("open window", "pause") |
+| `drawNotationTypes()` | Concert for Piano | 8 different symbol systems (clusters, arrows, etc.) |
+| `drawMycologicalForms()` | Cage's mycology | Mushroom shapes (Cage was a mycologist) |
+| `drawNumberPieceBrackets()` | Number Pieces | Floating time windows with sound indications |
+| `drawRadioStaticDots()` | Imaginary Landscape | Dense varying-opacity dots like radio static |
+| `drawWaterWalkSymbols()` | Water Walk | Object/action notation with timeline arrows |
+| `drawZenCircles()` | Ensō/Zen | Incomplete brush-stroke circles |
+| `drawAnarchySymbols()` | Cage's anarchism | "free", "any", "all", "∞" freedom marks |
+
+### Changed
+
+- Chance mode dispatcher now uses probabilistic layering with 7 primary structures
+- Mode elements list expanded from 4 to 23
+- Added `manuscript` to Chance's preferred palettes
+
+### Technical
+
+- All functions use `Math.max(1, ...)` for minimum element counts
+- Mesostic text uses bold styling for spine letters
+- Zen circles use incomplete arcs (PI * 1.4 to PI * 1.9) for authentic Ensō aesthetic
+
+---
+
 ## [3.2.0] - 2026-01-25
 
 ### Added
