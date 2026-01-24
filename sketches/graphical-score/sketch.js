@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.5.0
+ * Graphical Score v3.6.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,13 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.6.0: Major enhancement to Cluster (Penderecki) mode with 18 new elements:
+ *         - Cluster glissandi, micropolyphony textures, string effect notation
+ *         - Quarter-tone marks, aleatory boxes, black notation areas
+ *         - Vibrato wiggles, sustained tones, percussive marks
+ *         - Dynamic hairpins, tremolo slashes, harmonic diamonds
+ *         - Sul tasto, col legno battuto, flautando, spiccato
+ *         - Bariolage alternations, ricochet bow patterns
  * v3.5.0: Major enhancement to UPIC (Xenakis) mode with 18 new elements:
  *         - Glissandi bands, density masses, graph paper grid
  *         - Pressure strokes, stochastic points, mathematical curves
@@ -305,9 +312,15 @@ const MODES = {
   cluster: {
     name: "Cluster",
     composer: "Penderecki",
-    description: "Dense wedge shapes, time-space notation, extended techniques",
+    description: "Dense wedge shapes, micropolyphony, extended string techniques, black notation",
     weight: 0.15,
-    elements: ["wedges", "clusterBands", "extendedSymbols", "quarterTones"],
+    elements: [
+      "wedges", "clusterBands", "extendedSymbols", "quarterTones", "glissandi",
+      "micropolyphony", "stringEffects", "aleatoryBox", "blackNotation",
+      "vibratoWiggle", "sustainedTones", "percussive", "dynamicHairpin",
+      "tremoloSlashes", "harmonicDiamond", "sulTasto", "colLegnoBatt",
+      "flautando", "spiccato", "bariolage", "ricochet"
+    ],
     prefersPalette: ["manuscript", "sepia"]
   },
   graph: {
@@ -2275,6 +2288,524 @@ function drawExtendedSymbols(voice, section) {
     text(rndChoice(symbols), x, y);
   }
   textStyle(NORMAL);
+}
+
+// New Cluster functions v3.6.0
+
+function drawClusterGlissandi(voice, section) {
+  // Cluster glissandi - sliding pitch bands (Threnody style)
+  const numGlissandi = Math.max(1, Math.floor(rnd(1, 4) * features.densityValue));
+
+  for (let g = 0; g < numGlissandi; g++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 100);
+    const endX = startX + rnd(60, 120) * scaleFactor;
+    const startY = rnd(voice.yStart + 20, voice.yEnd - 40);
+    const endY = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const bandHeight = rnd(15, 35) * scaleFactor;
+    const direction = rndBool(0.5) ? 1 : -1; // Ascending or descending
+
+    fill(features.palette.ink + "55");
+    noStroke();
+
+    // Filled glissando band
+    beginShape();
+    vertex(startX, startY - bandHeight / 2);
+    vertex(endX, endY - bandHeight / 2 * direction);
+    vertex(endX, endY + bandHeight / 2 * direction);
+    vertex(startX, startY + bandHeight / 2);
+    endShape(CLOSE);
+
+    // Direction arrow
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+    line(midX - 10 * scaleFactor, midY, midX + 10 * scaleFactor, midY + (endY - startY) * 0.3);
+  }
+}
+
+function drawClusterMicropolyphony(voice, section) {
+  // Dense micropolyphonic texture (Ligeti/Penderecki crossover)
+  const cx = rnd(section.xStart + 40, section.xEnd - 40);
+  const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+  const cloudW = rnd(80, 140) * scaleFactor;
+  const cloudH = rnd(25, 45) * scaleFactor;
+  const numLines = Math.floor(rnd(30, 80) * features.densityValue);
+
+  stroke(features.palette.ink + "66");
+  strokeWeight(0.4 * scaleFactor);
+
+  for (let i = 0; i < numLines; i++) {
+    const x1 = cx + rndGaussian(0, cloudW / 3);
+    const y1 = cy + rndGaussian(0, cloudH / 3);
+    const len = rnd(5, 20) * scaleFactor;
+    const angle = rnd(-0.3, 0.3); // Nearly horizontal
+    line(x1, y1, x1 + cos(angle) * len, y1 + sin(angle) * len);
+  }
+}
+
+function drawClusterStringEffects(voice, section) {
+  // Visual string effect notation symbols
+  const numEffects = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let e = 0; e < numEffects; e++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 30);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const effectType = rndInt(0, 4);
+
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+    noFill();
+
+    if (effectType === 0) {
+      // Sul ponticello (near bridge) - zigzag
+      beginShape();
+      for (let i = 0; i < 5; i++) {
+        vertex(x + i * 4 * scaleFactor, y + (i % 2) * 6 * scaleFactor);
+      }
+      endShape();
+    } else if (effectType === 1) {
+      // Col legno (with wood) - dotted line with X
+      drawingContext.setLineDash([3 * scaleFactor, 2 * scaleFactor]);
+      line(x, y, x + 25 * scaleFactor, y);
+      drawingContext.setLineDash([]);
+      line(x + 28 * scaleFactor, y - 4 * scaleFactor, x + 34 * scaleFactor, y + 4 * scaleFactor);
+      line(x + 28 * scaleFactor, y + 4 * scaleFactor, x + 34 * scaleFactor, y - 4 * scaleFactor);
+    } else if (effectType === 2) {
+      // Tremolo - wavy line
+      beginShape();
+      for (let i = 0; i <= 20; i++) {
+        const px = x + i * 1.5 * scaleFactor;
+        const py = y + sin(i * 0.8) * 3 * scaleFactor;
+        vertex(px, py);
+      }
+      endShape();
+    } else {
+      // Harmonics - diamond
+      beginShape();
+      vertex(x, y - 5 * scaleFactor);
+      vertex(x + 5 * scaleFactor, y);
+      vertex(x, y + 5 * scaleFactor);
+      vertex(x - 5 * scaleFactor, y);
+      endShape(CLOSE);
+    }
+  }
+}
+
+function drawClusterQuarterTones(voice, section) {
+  // Quarter-tone accidental marks
+  const numMarks = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+
+  for (let m = 0; m < numMarks; m++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const type = rndInt(0, 4);
+
+    if (type === 0) {
+      // Quarter sharp (single vertical with half horizontal)
+      line(x, y - 6 * scaleFactor, x, y + 6 * scaleFactor);
+      line(x - 4 * scaleFactor, y - 2 * scaleFactor, x + 2 * scaleFactor, y - 2 * scaleFactor);
+    } else if (type === 1) {
+      // Three-quarter sharp
+      line(x, y - 6 * scaleFactor, x, y + 6 * scaleFactor);
+      line(x + 3 * scaleFactor, y - 6 * scaleFactor, x + 3 * scaleFactor, y + 6 * scaleFactor);
+      line(x - 2 * scaleFactor, y - 2 * scaleFactor, x + 5 * scaleFactor, y - 3 * scaleFactor);
+      line(x - 2 * scaleFactor, y + 2 * scaleFactor, x + 5 * scaleFactor, y + 1 * scaleFactor);
+    } else if (type === 2) {
+      // Quarter flat (reversed flat)
+      arc(x, y, 6 * scaleFactor, 8 * scaleFactor, -PI / 2, PI / 2);
+      line(x, y - 8 * scaleFactor, x, y + 4 * scaleFactor);
+    } else {
+      // Microtone arrow up/down
+      line(x, y - 6 * scaleFactor, x, y + 6 * scaleFactor);
+      if (rndBool(0.5)) {
+        line(x - 3 * scaleFactor, y - 3 * scaleFactor, x, y - 6 * scaleFactor);
+        line(x + 3 * scaleFactor, y - 3 * scaleFactor, x, y - 6 * scaleFactor);
+      } else {
+        line(x - 3 * scaleFactor, y + 3 * scaleFactor, x, y + 6 * scaleFactor);
+        line(x + 3 * scaleFactor, y + 3 * scaleFactor, x, y + 6 * scaleFactor);
+      }
+    }
+  }
+}
+
+function drawClusterAleatoryBox(voice, section) {
+  // Boxed aleatory sections (Penderecki notation)
+  const numBoxes = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let b = 0; b < numBoxes; b++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 80);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 30);
+    const w = rnd(40, 80) * scaleFactor;
+    const h = rnd(20, 35) * scaleFactor;
+
+    // Box frame
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * 1.2 * scaleFactor);
+    noFill();
+    rect(x, y, w, h);
+
+    // "ad lib." or similar marking
+    fill(features.palette.ink);
+    noStroke();
+    textSize(6 * scaleFactor);
+    textStyle(ITALIC);
+    const labels = ["ad lib.", "accel.", "rall.", "rit.", "libero"];
+    text(rndChoice(labels), x + 3 * scaleFactor, y - 3 * scaleFactor);
+    textStyle(NORMAL);
+
+    // Random marks inside
+    stroke(features.palette.ink + "88");
+    strokeWeight(0.5 * scaleFactor);
+    const numMarks = rndInt(4, 10);
+    for (let m = 0; m < numMarks; m++) {
+      const mx = x + rnd(5, w - 5);
+      const my = y + rnd(5, h - 5);
+      const mType = rndInt(0, 3);
+      if (mType === 0) point(mx, my);
+      else if (mType === 1) line(mx, my, mx + rnd(5, 15) * scaleFactor, my + rnd(-3, 3) * scaleFactor);
+      else ellipse(mx, my, 3 * scaleFactor, 3 * scaleFactor);
+    }
+  }
+}
+
+function drawClusterBlackNotation(voice, section) {
+  // Dense filled "black notation" areas (Penderecki's dense texture)
+  const numAreas = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let a = 0; a < numAreas; a++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 60);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 25);
+    const w = rnd(30, 70) * scaleFactor;
+    const h = rnd(15, 30) * scaleFactor;
+
+    // Filled black area with rough edges
+    fill(features.palette.ink + "cc");
+    noStroke();
+    beginShape();
+    // Top edge (rough)
+    for (let t = 0; t <= 1; t += 0.1) {
+      vertex(x + t * w, y + rnd(-3, 3) * scaleFactor);
+    }
+    // Bottom edge (rough, reversed)
+    for (let t = 1; t >= 0; t -= 0.1) {
+      vertex(x + t * w, y + h + rnd(-3, 3) * scaleFactor);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawClusterVibratoWiggle(voice, section) {
+  // Vibrato indication wiggles
+  const numWiggles = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let w = 0; w < numWiggles; w++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 50);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const wiggleW = rnd(25, 50) * scaleFactor;
+    const amplitude = rnd(3, 8) * scaleFactor;
+    const frequency = rnd(3, 6);
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const px = startX + t * wiggleW;
+      const py = y + sin(t * TWO_PI * frequency) * amplitude;
+      vertex(px, py);
+    }
+    endShape();
+  }
+}
+
+function drawClusterSustainedTones(voice, section) {
+  // Long sustained cluster tones
+  const numTones = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  for (let t = 0; t < numTones; t++) {
+    const startX = rnd(section.xStart + 5, section.xStart + section.width * 0.2);
+    const endX = rnd(section.xEnd - section.width * 0.2, section.xEnd - 5);
+    const y = rnd(voice.yStart + 8, voice.yEnd - 8);
+    const thickness = rnd(2, 6) * scaleFactor;
+
+    // Main sustained line
+    stroke(features.palette.ink);
+    strokeWeight(thickness);
+    line(startX, y, endX, y);
+
+    // Attack mark at start
+    strokeWeight(features.lineWeight * scaleFactor);
+    line(startX, y - 5 * scaleFactor, startX, y + 5 * scaleFactor);
+  }
+}
+
+function drawClusterPercussive(voice, section) {
+  // Percussive effect marks
+  const numMarks = Math.max(1, Math.floor(rnd(3, 7) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let m = 0; m < numMarks; m++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const type = rndInt(0, 4);
+    strokeWeight(features.lineWeight * scaleFactor);
+
+    if (type === 0) {
+      // X mark (col legno battuto)
+      line(x - 4 * scaleFactor, y - 4 * scaleFactor, x + 4 * scaleFactor, y + 4 * scaleFactor);
+      line(x - 4 * scaleFactor, y + 4 * scaleFactor, x + 4 * scaleFactor, y - 4 * scaleFactor);
+    } else if (type === 1) {
+      // Accent wedge
+      beginShape();
+      vertex(x - 6 * scaleFactor, y + 4 * scaleFactor);
+      vertex(x, y - 4 * scaleFactor);
+      vertex(x + 6 * scaleFactor, y + 4 * scaleFactor);
+      endShape();
+    } else if (type === 2) {
+      // Staccato dots
+      fill(features.palette.ink);
+      ellipse(x, y, 3 * scaleFactor, 3 * scaleFactor);
+      noFill();
+    } else {
+      // Tenuto line
+      strokeWeight(features.lineWeight * 2 * scaleFactor);
+      line(x - 5 * scaleFactor, y, x + 5 * scaleFactor, y);
+    }
+  }
+}
+
+function drawClusterDynamicHairpin(voice, section) {
+  // Hairpin dynamics for clusters
+  const numHairpins = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let h = 0; h < numHairpins; h++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = rnd(30, 60) * scaleFactor;
+    const spread = rnd(6, 12) * scaleFactor;
+    const isCrescendo = rndBool(0.5);
+
+    if (isCrescendo) {
+      line(x, y, x + w, y - spread);
+      line(x, y, x + w, y + spread);
+    } else {
+      line(x, y - spread, x + w, y);
+      line(x, y + spread, x + w, y);
+    }
+  }
+}
+
+function drawClusterTremoloSlashes(voice, section) {
+  // Tremolo slashes for sustained clusters
+  const numTremolos = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 1.5 * scaleFactor);
+
+  for (let t = 0; t < numTremolos; t++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const numSlashes = rndInt(2, 4);
+
+    for (let s = 0; s < numSlashes; s++) {
+      const sx = x + s * 3 * scaleFactor;
+      line(sx - 3 * scaleFactor, y + 5 * scaleFactor, sx + 3 * scaleFactor, y - 5 * scaleFactor);
+    }
+  }
+}
+
+function drawClusterHarmonicDiamond(voice, section) {
+  // Diamond harmonics notation
+  const numDiamonds = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let d = 0; d < numDiamonds; d++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const size = rnd(4, 8) * scaleFactor;
+
+    beginShape();
+    vertex(x, y - size);
+    vertex(x + size, y);
+    vertex(x, y + size);
+    vertex(x - size, y);
+    endShape(CLOSE);
+
+    // Small "o" above for harmonic
+    if (rndBool(0.5)) {
+      ellipse(x, y - size - 4 * scaleFactor, 3 * scaleFactor, 3 * scaleFactor);
+    }
+  }
+}
+
+function drawClusterSulTasto(voice, section) {
+  // Sul tasto (over fingerboard) indication
+  const numMarks = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let m = 0; m < numMarks; m++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 50);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const w = rnd(30, 60) * scaleFactor;
+
+    // Bracket above staff region
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+    noFill();
+
+    line(x, y - 8 * scaleFactor, x, y - 3 * scaleFactor);
+    line(x, y - 8 * scaleFactor, x + w, y - 8 * scaleFactor);
+    line(x + w, y - 8 * scaleFactor, x + w, y - 3 * scaleFactor);
+
+    // Label
+    fill(features.palette.ink);
+    noStroke();
+    textSize(5 * scaleFactor);
+    textStyle(ITALIC);
+    text("s.t.", x + 2 * scaleFactor, y - 10 * scaleFactor);
+    textStyle(NORMAL);
+  }
+}
+
+function drawClusterColLegnoBatt(voice, section) {
+  // Col legno battuto (strike with wood)
+  const numMarks = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let m = 0; m < numMarks; m++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 25);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+
+    // X with stem
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+
+    line(x - 4 * scaleFactor, y - 4 * scaleFactor, x + 4 * scaleFactor, y + 4 * scaleFactor);
+    line(x - 4 * scaleFactor, y + 4 * scaleFactor, x + 4 * scaleFactor, y - 4 * scaleFactor);
+    line(x, y + 4 * scaleFactor, x, y + 12 * scaleFactor);
+  }
+}
+
+function drawClusterFlautando(voice, section) {
+  // Flautando (flute-like) indication
+  const numMarks = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let m = 0; m < numMarks; m++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 50);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = rnd(25, 50) * scaleFactor;
+
+    // Wavy line (flautando tone)
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+    noFill();
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.03) {
+      const px = x + t * w;
+      const py = y + sin(t * TWO_PI * 3) * 2 * scaleFactor;
+      vertex(px, py);
+    }
+    endShape();
+
+    // "flaut." label
+    fill(features.palette.ink);
+    noStroke();
+    textSize(5 * scaleFactor);
+    textStyle(ITALIC);
+    text("flaut.", x, y - 6 * scaleFactor);
+    textStyle(NORMAL);
+  }
+}
+
+function drawClusterSpiccato(voice, section) {
+  // Spiccato bouncing bow dots
+  const numGroups = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let g = 0; g < numGroups; g++) {
+    const startX = rnd(section.xStart + 15, section.xEnd - 50);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const numDots = rndInt(4, 8);
+
+    for (let d = 0; d < numDots; d++) {
+      const dx = startX + d * rnd(5, 10) * scaleFactor;
+      ellipse(dx, y, 3 * scaleFactor, 3 * scaleFactor);
+    }
+  }
+}
+
+function drawClusterBariolage(voice, section) {
+  // Rapid alternating strings pattern
+  const numPatterns = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let p = 0; p < numPatterns; p++) {
+    const startX = rnd(section.xStart + 15, section.xEnd - 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = rnd(40, 70) * scaleFactor;
+    const numOsc = rndInt(4, 8);
+
+    beginShape();
+    for (let i = 0; i <= numOsc * 2; i++) {
+      const px = startX + (i / (numOsc * 2)) * w;
+      const py = y + (i % 2 === 0 ? -8 : 8) * scaleFactor;
+      vertex(px, py);
+    }
+    endShape();
+  }
+}
+
+function drawClusterRicochet(voice, section) {
+  // Ricochet bouncing bow pattern
+  const numPatterns = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let p = 0; p < numPatterns; p++) {
+    const startX = rnd(section.xStart + 15, section.xEnd - 50);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const numBounces = rndInt(4, 8);
+
+    // Bouncing arc pattern (diminishing)
+    beginShape();
+    for (let b = 0; b <= numBounces; b++) {
+      const t = b / numBounces;
+      const px = startX + t * 40 * scaleFactor;
+      const bounceHeight = (1 - t) * 15 * scaleFactor; // Decreasing height
+      const py = y - abs(sin(b * PI)) * bounceHeight;
+      vertex(px, py);
+    }
+    endShape();
+
+    // "ric." label
+    fill(features.palette.ink);
+    noStroke();
+    textSize(5 * scaleFactor);
+    textStyle(ITALIC);
+    text("ric.", startX - 2 * scaleFactor, y + 10 * scaleFactor);
+    textStyle(NORMAL);
+    stroke(features.palette.ink);
+  }
 }
 
 // ============================================================
@@ -5684,9 +6215,33 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "cluster":
-      drawClusterWedges(voice, section);
-      if (rndBool(0.5)) drawClusterBands(voice, section);
+      // Enhanced Cluster mode v3.6.0 - Penderecki extended techniques
+      // Primary structural element (choose one)
+      const clusterPrimary = rndInt(0, 6);
+      switch (clusterPrimary) {
+        case 0: drawClusterWedges(voice, section); break;
+        case 1: drawClusterBands(voice, section); break;
+        case 2: drawClusterGlissandi(voice, section); break;
+        case 3: drawClusterMicropolyphony(voice, section); break;
+        case 4: drawClusterBlackNotation(voice, section); break;
+        case 5: drawClusterSustainedTones(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
       if (rndBool(0.4)) drawExtendedSymbols(voice, section);
+      if (rndBool(0.35)) drawClusterStringEffects(voice, section);
+      if (rndBool(0.35)) drawClusterQuarterTones(voice, section);
+      if (rndBool(0.25)) drawClusterAleatoryBox(voice, section);
+      if (rndBool(0.35)) drawClusterVibratoWiggle(voice, section);
+      if (rndBool(0.35)) drawClusterPercussive(voice, section);
+      if (rndBool(0.3)) drawClusterDynamicHairpin(voice, section);
+      if (rndBool(0.3)) drawClusterTremoloSlashes(voice, section);
+      if (rndBool(0.25)) drawClusterHarmonicDiamond(voice, section);
+      if (rndBool(0.2)) drawClusterSulTasto(voice, section);
+      if (rndBool(0.25)) drawClusterColLegnoBatt(voice, section);
+      if (rndBool(0.2)) drawClusterFlautando(voice, section);
+      if (rndBool(0.3)) drawClusterSpiccato(voice, section);
+      if (rndBool(0.25)) drawClusterBariolage(voice, section);
+      if (rndBool(0.2)) drawClusterRicochet(voice, section);
       break;
 
     case "graph":
