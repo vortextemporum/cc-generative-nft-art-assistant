@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Braxton (Anthony Braxton) Mode** - 16 new elements inspired by Braxton's diagrammatic notation and Tri-Axium system:
+
+| Function | Description |
+|----------|-------------|
+| `drawBraxtonCompositionNumber()` | Composition number titles (opus numbering) |
+| `drawBraxtonConnectors()` | Connection lines between elements |
+| `drawBraxtonTechnicalMarks()` | Technical drawing marks (dimensions) |
+| `drawBraxtonFlowArrows()` | Flow/direction arrows |
+| `drawBraxtonCircuitElements()` | Circuit-like schematic symbols |
+| `drawBraxtonAngleBrackets()` | Angle bracket structures |
+| `drawBraxtonParallelStructures()` | Parallel structural lines |
+| `drawBraxtonContainment()` | Containment shapes (brackets, boxes) |
+| `drawBraxtonZones()` | Zone/region markers with labels |
+| `drawBraxtonPathways()` | Pathway/route indicators |
+| `drawBraxtonModular()` | Modular building block shapes |
+| `drawBraxtonVerticalStack()` | Vertical stack structures |
+| `drawBraxtonHorizontalSpread()` | Horizontal spread patterns |
+| `drawBraxtonIntersections()` | Intersection/crossing marks |
+| `drawBraxtonLabels()` | Text labels and identifiers |
+| `drawBraxtonRotational()` | Rotational symmetry elements |
+
+### Changed
+
+- Braxton mode dispatcher now uses probabilistic layering with 7 primary structures
+- Mode elements list expanded from 4 to 20
+- Updated mode description to include "modular structures"
+
+### Technical
+
+- Circuit elements include resistor, capacitor, inductor, ground, op-amp symbols
+- Zone markers use dashed outlines with zone letter labels
+- Composition numbers follow Braxton's numbering style (No. X, XA, (X), Comp. X)
+- Rotational elements use variable arm counts for symmetry patterns
+
+---
+
 ## [3.13.0] - 2026-01-25
 
 ### Added

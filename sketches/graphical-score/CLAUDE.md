@@ -1,4 +1,4 @@
-# Graphical Score v3.13.0 - AI Assistant Guide
+# Graphical Score v3.14.0 - AI Assistant Guide
 
 ## Project Overview
 
@@ -341,7 +341,25 @@ graphical-score/
 - `drawAnkhrasmationNumbers()` - Numerical unit indicators
 - `drawAnkhrasmationParallel()` - Parallel color lines
 - `drawAnkhrasmationImprovisationZone()` - Free improvisation zones
-- **Braxton**: `drawBraxtonDiagrams()`, `drawBraxtonLanguageTypes()`
+### Enhanced Braxton Mode (v3.14.0 - Anthony Braxton)
+- `drawBraxtonDiagrams()` - Diagrammatic/schematic notation
+- `drawBraxtonLanguageTypes()` - Language type symbols (sound lines)
+- `drawBraxtonCompositionNumber()` - Composition number titles
+- `drawBraxtonConnectors()` - Connection lines between elements
+- `drawBraxtonTechnicalMarks()` - Technical drawing dimension marks
+- `drawBraxtonFlowArrows()` - Flow/direction arrows
+- `drawBraxtonCircuitElements()` - Circuit-like schematic symbols
+- `drawBraxtonAngleBrackets()` - Angle bracket structures
+- `drawBraxtonParallelStructures()` - Parallel structural lines
+- `drawBraxtonContainment()` - Containment shapes (brackets, boxes)
+- `drawBraxtonZones()` - Zone/region markers with labels
+- `drawBraxtonPathways()` - Pathway/route indicators
+- `drawBraxtonModular()` - Modular building block shapes
+- `drawBraxtonVerticalStack()` - Vertical stack structures
+- `drawBraxtonHorizontalSpread()` - Horizontal spread patterns
+- `drawBraxtonIntersections()` - Intersection/crossing marks
+- `drawBraxtonLabels()` - Text labels and identifiers
+- `drawBraxtonRotational()` - Rotational symmetry elements
 
 ### Engraving Helpers (v2.1.0)
 - `drawHatching(x, y, w, h, angle, spacing, intensity)` - Line hatching
