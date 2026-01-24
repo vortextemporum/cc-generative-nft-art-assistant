@@ -1,4 +1,4 @@
-# Graphical Score v3.12.0 - AI Assistant Guide
+# Graphical Score v3.13.0 - AI Assistant Guide
 
 ## Project Overview
 
@@ -322,7 +322,25 @@ graphical-score/
 - `drawStripsodyPuffs()` - Smoke/cloud puffs
 - `drawStripsodyImpact()` - Impact radiating lines
 - `drawStripsodyWobble()` - Wobble/vibration marks
-- **Ankhrasmation**: `drawAnkhrasmationDurations()`, `drawAnkhrasmationSymbols()`
+### Enhanced Ankhrasmation Mode (v3.13.0 - Wadada Leo Smith)
+- `drawAnkhrasmationDurations()` - Duration symbols (colored bars)
+- `drawAnkhrasmationSymbols()` - Symbolic marks from Ankhrasmation language
+- `drawAnkhrasmationColorBars()` - Colored horizontal bar sequences
+- `drawAnkhrasmationDiagonals()` - Diagonal direction indicators
+- `drawAnkhrasmationCells()` - Rhythmic unit cells (boxed regions)
+- `drawAnkhrasmationArrows()` - Direction arrows for movement
+- `drawAnkhrasmationGradients()` - Color gradient intensity bars
+- `drawAnkhrasmationVertical()` - Vertical accent marks
+- `drawAnkhrasmationRests()` - Rest/silence indicators
+- `drawAnkhrasmationConnected()` - Connected color sequences
+- `drawAnkhrasmationCrescendo()` - Growing intensity wedges
+- `drawAnkhrasmationClusters()` - Grouped multi-color mark clusters
+- `drawAnkhrasmationWaves()` - Wave-form duration indicators
+- `drawAnkhrasmationDots()` - Dot patterns (rhythmic accents)
+- `drawAnkhrasmationBrackets()` - Grouping brackets
+- `drawAnkhrasmationNumbers()` - Numerical unit indicators
+- `drawAnkhrasmationParallel()` - Parallel color lines
+- `drawAnkhrasmationImprovisationZone()` - Free improvisation zones
 - **Braxton**: `drawBraxtonDiagrams()`, `drawBraxtonLanguageTypes()`
 
 ### Engraving Helpers (v2.1.0)

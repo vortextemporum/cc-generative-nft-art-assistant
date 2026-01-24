@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Ankhrasmation (Wadada Leo Smith) Mode** - 16 new elements inspired by Smith's Ankhrasmation language score system:
+
+| Function | Description |
+|----------|-------------|
+| `drawAnkhrasmationColorBars()` | Colored horizontal bars in sequence (phrases) |
+| `drawAnkhrasmationDiagonals()` | Diagonal direction indicators |
+| `drawAnkhrasmationCells()` | Rhythmic unit cells (boxed color regions) |
+| `drawAnkhrasmationArrows()` | Direction arrows for movement |
+| `drawAnkhrasmationGradients()` | Color gradient bars (intensity change) |
+| `drawAnkhrasmationVertical()` | Vertical accent marks |
+| `drawAnkhrasmationRests()` | Rest/silence indicators |
+| `drawAnkhrasmationConnected()` | Connected color sequences (phrases) |
+| `drawAnkhrasmationCrescendo()` | Growing intensity wedge marks |
+| `drawAnkhrasmationClusters()` | Grouped multi-color mark clusters |
+| `drawAnkhrasmationWaves()` | Wave-form duration indicators |
+| `drawAnkhrasmationDots()` | Dot patterns (rhythmic accents) |
+| `drawAnkhrasmationBrackets()` | Grouping brackets |
+| `drawAnkhrasmationNumbers()` | Numerical unit indicators |
+| `drawAnkhrasmationParallel()` | Parallel color lines (simultaneous events) |
+| `drawAnkhrasmationImprovisationZone()` | Free improvisation zone (dashed outline) |
+
+### Changed
+
+- Ankhrasmation mode dispatcher now uses probabilistic layering with 7 primary structures
+- Mode elements list expanded from 4 to 20
+- Updated mode description to include "improvisation zones"
+
+### Technical
+
+- Color bars use horizontal sequences for phrase-like notation
+- Gradients simulate intensity changes with alpha blending
+- Improvisation zones use dashed outlines with light color fill
+- Connected sequences show phrase relationships with connecting lines
+
+---
+
 ## [3.12.0] - 2026-01-25
 
 ### Added
