@@ -1,11 +1,11 @@
-# Graphical Score v3.3.0 - AI Assistant Guide
+# Graphical Score v3.4.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.3.0
+**Current Version:** 3.4.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -85,6 +85,26 @@ graphical-score/
 ### Mode Drawing (Original)
 - `drawArtikulationColorBlocks()`, `drawArtikulationClusters()`
 - `drawUpicArcs()`, `drawUpicRuledLines()`
+
+### Enhanced Artikulation Mode (v3.4.0 - Ligeti/Wehinger)
+- `drawArtikulationCallResponse()` - Call/response patterns between timbral groups
+- `drawArtikulationTimbralStripes()` - Horizontal gradient stripes for sustained timbres
+- `drawArtikulationGlitchPatterns()` - Short stuttering electronic bursts
+- `drawArtikulationSpeechFragments()` - Speech-like contour lines
+- `drawArtikulationDensityClouds()` - Gaussian density clouds with color mixing
+- `drawArtikulationAttackDecay()` - Attack/decay envelope shapes
+- `drawArtikulationConnectors()` - Curved lines connecting related events
+- `drawArtikulationWedges()` - Crescendo/diminuendo wedge shapes
+- `drawArtikulationInterrupted()` - Fragmented/interrupted elements
+- `drawArtikulationOverlaps()` - Overlapping transparent colored regions
+- `drawArtikulationTextureGradient()` - Textural density gradients
+- `drawArtikulationPulsation()` - Rhythmic pulsing elements
+- `drawArtikulationMorphing()` - Shapes that morph across time
+- `drawArtikulationStaticBursts()` - Radio static / white noise bursts
+- `drawArtikulationTimbreLegend()` - Legend-like timbre labels (I, II, α, β)
+- `drawArtikulationVerticalSync()` - Vertical alignment markers
+- `drawArtikulationElectronicMotifs()` - Sine, square, sawtooth waveforms
+- `drawArtikulationSpatialPanning()` - L/R spatial panning indicators
 - `drawClusterWedges()`, `drawClusterBands()`, `drawExtendedSymbols()`
 - `drawGraphBoxes()`, `drawSparsePoints()`
 - `drawChanceCurves()`, `drawChanceDots()`, `drawChanceIntersections()`

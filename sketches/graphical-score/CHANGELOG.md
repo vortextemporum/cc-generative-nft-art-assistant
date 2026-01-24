@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Artikulation (Ligeti/Wehinger) Mode** - 18 new elements inspired by Rainer Wehinger's visual listening score for György Ligeti's *Artikulation* (1958):
+
+| Function | Description |
+|----------|-------------|
+| `drawArtikulationCallResponse()` | Call and response patterns between colored timbral groups with connecting lines |
+| `drawArtikulationTimbralStripes()` | Horizontal gradient stripes for sustained electronic timbres |
+| `drawArtikulationGlitchPatterns()` | Short stuttering electronic burst patterns (artifact aesthetics) |
+| `drawArtikulationSpeechFragments()` | Speech-like contour lines reflecting Ligeti's phonetic influences |
+| `drawArtikulationDensityClouds()` | Gaussian density clouds with two-color mixing |
+| `drawArtikulationAttackDecay()` | Attack/decay envelope shapes with variable attack times |
+| `drawArtikulationConnectors()` | Curved lines connecting related sound events |
+| `drawArtikulationWedges()` | Crescendo/diminuendo wedge shapes |
+| `drawArtikulationInterrupted()` | Fragmented/interrupted elements (electronic stuttering) |
+| `drawArtikulationOverlaps()` | Overlapping colored transparent regions for simultaneous timbres |
+| `drawArtikulationTextureGradient()` | Textural density gradients (dense in middle, sparse at edges) |
+| `drawArtikulationPulsation()` | Rhythmic pulsing elements with accented beats |
+| `drawArtikulationMorphing()` | Shapes that morph from angular to smooth across time |
+| `drawArtikulationStaticBursts()` | Radio static / white noise burst patterns |
+| `drawArtikulationTimbreLegend()` | Legend-like labels for timbres (I, II, III, IV, A, B, α, β) |
+| `drawArtikulationVerticalSync()` | Vertical dashed alignment markers for simultaneous events |
+| `drawArtikulationElectronicMotifs()` | Electronic waveform patterns (sine, square, sawtooth) |
+| `drawArtikulationSpatialPanning()` | Left/right spatial panning indicators with L/R labels |
+
+### Changed
+
+- Artikulation mode dispatcher now uses probabilistic layering with 5 primary structures
+- Mode elements list expanded from 4 to 20
+- Updated mode description to include "electronic patterns"
+
+### Technical
+
+- All functions use `Math.max(1, ...)` for minimum element counts
+- Call/response patterns use dotted connector lines
+- Timbral stripes use gradient fills for fade-in effect
+- Electronic motifs support sine, square, and sawtooth waveforms
+
+---
+
 ## [3.3.0] - 2026-01-25
 
 ### Added
