@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graphical Score v3.0.1 - 14 Modes</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d14;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1950px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #2a2a3a;
+    }
+
+    h1 { font-size: 1.4rem; font-weight: 400; color: #fff; }
+    .version { font-size: 0.75rem; color: #666; margin-left: 10px; }
+    .controls { display: flex; gap: 10px; }
+
+    button {
+      background: #1a1a2e;
+      border: 1px solid #3a3a5a;
+      color: #e0e0e0;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    button:hover { background: #2a2a4e; border-color: #5a5a8a; }
+
+    .main-container {
+      display: flex;
+      gap: 20px;
+      max-width: 1950px;
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    .canvas-section {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #sketch-holder {
+      background: #1a1a2e;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      display: inline-block;
+    }
+    #sketch-holder canvas {
+      display: block;
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    .sidebar {
+      width: 340px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      position: sticky;
+      top: 20px;
+    }
+
+    .panel {
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 15px;
+      border: 1px solid #2a2a3a;
+    }
+
+    .panel h2 {
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel h2 button { padding: 4px 8px; font-size: 0.7rem; }
+
+    .hash-display {
+      font-size: 0.65rem;
+      color: #555;
+      word-break: break-all;
+      background: #0d0d14;
+      padding: 6px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .mode-display {
+      background: #0d0d14;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .mode-primary {
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .mode-secondary {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .mode-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .mode-tag.artikulation { background: #cc3333; color: #fff; }
+    .mode-tag.upic { background: #1a4488; color: #fff; }
+    .mode-tag.cluster { background: #2a1f14; color: #e0e0e0; }
+    .mode-tag.graph { background: #5f5040; color: #fff; }
+    .mode-tag.chance { background: #333333; color: #fff; }
+    .mode-tag.spectral { background: #440066; color: #fff; }
+    .mode-tag.spiral { background: #8b0000; color: #fff; }
+    /* New modes (v3.0.0) */
+    .mode-tag.treatise { background: #1a1a1a; color: #fff; }
+    .mode-tag.openform { background: #4a4030; color: #fff; }
+    .mode-tag.bussotti { background: #3a2020; color: #e0e0e0; }
+    .mode-tag.textscore { background: #2a2a2a; color: #e0e0e0; }
+    .mode-tag.stripsody { background: #cc6600; color: #fff; }
+    .mode-tag.ankhrasmation { background: #cc3300; color: #fff; }
+    .mode-tag.braxton { background: #1a3050; color: #fff; }
+
+    .feature-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #2a2a3a;
+      font-size: 0.85rem;
+    }
+    .feature-row:last-child { border-bottom: none; }
+    .feature-name { color: #888; }
+    .feature-value { color: #fff; display: flex; align-items: center; gap: 6px; }
+
+    .rarity-badge {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .rarity-common { background: #3a3a4a; color: #aaa; }
+    .rarity-uncommon { background: #2a4a3a; color: #4a9; }
+    .rarity-rare { background: #3a3a6a; color: #88f; }
+    .rarity-legendary { background: #5a3a2a; color: #fa4; }
+
+    .blend-badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 3px;
+      background: #2a2a4e;
+      color: #aaa;
+    }
+
+    .feedback-panel { display: flex; gap: 10px; margin-top: 10px; }
+    .feedback-panel button { flex: 1; }
+    .feedback-panel .like { background: #2a4a3a; border-color: #4a8a6a; }
+    .feedback-panel .like:hover { background: #3a5a4a; }
+    .feedback-panel .dislike { background: #4a2a2a; border-color: #8a4a4a; }
+    .feedback-panel .dislike:hover { background: #5a3a3a; }
+
+    .keyboard-hints {
+      font-size: 0.75rem;
+      color: #555;
+      text-align: center;
+      margin-top: 15px;
+    }
+    .keyboard-hints kbd {
+      background: #2a2a3a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin: 0 2px;
+    }
+
+    .mode-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .stats-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .stat-chip {
+      background: #0d0d14;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: #888;
+    }
+
+    @media (max-width: 1400px) {
+      .main-container { flex-direction: column; align-items: center; }
+      #sketch-holder { max-width: 100%; }
+      .sidebar {
+        width: 100%;
+        max-width: 1587px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-height: none;
+        position: static;
+      }
+      .panel { flex: 1; min-width: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Graphical Score <span class="version">v3.0.1</span></h1>
+    </div>
+    <div class="controls">
+      <button id="btn-regenerate">Regenerate (R)</button>
+      <button id="btn-hires">Hi-Res (H)</button>
+      <button id="btn-save">Save PNG (S)</button>
+      <button id="btn-print">Print-Friendly (P)</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="canvas-section">
+      <div id="sketch-holder"></div>
+    </div>
+
+    <div class="sidebar">
+      <!-- Modes Panel -->
+      <div class="panel" id="modes-panel">
+        <h2>Modes</h2>
+        <div class="mode-display">
+          <div class="mode-primary" id="primary-mode"></div>
+          <div class="mode-secondary" id="secondary-modes"></div>
+        </div>
+        <div class="feature-row">
+          <span class="feature-name">Blend Type</span>
+          <span class="feature-value"><span class="blend-badge" id="blend-type"></span></span>
+        </div>
+        <div class="mode-legend" id="mode-legend"></div>
+      </div>
+
+      <!-- Features Panel -->
+      <div class="panel" id="features-panel">
+        <h2>Features</h2>
+        <div class="hash-display" id="hash-display"></div>
+        <div id="features-list"></div>
+      </div>
+
+      <!-- Palettes Panel -->
+      <div class="panel" id="palette-panel">
+        <h2>Palette</h2>
+        <div id="palette-display"></div>
+      </div>
+
+      <!-- Feedback Panel -->
+      <div class="panel" id="feedback-panel">
+        <h2>Feedback</h2>
+        <div class="stats-summary" id="feedback-stats"></div>
+        <div class="feedback-panel">
+          <button class="like" id="btn-like">Like (L)</button>
+          <button class="dislike" id="btn-dislike">Dislike (D)</button>
+        </div>
+        <button id="btn-export" style="width: 100%; margin-top: 10px;">Export to Console</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="keyboard-hints">
+    <kbd>R</kbd> Regenerate &nbsp;
+    <kbd>S</kbd> Save PNG &nbsp;
+    <kbd>H</kbd> Hi-Res A3 &nbsp;
+    <kbd>P</kbd> Print-Friendly &nbsp;
+    <kbd>L</kbd> Like &nbsp;
+    <kbd>D</kbd> Dislike
+  </div>
+
+  <script src="sketch.js"></script>
+  <script>
+    const FEEDBACK_KEY = 'graphical-score-v2-feedback';
+
+    function loadFeedback() {
+      const data = localStorage.getItem(FEEDBACK_KEY);
+      return data ? JSON.parse(data) : { liked: [], disliked: [] };
+    }
+
+    function saveFeedback(feedback) {
+      localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback));
+    }
+
+    function recordFeedback(isLike) {
+      const feedback = loadFeedback();
+      const features = window.getFeatures();
+      const entry = {
+        timestamp: Date.now(),
+        hash: window.getHash(),
+        primaryMode: features.primaryMode,
+        activeModes: features.activeModes,
+        blendType: features.blendType,
+        density: features.density,
+        paletteName: features.paletteName
+      };
+
+      if (isLike) {
+        feedback.liked.push(entry);
+        console.log('LIKED:', entry);
+      } else {
+        feedback.disliked.push(entry);
+        console.log('DISLIKED:', entry);
+      }
+
+      saveFeedback(feedback);
+      updateFeedbackStats();
+    }
+
+    function updateFeedbackStats() {
+      const feedback = loadFeedback();
+      const statsEl = document.getElementById('feedback-stats');
+      statsEl.innerHTML = `
+        <span class="stat-chip">Liked: ${feedback.liked.length}</span>
+        <span class="stat-chip">Disliked: ${feedback.disliked.length}</span>
+      `;
+    }
+
+    function exportFeedback() {
+      const feedback = loadFeedback();
+      console.log('=== FEEDBACK EXPORT ===');
+      console.log(JSON.stringify(feedback, null, 2));
+      console.log('=== END EXPORT ===');
+      return feedback;
+    }
+
+    function updateModesPanel() {
+      const features = window.getFeatures();
+      const modes = window.getModes();
+
+      // Primary mode
+      const primaryEl = document.getElementById('primary-mode');
+      const primaryMode = modes[features.primaryMode];
+      primaryEl.innerHTML = `
+        <span class="mode-tag ${features.primaryMode}">${primaryMode.name}</span>
+        <span style="color: #666; font-size: 0.8rem;">${primaryMode.composer}</span>
+      `;
+
+      // Secondary modes
+      const secondaryEl = document.getElementById('secondary-modes');
+      if (features.secondaryModes.length > 0) {
+        secondaryEl.innerHTML = features.secondaryModes.map(m =>
+          `<span class="mode-tag ${m}">${modes[m].name}</span>`
+        ).join(' ');
+      } else {
+        secondaryEl.innerHTML = '<span style="color: #555;">Single mode</span>';
+      }
+
+      // Blend type
+      document.getElementById('blend-type').textContent = features.blendType;
+
+      // Mode legend
+      const legendEl = document.getElementById('mode-legend');
+      legendEl.innerHTML = Object.entries(modes).map(([key, mode]) =>
+        `<span class="mode-tag ${key}" style="opacity: ${features.activeModes.includes(key) ? 1 : 0.3}">${mode.name}</span>`
+      ).join('');
+    }
+
+    function updateFeaturesPanel() {
+      const features = window.getFeatures();
+      const hashEl = document.getElementById('hash-display');
+      const listEl = document.getElementById('features-list');
+
+      hashEl.textContent = window.getHash();
+
+      const displayFeatures = [
+        { name: 'Mode Count', value: features.modeCount, rarity: features.modeCountRarity },
+        { name: 'Voices', value: features.voiceCount, rarity: features.voiceRarity },
+        { name: 'Structure', value: features.structure, rarity: features.structureRarity },
+        { name: 'Density', value: features.density, rarity: features.densityRarity },
+        { name: 'Tempo', value: features.tempo },
+        { name: 'Time Sig', value: features.timeSignature },
+        { name: 'Symmetry', value: features.hasSymmetry ? 'Palindrome' : 'None' }
+      ];
+
+      listEl.innerHTML = displayFeatures.map(f => `
+        <div class="feature-row">
+          <span class="feature-name">${f.name}</span>
+          <span class="feature-value">
+            ${f.value}
+            ${f.rarity ? `<span class="rarity-badge rarity-${f.rarity}">${f.rarity}</span>` : ''}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function updatePalettePanel() {
+      const features = window.getFeatures();
+      const paletteEl = document.getElementById('palette-display');
+
+      paletteEl.innerHTML = `
+        <div class="feature-row">
+          <span class="feature-name">Name</span>
+          <span class="feature-value">${features.paletteName}</span>
+        </div>
+        <div class="feature-row">
+          <span class="feature-name">Type</span>
+          <span class="feature-value">${features.paletteType}</span>
+        </div>
+        <div style="display: flex; gap: 4px; margin-top: 10px;">
+          <div style="width: 30px; height: 30px; background: ${features.palette.paper}; border-radius: 4px; border: 1px solid #333;" title="Paper"></div>
+          <div style="width: 30px; height: 30px; background: ${features.palette.ink}; border-radius: 4px; border: 1px solid #333;" title="Ink"></div>
+          <div style="width: 30px; height: 30px; background: ${features.palette.accent}; border-radius: 4px; border: 1px solid #333;" title="Accent"></div>
+          <div style="width: 30px; height: 30px; background: ${features.palette.faded}; border-radius: 4px; border: 1px solid #333;" title="Faded"></div>
+          ${features.palette.colors ? features.palette.colors.slice(0, 4).map(c =>
+            `<div style="width: 30px; height: 30px; background: ${c}; border-radius: 4px; border: 1px solid #333;"></div>`
+          ).join('') : ''}
+        </div>
+      `;
+    }
+
+    // Event listeners
+    document.getElementById('btn-regenerate').addEventListener('click', () => window.regenerate());
+
+    document.getElementById('btn-save').addEventListener('click', () => {
+      const features = window.getFeatures();
+      saveCanvas(`graphical-score-${features.seed}`, 'png');
+    });
+
+    document.getElementById('btn-hires').addEventListener('click', () => {
+      const btn = document.getElementById('btn-hires');
+      const isHiRes = btn.textContent.includes('Standard');
+      window.setHiRes(!isHiRes);
+      btn.textContent = isHiRes ? 'Hi-Res (H)' : 'Standard (H)';
+    });
+
+    document.getElementById('btn-print').addEventListener('click', () => window.savePrintFriendly());
+
+    document.getElementById('btn-like').addEventListener('click', () => recordFeedback(true));
+    document.getElementById('btn-dislike').addEventListener('click', () => recordFeedback(false));
+    document.getElementById('btn-export').addEventListener('click', exportFeedback);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      if (e.key === 'l' || e.key === 'L') recordFeedback(true);
+      else if (e.key === 'd' || e.key === 'D') recordFeedback(false);
+    });
+
+    window.addEventListener('featuresUpdated', () => {
+      updateModesPanel();
+      updateFeaturesPanel();
+      updatePalettePanel();
+    });
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        updateModesPanel();
+        updateFeaturesPanel();
+        updatePalettePanel();
+        updateFeedbackStats();
+      }, 100);
+    });
+  </script>
+</body>
+</html>
