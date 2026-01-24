@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Cluster (Penderecki) Mode** - 18 new elements inspired by Krzysztof Penderecki's string notation from *Threnody to the Victims of Hiroshima*:
+
+| Function | Description |
+|----------|-------------|
+| `drawClusterGlissandi()` | Cluster glissandi - sliding pitch bands |
+| `drawClusterMicropolyphony()` | Dense micropolyphonic texture (Ligeti/Penderecki crossover) |
+| `drawClusterStringEffects()` | Visual string effect notation symbols (sul pont, col legno, tremolo) |
+| `drawClusterQuarterTones()` | Quarter-tone accidental marks (quarter/three-quarter sharps/flats) |
+| `drawClusterAleatoryBox()` | Boxed aleatory sections with "ad lib.", "accel." markings |
+| `drawClusterBlackNotation()` | Dense filled "black notation" areas with rough edges |
+| `drawClusterVibratoWiggle()` | Vibrato indication wavy lines |
+| `drawClusterSustainedTones()` | Long sustained cluster tones with attack marks |
+| `drawClusterPercussive()` | Percussive effect marks (X, accent, staccato, tenuto) |
+| `drawClusterDynamicHairpin()` | Hairpin crescendo/diminuendo for clusters |
+| `drawClusterTremoloSlashes()` | Tremolo slashes for sustained clusters |
+| `drawClusterHarmonicDiamond()` | Diamond harmonics notation with "o" marker |
+| `drawClusterSulTasto()` | Sul tasto (over fingerboard) bracket indication |
+| `drawClusterColLegnoBatt()` | Col legno battuto (strike with wood) X marks |
+| `drawClusterFlautando()` | Flautando (flute-like) wavy line with label |
+| `drawClusterSpiccato()` | Spiccato bouncing bow dot patterns |
+| `drawClusterBariolage()` | Rapid alternating strings zigzag pattern |
+| `drawClusterRicochet()` | Ricochet bouncing bow arc pattern |
+
+### Changed
+
+- Cluster mode dispatcher now uses probabilistic layering with 6 primary structures
+- Mode elements list expanded from 4 to 21
+- Updated mode description to include "micropolyphony, black notation"
+
+### Technical
+
+- Extended techniques include authentic string notation symbols
+- Quarter-tone marks support various microtonal notations
+- Ricochet pattern uses diminishing bounce heights for realism
+
+---
+
 ## [3.5.0] - 2026-01-25
 
 ### Added
