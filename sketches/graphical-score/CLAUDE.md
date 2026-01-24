@@ -1,4 +1,4 @@
-# Graphical Score v3.10.0 - AI Assistant Guide
+# Graphical Score v3.11.0 - AI Assistant Guide
 
 ## Project Overview
 
@@ -284,7 +284,25 @@ graphical-score/
 - `drawBussottiDecorativeDots()` - Decorative dot patterns
 - `drawBussottiWaves()` - Wavy gestural lines
 - `drawBussottiCrescendo()` - Dramatic crescendo/decrescendo shapes
-- **TextScore**: `drawTextInstructions()`, `drawTextCryptic()`
+### Enhanced TextScore Mode (v3.11.0 - Stockhausen/Eno)
+- `drawTextInstructions()` - Text-based verbal instructions
+- `drawTextCryptic()` - Cryptic phrases and symbols
+- `drawTextScorePoetic()` - Spaced poetic phrases (Stockhausen's intuitive music)
+- `drawTextScoreNumbered()` - Numbered instruction lists
+- `drawTextScoreTime()` - Time-based instructions with brackets
+- `drawTextScoreStockhausen()` - Intuitive music text instructions
+- `drawTextScoreOblique()` - Oblique Strategies style prompts in frames
+- `drawTextScoreProsody()` - Prosodic stress marks
+- `drawTextScoreConceptual()` - Conceptual art-style instructions (Fluxus)
+- `drawTextScoreParenthetical()` - Parenthetical annotations (ad libitum)
+- `drawTextScoreQuotes()` - Quoted single-word fragments
+- `drawTextScoreVerbs()` - Scattered action verbs
+- `drawTextScoreLayout()` - Typographic spatial layout
+- `drawTextScoreMinimal()` - Minimal single words, large and sparse
+- `drawTextScoreQuestions()` - Question-based instructions
+- `drawTextScoreNegation()` - Negation-based conceptual instructions
+- `drawTextScoreDuration()` - Duration indicator lines with text
+- `drawTextScoreWhisper()` - Small, quiet whispered instructions
 - **Stripsody**: `drawStripsodyOnomatopoeia()`, `drawStripsodyBubbles()`, `drawStripsodyActionLines()`
 - **Ankhrasmation**: `drawAnkhrasmationDurations()`, `drawAnkhrasmationSymbols()`
 - **Braxton**: `drawBraxtonDiagrams()`, `drawBraxtonLanguageTypes()`

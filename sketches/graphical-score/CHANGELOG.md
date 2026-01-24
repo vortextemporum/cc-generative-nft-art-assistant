@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.11.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to TextScore (Stockhausen/Eno) Mode** - 16 new elements inspired by text-based graphic scores, intuitive music (*Aus den sieben Tagen*), and Oblique Strategies:
+
+| Function | Description |
+|----------|-------------|
+| `drawTextScorePoetic()` | Spaced poetic phrases across the section (Stockhausen style) |
+| `drawTextScoreNumbered()` | Numbered instruction lists |
+| `drawTextScoreTime()` | Time-based instructions with brackets ("15 seconds", "until...") |
+| `drawTextScoreStockhausen()` | Intuitive music text instructions |
+| `drawTextScoreOblique()` | Oblique Strategies style prompts in frames |
+| `drawTextScoreProsody()` | Prosodic stress marks (stressed/unstressed) |
+| `drawTextScoreConceptual()` | Conceptual art-style instructions (Fluxus/Yoko Ono) |
+| `drawTextScoreParenthetical()` | Parenthetical annotations (ad libitum, optional) |
+| `drawTextScoreQuotes()` | Quoted single-word fragments |
+| `drawTextScoreVerbs()` | Scattered action verbs |
+| `drawTextScoreLayout()` | Typographic spatial layout with rotated letters |
+| `drawTextScoreMinimal()` | Minimal single words, large and sparse |
+| `drawTextScoreQuestions()` | Question-based instructions |
+| `drawTextScoreNegation()` | Negation-based conceptual instructions |
+| `drawTextScoreDuration()` | Duration indicator lines with text |
+| `drawTextScoreWhisper()` | Small, quiet text (whispered instructions) |
+
+### Changed
+
+- TextScore mode dispatcher now uses probabilistic layering with 7 primary structures
+- Mode elements list expanded from 4 to 20
+- Updated mode description to include "intuitive music, oblique strategies"
+
+### Technical
+
+- Poetic phrases use spaced word layout across section width
+- Oblique strategies rendered in framed boxes
+- Prosody marks use stressed/unstressed syllable notation
+- Whisper text uses smaller size and lighter color for quiet effect
+
+---
+
 ## [3.10.0] - 2026-01-25
 
 ### Added
