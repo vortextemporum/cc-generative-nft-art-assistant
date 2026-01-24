@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to UPIC (Xenakis) Mode** - 18 new elements inspired by Iannis Xenakis's UPIC system and stochastic composition:
+
+| Function | Description |
+|----------|-------------|
+| `drawUpicGlissandiBands()` | Multiple parallel glissandi (Metastaseis style) |
+| `drawUpicDensityMass()` | Dense texture masses (stochastic clouds like Pithoprakta) |
+| `drawUpicGraphPaper()` | Grid overlay like original UPIC screen |
+| `drawUpicPressureStrokes()` | Variable pressure/thickness strokes |
+| `drawUpicStochasticPoints()` | Probabilistically distributed points (uniform/gaussian/exponential) |
+| `drawUpicMathCurves()` | Mathematical curves (parabolas, exponentials, logarithms, hyperbolas) |
+| `drawUpicArborescences()` | Tree-like branching structures |
+| `drawUpicPolytopes()` | Geometric spatial structures (inspired by Xenakis Polytopes) |
+| `drawUpicGranularCloud()` | Dense granular synthesis representation |
+| `drawUpicProbabilityBands()` | Probability distribution envelope bands |
+| `drawUpicAngularTransforms()` | Angular line transformations |
+| `drawUpicWavePages()` | UPIC "page" segments with waveforms |
+| `drawUpicRotations()` | Rotational shape transformations |
+| `drawUpicParallelStreams()` | Multiple parallel voice streams |
+| `drawUpicSifted()` | "Sifted" patterns (Xenakis sieves theory) |
+| `drawUpicArchitectural()` | Architectural structures (Polytope de Montréal influence) |
+| `drawUpicLogisticMap()` | Chaos theory curves (logistic map visualization) |
+| `drawUpicHarmonicSeries()` | Overtone series visualization with partial numbers |
+
+### Changed
+
+- UPIC mode dispatcher now uses probabilistic layering with 6 primary structures
+- Mode elements list expanded from 4 to 22
+- Updated mode description to include "stochastic masses, mathematical curves"
+
+### Technical
+
+- Arborescences use recursive branch drawing with depth limiting
+- Stochastic points support three distribution types (uniform, gaussian, exponential)
+- Logistic map uses r=3.5-3.9 for chaotic regime visualization
+
+---
+
 ## [3.4.0] - 2026-01-25
 
 ### Added

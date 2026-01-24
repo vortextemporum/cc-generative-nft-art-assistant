@@ -1,11 +1,11 @@
-# Graphical Score v3.4.0 - AI Assistant Guide
+# Graphical Score v3.5.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.4.0
+**Current Version:** 3.5.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -85,6 +85,26 @@ graphical-score/
 ### Mode Drawing (Original)
 - `drawArtikulationColorBlocks()`, `drawArtikulationClusters()`
 - `drawUpicArcs()`, `drawUpicRuledLines()`
+
+### Enhanced UPIC Mode (v3.5.0 - Xenakis)
+- `drawUpicGlissandiBands()` - Multiple parallel glissandi (Metastaseis style)
+- `drawUpicDensityMass()` - Dense stochastic texture masses
+- `drawUpicGraphPaper()` - Grid overlay like original UPIC screen
+- `drawUpicPressureStrokes()` - Variable pressure/thickness strokes
+- `drawUpicStochasticPoints()` - Probabilistically distributed points
+- `drawUpicMathCurves()` - Parabolas, exponentials, logarithms, hyperbolas
+- `drawUpicArborescences()` - Tree-like branching structures
+- `drawUpicPolytopes()` - Geometric spatial structures (Polytopes)
+- `drawUpicGranularCloud()` - Dense granular synthesis representation
+- `drawUpicProbabilityBands()` - Probability distribution envelope bands
+- `drawUpicAngularTransforms()` - Angular line transformations
+- `drawUpicWavePages()` - UPIC "page" segments with waveforms
+- `drawUpicRotations()` - Rotational shape transformations
+- `drawUpicParallelStreams()` - Multiple parallel voice streams
+- `drawUpicSifted()` - "Sifted" patterns (Xenakis sieves theory)
+- `drawUpicArchitectural()` - Architectural structures (Polytope influence)
+- `drawUpicLogisticMap()` - Chaos theory logistic map curves
+- `drawUpicHarmonicSeries()` - Overtone series visualization
 
 ### Enhanced Artikulation Mode (v3.4.0 - Ligeti/Wehinger)
 - `drawArtikulationCallResponse()` - Call/response patterns between timbral groups
