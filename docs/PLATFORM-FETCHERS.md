@@ -8,6 +8,7 @@
 
 | Platform | Chain | Status | API Method | Contract/Endpoint |
 |----------|-------|--------|------------|-------------------|
+| **EditArt** | Tezos | ✅ Working | Objkt GraphQL | 575+ collections, IPFS code, 5 sliders |
 | **Highlight.xyz** | Multi-chain | ✅ Working | Alchemy + Arweave | 9 collections, Arweave/on-chain code |
 | **Verse.works** | Ethereum | 🟡 Limited | Indexer API | Mostly static editions, few generative |
 | **Prohibition** | Arbitrum | 🟢 Ready | Art Blocks Engine Hasura | `0x47a91457a3a1f700097199fd63c039c4784384ab` |
@@ -31,6 +32,75 @@
 | **Tender.art** | Ethereum | 🔴 Unknown | Needs research |
 | **Vivid** | Unknown | 🔴 Unknown | Needs research |
 | **Versum** | Tezos | 🔴 Inactive | Platform less active |
+
+---
+
+## EditArt Details
+
+**URL**: https://editart.xyz
+**Chain**: Tezos
+**Creator**: Pifragile
+**API**: Objkt GraphQL (`data.objkt.com/v3/graphql`)
+**Storage**: IPFS for code and metadata
+
+### How It Works
+
+EditArt allows collectors to become co-creators by adjusting 5 parameter sliders (m0-m4) when minting:
+- Artists upload parameterized artwork code to IPFS
+- Each artwork has a custom smart contract (KT1... address)
+- When minting, slider values are stored on-chain
+- Code receives parameters via URL query string: `?m0=0.5&m1=0.3&m2=0.8&m3=0.2&m4=0.6`
+
+### Data Structure
+
+```javascript
+// Artifact URI format
+"ipfs://Qm...?m0=0.500&m1=0.500&m2=0.500&m3=0.500&m4=0.500"
+
+// Collection metadata via Objkt API
+{
+  "contract": "KT1...",           // Unique contract per collection
+  "name": "Collection Name",
+  "path": "editart-collection-name",
+  "creator_address": "tz1...",
+  "description": "...",
+  "items": 100,                   // Minted tokens
+  "editions": 100                 // Total supply
+}
+```
+
+### Fetching Strategy
+
+1. Query Objkt GraphQL for all collections with path starting with `editart-`
+2. For each collection, fetch sample tokens to get IPFS hash
+3. Extract generative code from IPFS (HTML with embedded p5.js)
+4. Use `--update` flag for incremental fetching of new collections
+
+### Script Structure
+
+EditArt projects are typically HTML files with embedded p5.js:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <script>/* p5.js library */</script>
+</head>
+<body>
+<script>
+// Read slider parameters from URL
+const params = new URLSearchParams(window.location.search);
+const m0 = parseFloat(params.get('m0') || 0.5);
+const m1 = parseFloat(params.get('m1') || 0.5);
+// ... m2, m3, m4
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  // Use m0-m4 to control artwork generation
+}
+</script>
+</body>
+</html>
+```
 
 ---
 
@@ -234,6 +304,7 @@ query {
 
 | Fetcher | Script | Status | Test Results |
 |---------|--------|--------|--------------|
+| **EditArt** | `scripts/editart-fetcher.js` | ✅ Working | 575+ collections via Objkt API, IPFS scripts |
 | **Highlight.xyz** | `scripts/highlight-fetcher.js` | ✅ Working | 9 collections configured, 4 with code extracted |
 | **Dwitter** | `scripts/dwitter-fetcher.js` | ✅ Working | 5,000 dweets, 372 authors |
 | **Shadertoy** | `scripts/shadertoy-dataset-downloader.js` | ✅ Ready | Multi-source: HuggingFace (44k), Kaggle (1k), API |
@@ -261,9 +332,22 @@ query {
 - 42,257 total likes
 - Average code length: ~95 chars
 
+**EditArt** (in `data/editart-dataset.json`):
+- 575+ generative art collections
+- Tezos blockchain (via Objkt API)
+- Each collection uses 5 parameter sliders (m0-m4)
+- Code stored on IPFS (mostly p5.js)
+- Supports incremental updates
+
 ### Usage
 
 ```bash
+# EditArt - no API key required (uses Objkt GraphQL)
+node scripts/editart-fetcher.js                    # All collections, metadata only
+node scripts/editart-fetcher.js --with-scripts     # Include IPFS script content
+node scripts/editart-fetcher.js --update           # Incremental update (new since last run)
+node scripts/editart-fetcher.js --limit 50         # Fetch only first 50 collections
+
 # Highlight - requires Alchemy API key
 ALCHEMY_API_KEY=xxx node scripts/highlight-fetcher.js
 
@@ -292,8 +376,8 @@ SHADERTOY_API_KEY=xxx node scripts/shadertoy-fetcher.js --limit 500
 ### Still To Do
 - [x] More Highlight collections discovered and added
 - [x] Shadertoy dataset options documented
+- [x] EditArt fetcher via Objkt GraphQL (Tezos)
 - [ ] Fetch remaining 5 Highlight collections
-- [ ] Objkt GraphQL fetcher (Tezos)
 - [ ] OpenProcessing scraper
 - [ ] VertexShaderArt (exploring options)
 
