@@ -1,11 +1,11 @@
-# Graphical Score v3.8.0 - AI Assistant Guide
+# Graphical Score v3.9.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.8.0
+**Current Version:** 3.9.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -246,6 +246,24 @@ graphical-score/
 - `drawTreatiseSmallSpiral()` - Small spiral elements
 - `drawTreatiseBlocks()` - Rectangular blocks
 - **OpenForm**: `drawOpenFormRects()`, `drawOpenFormSpatial()`
+
+### Enhanced OpenForm Mode (v3.9.0 - Earle Brown)
+- `drawOpenFormMobile()` - Mobile-like floating arrangement
+- `drawOpenFormProportional()` - Proportional time-space bars
+- `drawOpenFormBalance()` - Visual weight and balance composition
+- `drawOpenFormTrajectory()` - Curved arrows showing paths
+- `drawOpenFormClusters()` - Grouped rectangles
+- `drawOpenFormVerticalStacks()` - Stacked vertical bars
+- `drawOpenFormHorizontalStream()` - Horizontal bar streams
+- `drawOpenFormEvent()` - Single prominent event
+- `drawOpenFormGradient()` - Size gradient arrangements
+- `drawOpenFormSparse()` - Minimal sparse arrangement
+- `drawOpenFormDense()` - Dense accumulation
+- `drawOpenFormOverlap()` - Overlapping transparent rectangles
+- `drawOpenFormAsymmetric()` - Asymmetric balance
+- `drawOpenFormContrapuntal()` - Two-voice contrapuntal
+- `drawOpenFormLooseGrid()` - Loose grid arrangement
+- `drawOpenFormDiagonal()` - Diagonal arrangement
 - **Bussotti**: `drawBussottiCalligraphic()`, `drawBussottiFlourishes()`, `drawBussottiSplatters()`
 - **TextScore**: `drawTextInstructions()`, `drawTextCryptic()`
 - **Stripsody**: `drawStripsodyOnomatopoeia()`, `drawStripsodyBubbles()`, `drawStripsodyActionLines()`

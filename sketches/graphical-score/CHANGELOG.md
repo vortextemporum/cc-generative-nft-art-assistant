@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to OpenForm (Earle Brown) Mode** - 16 new elements inspired by Earle Brown's graphic scores (*December 1952*, *Available Forms*):
+
+| Function | Description |
+|----------|-------------|
+| `drawOpenFormMobile()` | Mobile-like floating arrangement with connecting structure |
+| `drawOpenFormProportional()` | Proportional time-space bars |
+| `drawOpenFormBalance()` | Visual weight and balance composition |
+| `drawOpenFormTrajectory()` | Curved arrows suggesting possible paths through material |
+| `drawOpenFormClusters()` | Grouped rectangles in clusters |
+| `drawOpenFormVerticalStacks()` | Stacked vertical bars |
+| `drawOpenFormHorizontalStream()` | Horizontal bar streams with gaps |
+| `drawOpenFormEvent()` | Single prominent event rectangle |
+| `drawOpenFormGradient()` | Size gradient arrangements (small to large) |
+| `drawOpenFormSparse()` | Minimal sparse arrangement |
+| `drawOpenFormDense()` | Dense accumulation of rectangles |
+| `drawOpenFormOverlap()` | Overlapping transparent rectangles |
+| `drawOpenFormAsymmetric()` | Asymmetric balance (different types on each side) |
+| `drawOpenFormContrapuntal()` | Two-voice contrapuntal arrangement |
+| `drawOpenFormLooseGrid()` | Loose grid with partial cell fills |
+| `drawOpenFormDiagonal()` | Diagonal arrangement |
+
+### Changed
+
+- OpenForm mode dispatcher now uses probabilistic layering with 7 primary structures
+- Mode elements list expanded from 4 to 18
+- Updated mode description to include "proportional notation, visual balance"
+
+### Technical
+
+- Mobile arrangement includes light connecting structure lines
+- Balance composition creates visual weight contrast
+- Trajectory arrows use bezier curves for smooth paths
+
+---
+
 ## [3.8.0] - 2026-01-25
 
 ### Added
