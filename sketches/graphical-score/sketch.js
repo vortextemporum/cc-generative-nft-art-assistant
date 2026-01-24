@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.6.0
+ * Graphical Score v3.7.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,13 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.7.0: Major enhancement to Spectral (Murail/Grisey) mode with 16 new elements:
+ *         - Harmonic partials, inharmonicity, beating patterns
+ *         - Spectral interpolation, difference tones, ring modulation
+ *         - Spectral compression, filtering curves, envelopes
+ *         - Spectral gestures, sonograms, morphing
+ *         - Fundamental emphasis, spectral glissando, decay curves
+ *         - Additive synthesis visualization
  * v3.6.0: Major enhancement to Cluster (Penderecki) mode with 18 new elements:
  *         - Cluster glissandi, micropolyphony textures, string effect notation
  *         - Quarter-tone marks, aleatory boxes, black notation areas
@@ -354,9 +361,15 @@ const MODES = {
   spectral: {
     name: "Spectral",
     composer: "Murail/Grisey",
-    description: "Frequency bands, overtone stacks, horizontal strata",
+    description: "Frequency bands, overtone analysis, spectral transformations, sonograms",
     weight: 0.15,
-    elements: ["frequencyBands", "harmonicStacks", "spectralEnvelopes", "partials"],
+    elements: [
+      "frequencyBands", "harmonicStacks", "spectralEnvelopes", "partials",
+      "waterfall", "formantContours", "attackTransients", "resonanceBells",
+      "inharmonicity", "beating", "interpolation", "differenceTones",
+      "ringMod", "compression", "filtering", "envelopeTime", "gesture",
+      "sonogram", "morphing", "fundamental", "gliss", "decay", "additive"
+    ],
     prefersPalette: ["spectralHeat", "blueprint"]
   },
   spiral: {
@@ -4810,6 +4823,531 @@ function drawSpectralBands(voice, section) {
   }
 }
 
+// New Spectral functions v3.7.0
+
+function drawSpectralPartials(voice, section) {
+  // Individual harmonic partials with varying intensity (Grisey's Partiels)
+  const fundamental = rnd(voice.yEnd - 20, voice.yEnd - 10);
+  const startX = rnd(section.xStart + 10, section.xEnd - 100);
+  const w = rnd(60, 120) * scaleFactor;
+  const numPartials = rndInt(8, 16);
+
+  for (let p = 1; p <= numPartials; p++) {
+    // Harmonic series: partials at integer multiples
+    const y = fundamental - (voice.height - 30) * log(p) / log(numPartials + 2);
+    const intensity = 1 / sqrt(p); // Natural harmonic decay
+
+    stroke(features.palette.ink + hex(Math.floor(intensity * 200), 2));
+    strokeWeight(features.lineWeight * intensity * 1.5 * scaleFactor);
+    line(startX, y, startX + w * intensity, y);
+
+    // Slight vibration on stronger partials
+    if (p <= 4 && rndBool(0.5)) {
+      strokeWeight(0.3 * scaleFactor);
+      for (let t = 0; t < 3; t++) {
+        const vy = y + rnd(-2, 2) * scaleFactor;
+        line(startX + t * 8 * scaleFactor, vy, startX + (t + 0.5) * 8 * scaleFactor, vy);
+      }
+    }
+  }
+}
+
+function drawSpectralInharmonicity(voice, section) {
+  // Inharmonic partial spreading (bell/piano string inharmonicity)
+  const fundamental = rnd(voice.yEnd - 15, voice.yEnd - 5);
+  const startX = rnd(section.xStart + 20, section.xEnd - 80);
+  const w = rnd(50, 100) * scaleFactor;
+  const numPartials = rndInt(6, 12);
+  const inharmonicity = rnd(0.02, 0.08); // Inharmonicity coefficient
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let p = 1; p <= numPartials; p++) {
+    // Inharmonic: f_n = f_1 * n * sqrt(1 + B*n^2)
+    const stretch = sqrt(1 + inharmonicity * p * p);
+    const idealY = fundamental - (voice.height - 30) * log(p) / log(numPartials + 2);
+    const actualY = idealY - (stretch - 1) * 20 * scaleFactor; // Stretch upward
+
+    const intensity = 1 / (p * 0.7);
+    strokeWeight(features.lineWeight * intensity * scaleFactor);
+    stroke(features.palette.ink + hex(Math.floor(intensity * 200), 2));
+    line(startX, actualY, startX + w * intensity, actualY);
+  }
+}
+
+function drawSpectralBeating(voice, section) {
+  // Beating/interference patterns between close frequencies
+  const numBeats = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let b = 0; b < numBeats; b++) {
+    const startX = rnd(section.xStart + 15, section.xEnd - 100);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const w = rnd(80, 140) * scaleFactor;
+    const beatFreq = rnd(2, 6); // Number of beats
+
+    strokeWeight(features.lineWeight * scaleFactor);
+
+    // Upper frequency
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.01) {
+      const x = startX + t * w;
+      const amp = sin(t * TWO_PI * beatFreq) * 0.5 + 0.5; // Amplitude modulation
+      const py = y - 8 * scaleFactor + sin(t * TWO_PI * 20) * amp * 4 * scaleFactor;
+      vertex(x, py);
+    }
+    endShape();
+
+    // Lower frequency (slightly different)
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.01) {
+      const x = startX + t * w;
+      const amp = sin(t * TWO_PI * beatFreq + PI) * 0.5 + 0.5;
+      const py = y + 8 * scaleFactor + sin(t * TWO_PI * 19) * amp * 4 * scaleFactor;
+      vertex(x, py);
+    }
+    endShape();
+  }
+}
+
+function drawSpectralInterpolation(voice, section) {
+  // Spectral interpolation between two spectra
+  const startX = rnd(section.xStart + 15, section.xEnd - 120);
+  const w = rnd(80, 140) * scaleFactor;
+  const numBands = rndInt(5, 10);
+
+  noFill();
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+
+  for (let band = 0; band < numBands; band++) {
+    // Start and end Y positions (different spectra)
+    const startY = voice.yStart + (band / numBands) * voice.height * 0.8 + rnd(-5, 5) * scaleFactor;
+    const endY = voice.yStart + ((numBands - band) / numBands) * voice.height * 0.8 + rnd(-5, 5) * scaleFactor;
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      const y = lerp(startY, endY, t);
+      vertex(x, y);
+    }
+    endShape();
+  }
+
+  // Interpolation arrows
+  stroke(features.palette.ink + "66");
+  const arrowX = startX + w / 2;
+  line(arrowX, voice.yEnd - 5, arrowX, voice.yStart + 5);
+  line(arrowX - 3 * scaleFactor, voice.yStart + 10, arrowX, voice.yStart + 5);
+  line(arrowX + 3 * scaleFactor, voice.yStart + 10, arrowX, voice.yStart + 5);
+}
+
+function drawSpectralDifferenceTones(voice, section) {
+  // Combination/difference tone visualization
+  const startX = rnd(section.xStart + 20, section.xEnd - 80);
+  const y1 = rnd(voice.yStart + 15, voice.yStart + voice.height * 0.3);
+  const y2 = rnd(voice.yStart + voice.height * 0.4, voice.yStart + voice.height * 0.6);
+  const w = rnd(40, 80) * scaleFactor;
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+
+  // Two primary tones
+  line(startX, y1, startX + w, y1);
+  line(startX, y2, startX + w, y2);
+
+  // Difference tone (below)
+  const diffY = y2 + (y2 - y1);
+  stroke(features.palette.ink + "88");
+  strokeWeight(features.lineWeight * 0.7 * scaleFactor);
+  drawingContext.setLineDash([3 * scaleFactor, 2 * scaleFactor]);
+  line(startX + w * 0.3, diffY, startX + w, diffY);
+
+  // Summation tone (above)
+  const sumY = y1 - (y2 - y1) * 0.5;
+  if (sumY > voice.yStart + 5) {
+    line(startX + w * 0.3, sumY, startX + w, sumY);
+  }
+  drawingContext.setLineDash([]);
+
+  // Labels
+  fill(features.palette.ink + "88");
+  noStroke();
+  textSize(5 * scaleFactor);
+  text("f₁", startX - 10 * scaleFactor, y1);
+  text("f₂", startX - 10 * scaleFactor, y2);
+  text("f₂-f₁", startX - 15 * scaleFactor, diffY);
+}
+
+function drawSpectralRingMod(voice, section) {
+  // Ring modulation sidebands visualization
+  const startX = rnd(section.xStart + 20, section.xEnd - 80);
+  const centerY = rnd(voice.yStart + voice.height * 0.3, voice.yEnd - voice.height * 0.3);
+  const w = rnd(50, 90) * scaleFactor;
+  const spacing = rnd(15, 25) * scaleFactor;
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+
+  // Carrier frequency (center)
+  line(startX, centerY, startX + w, centerY);
+
+  // Upper sideband
+  stroke(features.palette.ink + "aa");
+  line(startX, centerY - spacing, startX + w * 0.8, centerY - spacing);
+
+  // Lower sideband
+  line(startX, centerY + spacing, startX + w * 0.8, centerY + spacing);
+
+  // Second-order sidebands (fainter)
+  stroke(features.palette.ink + "55");
+  strokeWeight(features.lineWeight * 0.6 * scaleFactor);
+  if (centerY - spacing * 2 > voice.yStart + 5) {
+    line(startX, centerY - spacing * 2, startX + w * 0.5, centerY - spacing * 2);
+  }
+  if (centerY + spacing * 2 < voice.yEnd - 5) {
+    line(startX, centerY + spacing * 2, startX + w * 0.5, centerY + spacing * 2);
+  }
+
+  // Label
+  fill(features.palette.ink + "66");
+  noStroke();
+  textSize(5 * scaleFactor);
+  text("RM", startX + w + 5 * scaleFactor, centerY);
+}
+
+function drawSpectralCompression(voice, section) {
+  // Spectral compression/expansion bands
+  const startX = rnd(section.xStart + 15, section.xEnd - 100);
+  const w = rnd(70, 120) * scaleFactor;
+  const numBands = rndInt(6, 12);
+  const isCompression = rndBool(0.5);
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+  noFill();
+
+  for (let band = 0; band < numBands; band++) {
+    const normalSpacing = band / numBands;
+    let startY, endY;
+
+    if (isCompression) {
+      // Compress toward center
+      startY = voice.yStart + normalSpacing * voice.height;
+      const compressed = 0.3 + normalSpacing * 0.4; // Compress to middle range
+      endY = voice.yStart + compressed * voice.height;
+    } else {
+      // Expand from center
+      const compressed = 0.3 + normalSpacing * 0.4;
+      startY = voice.yStart + compressed * voice.height;
+      endY = voice.yStart + normalSpacing * voice.height;
+    }
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      const y = lerp(startY, endY, t);
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawSpectralFiltering(voice, section) {
+  // Spectral filter curves (LP, HP, BP)
+  const filterType = rndInt(0, 3);
+  const startX = rnd(section.xStart + 20, section.xEnd - 80);
+  const w = rnd(50, 90) * scaleFactor;
+  const h = voice.height * 0.6;
+  const baseY = voice.yStart + voice.height * 0.2;
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 1.2 * scaleFactor);
+  noFill();
+
+  beginShape();
+  for (let t = 0; t <= 1; t += 0.02) {
+    const x = startX + t * w;
+    let amplitude;
+
+    if (filterType === 0) {
+      // Low-pass filter
+      amplitude = 1 / (1 + pow(t * 3, 4));
+    } else if (filterType === 1) {
+      // High-pass filter
+      amplitude = 1 - 1 / (1 + pow(t * 3, 4));
+    } else {
+      // Band-pass filter
+      const center = 0.5;
+      amplitude = exp(-pow((t - center) * 5, 2));
+    }
+
+    const y = baseY + h * (1 - amplitude);
+    vertex(x, y);
+  }
+  endShape();
+
+  // Filter label
+  fill(features.palette.ink + "88");
+  noStroke();
+  textSize(5 * scaleFactor);
+  const labels = ["LP", "HP", "BP"];
+  text(labels[filterType], startX + w + 5 * scaleFactor, baseY + h * 0.5);
+}
+
+function drawSpectralEnvelopeTime(voice, section) {
+  // Spectral amplitude envelope over time
+  const startX = rnd(section.xStart + 10, section.xEnd - 100);
+  const w = rnd(80, 130) * scaleFactor;
+  const numBands = rndInt(4, 8);
+
+  noFill();
+
+  for (let band = 0; band < numBands; band++) {
+    const baseY = voice.yStart + (band / numBands) * voice.height * 0.8 + 10;
+    const maxAmp = rnd(5, 15) * scaleFactor;
+    const phase = rnd(0, TWO_PI);
+
+    stroke(features.palette.ink + hex(Math.floor((1 - band / numBands) * 200), 2));
+    strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      // Time-varying amplitude envelope
+      const envelope = sin(t * PI) * sin(t * TWO_PI * 2 + phase) * maxAmp;
+      const y = baseY + envelope;
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawSpectralGesture(voice, section) {
+  // Time-varying spectral gesture (Murail-style)
+  const startX = rnd(section.xStart + 15, section.xEnd - 120);
+  const w = rnd(100, 150) * scaleFactor;
+
+  noFill();
+  stroke(features.palette.ink);
+
+  // Multiple traces showing spectral evolution
+  const numTraces = rndInt(5, 10);
+  for (let trace = 0; trace < numTraces; trace++) {
+    const startY = voice.yStart + rnd(10, voice.height - 20);
+    const gestureType = rndInt(0, 3);
+
+    strokeWeight(features.lineWeight * rnd(0.5, 1) * scaleFactor);
+    stroke(features.palette.ink + hex(Math.floor(rnd(100, 220)), 2));
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      let y = startY;
+
+      if (gestureType === 0) {
+        // Rising gesture
+        y = startY - t * t * 30 * scaleFactor;
+      } else if (gestureType === 1) {
+        // Falling gesture
+        y = startY + t * t * 30 * scaleFactor;
+      } else {
+        // Arc gesture
+        y = startY - sin(t * PI) * 25 * scaleFactor;
+      }
+
+      y = constrain(y, voice.yStart + 5, voice.yEnd - 5);
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawSpectralSonogram(voice, section) {
+  // Sonogram-like dense display
+  const numTimeSlices = Math.floor(section.width / (3 * scaleFactor));
+  const numFreqBins = rndInt(15, 30);
+
+  noStroke();
+  const binHeight = voice.height / numFreqBins;
+  const sliceWidth = 2 * scaleFactor;
+
+  for (let t = 0; t < numTimeSlices; t++) {
+    const x = section.xStart + t * 3 * scaleFactor;
+
+    for (let f = 0; f < numFreqBins; f++) {
+      const y = voice.yStart + f * binHeight;
+      const energy = noise(t * 0.08, f * 0.12) * noise(t * 0.02, f * 0.05);
+
+      if (energy > 0.2) {
+        fill(features.palette.ink + hex(Math.floor(energy * 255), 2));
+        rect(x, y, sliceWidth, binHeight * 0.8);
+      }
+    }
+  }
+}
+
+function drawSpectralMorphing(voice, section) {
+  // Morphing between spectral states
+  const startX = rnd(section.xStart + 15, section.xEnd - 100);
+  const w = rnd(70, 110) * scaleFactor;
+  const numBands = rndInt(5, 9);
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 0.7 * scaleFactor);
+  noFill();
+
+  // Source spectrum (left) and target spectrum (right)
+  const sourceFreqs = [];
+  const targetFreqs = [];
+  for (let i = 0; i < numBands; i++) {
+    sourceFreqs.push(voice.yStart + (i / numBands) * voice.height * 0.8 + 10);
+    targetFreqs.push(voice.yStart + rnd(0.1, 0.9) * voice.height);
+  }
+
+  // Draw morphing paths
+  for (let i = 0; i < numBands; i++) {
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      // S-curve interpolation for smooth morphing
+      const morph = 0.5 - 0.5 * cos(t * PI);
+      const y = lerp(sourceFreqs[i], targetFreqs[i], morph);
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawSpectralFundamental(voice, section) {
+  // Emphasized fundamental with overtones radiating
+  const fundamental = rnd(voice.yEnd - 25, voice.yEnd - 10);
+  const cx = rnd(section.xStart + 30, section.xEnd - 30);
+
+  // Strong fundamental
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 2 * scaleFactor);
+  fill(features.palette.ink);
+  ellipse(cx, fundamental, 8 * scaleFactor, 8 * scaleFactor);
+
+  // Overtones radiating upward
+  noFill();
+  for (let p = 2; p <= 8; p++) {
+    const y = fundamental - (voice.height - 30) * log(p) / log(10);
+    const intensity = 1 / p;
+
+    stroke(features.palette.ink + hex(Math.floor(intensity * 200), 2));
+    strokeWeight(features.lineWeight * intensity * scaleFactor);
+
+    // Radiating lines
+    line(cx, fundamental - 4 * scaleFactor, cx + rnd(-10, 10) * scaleFactor, y);
+    ellipse(cx + rnd(-5, 5) * scaleFactor, y, 3 * scaleFactor * intensity, 3 * scaleFactor * intensity);
+  }
+}
+
+function drawSpectralGliss(voice, section) {
+  // Spectral glissando - all partials moving together
+  const startX = rnd(section.xStart + 15, section.xEnd - 100);
+  const w = rnd(70, 110) * scaleFactor;
+  const numPartials = rndInt(5, 10);
+  const glissDirection = rndBool(0.5) ? 1 : -1; // Up or down
+  const glissAmount = rnd(20, 40) * scaleFactor * glissDirection;
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let p = 1; p <= numPartials; p++) {
+    const startY = voice.yEnd - 10 - (voice.height - 20) * log(p) / log(numPartials + 2);
+    const endY = startY - glissAmount;
+    const intensity = 1 / sqrt(p);
+
+    strokeWeight(features.lineWeight * intensity * scaleFactor);
+    stroke(features.palette.ink + hex(Math.floor(intensity * 220), 2));
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      const y = lerp(startY, endY, t);
+      vertex(x, constrain(y, voice.yStart + 5, voice.yEnd - 5));
+    }
+    endShape();
+  }
+}
+
+function drawSpectralDecay(voice, section) {
+  // Natural spectral decay curves (higher partials decay faster)
+  const startX = rnd(section.xStart + 15, section.xEnd - 120);
+  const w = rnd(100, 150) * scaleFactor;
+  const numPartials = rndInt(6, 12);
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let p = 1; p <= numPartials; p++) {
+    const y = voice.yEnd - 10 - (voice.height - 20) * log(p) / log(numPartials + 2);
+    const decayRate = p * 0.5; // Higher partials decay faster
+
+    strokeWeight(features.lineWeight * (1 / sqrt(p)) * scaleFactor);
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      const amplitude = exp(-t * decayRate);
+      // Draw as horizontal line with varying alpha
+      stroke(features.palette.ink + hex(Math.floor(amplitude * 200), 2));
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawSpectralAdditive(voice, section) {
+  // Additive synthesis visualization (stacked sine components)
+  const startX = rnd(section.xStart + 15, section.xEnd - 100);
+  const w = rnd(70, 110) * scaleFactor;
+  const numComponents = rndInt(4, 8);
+  const baseY = (voice.yStart + voice.yEnd) / 2;
+
+  stroke(features.palette.ink);
+  noFill();
+
+  // Individual components
+  for (let c = 1; c <= numComponents; c++) {
+    const amplitude = (10 / c) * scaleFactor;
+    const frequency = c;
+
+    strokeWeight(features.lineWeight * 0.5 * scaleFactor);
+    stroke(features.palette.ink + "66");
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * w;
+      const y = baseY - c * 8 * scaleFactor + sin(t * TWO_PI * frequency) * amplitude;
+      vertex(x, constrain(y, voice.yStart + 5, voice.yEnd - 5));
+    }
+    endShape();
+  }
+
+  // Sum (composite waveform)
+  strokeWeight(features.lineWeight * 1.2 * scaleFactor);
+  stroke(features.palette.ink);
+
+  beginShape();
+  for (let t = 0; t <= 1; t += 0.01) {
+    const x = startX + t * w;
+    let sum = 0;
+    for (let c = 1; c <= numComponents; c++) {
+      sum += sin(t * TWO_PI * c) * (10 / c);
+    }
+    const y = baseY + sum * scaleFactor * 0.5;
+    vertex(x, constrain(y, voice.yStart + 5, voice.yEnd - 5));
+  }
+  endShape();
+}
+
 // ============================================================
 // MODE-SPECIFIC DRAWING: SPIRAL (Crumb)
 // ============================================================
@@ -6322,19 +6860,34 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "spectral":
-      // Primary spectral element (varied based on hash)
-      const spectralVariant = rnd();
-      if (spectralVariant < 0.3) {
-        drawSpectralWaterfall(voice, section);
-      } else if (spectralVariant < 0.5) {
-        drawFormantContours(voice, section);
-      } else {
-        drawSpectralBands(voice, section);
+      // Enhanced Spectral mode v3.7.0 - Murail/Grisey spectral analysis
+      // Primary structural element (choose one)
+      const spectralPrimary = rndInt(0, 8);
+      switch (spectralPrimary) {
+        case 0: drawSpectralBands(voice, section); break;
+        case 1: drawSpectralWaterfall(voice, section); break;
+        case 2: drawFormantContours(voice, section); break;
+        case 3: drawSpectralPartials(voice, section); break;
+        case 4: drawSpectralSonogram(voice, section); break;
+        case 5: drawSpectralGesture(voice, section); break;
+        case 6: drawSpectralFundamental(voice, section); break;
+        case 7: drawSpectralAdditive(voice, section); break;
       }
-      // Secondary elements
-      if (rndBool(0.5)) drawHarmonicStacks(voice, section);
-      if (rndBool(0.4)) drawAttackTransients(voice, section);
-      if (rndBool(0.35)) drawResonanceBells(voice, section);
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.45)) drawHarmonicStacks(voice, section);
+      if (rndBool(0.35)) drawAttackTransients(voice, section);
+      if (rndBool(0.3)) drawResonanceBells(voice, section);
+      if (rndBool(0.3)) drawSpectralInharmonicity(voice, section);
+      if (rndBool(0.25)) drawSpectralBeating(voice, section);
+      if (rndBool(0.25)) drawSpectralInterpolation(voice, section);
+      if (rndBool(0.2)) drawSpectralDifferenceTones(voice, section);
+      if (rndBool(0.2)) drawSpectralRingMod(voice, section);
+      if (rndBool(0.25)) drawSpectralCompression(voice, section);
+      if (rndBool(0.25)) drawSpectralFiltering(voice, section);
+      if (rndBool(0.3)) drawSpectralEnvelopeTime(voice, section);
+      if (rndBool(0.25)) drawSpectralMorphing(voice, section);
+      if (rndBool(0.3)) drawSpectralGliss(voice, section);
+      if (rndBool(0.25)) drawSpectralDecay(voice, section);
       break;
 
     case "spiral":
