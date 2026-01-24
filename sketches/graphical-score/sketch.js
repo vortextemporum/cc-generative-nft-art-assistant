@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.10.0
+ * Graphical Score v3.11.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -446,9 +446,14 @@ const MODES = {
   textscore: {
     name: "TextScore",
     composer: "Stockhausen/Eno",
-    description: "Verbal instructions, cryptic phrases, text-based notation",
+    description: "Verbal instructions, cryptic phrases, text-based notation, intuitive music, oblique strategies",
     weight: 0.07,
-    elements: ["textInstructions", "crypticPhrases", "spacedWords", "typographicLayout"],
+    elements: [
+      "textInstructions", "crypticPhrases", "spacedWords", "typographicLayout",
+      "poetic", "numbered", "time", "stockhausen", "oblique",
+      "prosody", "conceptual", "parenthetical", "quotes", "verbs",
+      "layout", "minimal", "questions", "negation", "duration", "whisper"
+    ],
     prefersPalette: ["textMinimal", "manuscript"]
   },
   stripsody: {
@@ -7758,6 +7763,476 @@ function drawTextCryptic(voice, section) {
   }
 }
 
+function drawTextScorePoetic(voice, section) {
+  // Spaced poetic phrases (Stockhausen's "Aus den sieben Tagen" style)
+  const phrases = [
+    "in the rhythm of the universe",
+    "vibration in the rhythm of dreaming",
+    "think nothing",
+    "let it stream through you",
+    "play a sound",
+    "with certainty that you are creating miracles",
+    "between yourself and the infinite",
+    "until you reach the silence",
+    "a sound that is only your own",
+    "beyond the surface of the sound"
+  ];
+
+  const numPhrases = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+  textStyle(ITALIC);
+
+  for (let i = 0; i < numPhrases; i++) {
+    const phrase = rndChoice(phrases);
+    const words = phrase.split(" ");
+    let x = rnd(section.xStart + 20, section.xStart + 100);
+    const baseY = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(9, 12) * scaleFactor;
+    textSize(size);
+
+    // Space words across the section
+    const spacing = (section.xEnd - x - 50) / words.length;
+    for (const word of words) {
+      const yOffset = rnd(-8, 8) * scaleFactor;
+      text(word, x, baseY + yOffset);
+      x += spacing + rnd(-10, 10);
+    }
+  }
+  textStyle(NORMAL);
+}
+
+function drawTextScoreNumbered(voice, section) {
+  // Numbered instruction lists
+  const instructions = [
+    "begin at any point",
+    "continue until satisfied",
+    "repeat if necessary",
+    "observe your breathing",
+    "listen to others",
+    "wait for a sign",
+    "proceed slowly"
+  ];
+
+  const numItems = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+  const startX = rnd(section.xStart + 20, section.xStart + 100);
+  const startY = rnd(voice.yStart + 15, voice.yEnd - 40);
+  const lineHeight = 12 * scaleFactor;
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+  textSize(10 * scaleFactor);
+
+  for (let i = 0; i < numItems; i++) {
+    const y = startY + i * lineHeight;
+    if (y < voice.yEnd - 10) {
+      text(`${i + 1}. ${rndChoice(instructions)}`, startX, y);
+    }
+  }
+}
+
+function drawTextScoreTime(voice, section) {
+  // Time-based instructions
+  const times = [
+    "15 seconds", "30 seconds", "1 minute", "2 minutes",
+    "until silence", "until change", "until ready",
+    "as long as possible", "briefly", "at length",
+    "ca. 10\"", "ca. 20\"", "ca. 30\"", "ca. 1'",
+    "freely", "in your own time"
+  ];
+
+  const numTimes = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+
+  for (let i = 0; i < numTimes; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 80);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const size = rnd(8, 12) * scaleFactor;
+    textSize(size);
+    textStyle(NORMAL);
+
+    // Draw time with brackets or parentheses
+    const timeText = rndChoice(times);
+    const format = rndInt(0, 2);
+    if (format === 0) text(`(${timeText})`, x, y);
+    else if (format === 1) text(`[${timeText}]`, x, y);
+    else text(timeText, x, y);
+  }
+}
+
+function drawTextScoreStockhausen(voice, section) {
+  // Intuitive music text instructions (Stockhausen style)
+  const intuitive = [
+    "play a vibration in the rhythm of dreaming",
+    "play a sound with certainty",
+    "think NOTHING",
+    "do not think",
+    "play a tone for so long until you hear its individual vibrations",
+    "play a vibration in the rhythm of your body",
+    "play a vibration in the rhythm of the universe",
+    "play or do not play",
+    "let it stream through you",
+    "synchronize yourself"
+  ];
+
+  const numTexts = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+  textSize(11 * scaleFactor);
+  textStyle(ITALIC);
+  textAlign(CENTER);
+
+  for (let i = 0; i < numTexts; i++) {
+    const x = (section.xStart + section.xEnd) / 2;
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    text(rndChoice(intuitive), x, y);
+  }
+
+  textAlign(LEFT);
+  textStyle(NORMAL);
+}
+
+function drawTextScoreOblique(voice, section) {
+  // Oblique Strategies style (Eno/Schmidt)
+  const strategies = [
+    "Honor thy error as a hidden intention",
+    "What would your closest friend do?",
+    "Use an old idea",
+    "State the problem as clearly as possible",
+    "Make a blank valuable by putting it in an exquisite frame",
+    "What is the reality of the situation?",
+    "Turn it upside down",
+    "Don't be afraid of things because they're easy to do",
+    "Remove specifics and convert to ambiguities",
+    "Go slowly all the way round the outside"
+  ];
+
+  const numStrategies = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("sans-serif");
+  textSize(10 * scaleFactor);
+
+  for (let i = 0; i < numStrategies; i++) {
+    const x = rnd(section.xStart + 15, section.xStart + 80);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+
+    // Draw in a box-like frame
+    const strat = rndChoice(strategies);
+    const tw = textWidth(strat) + 10 * scaleFactor;
+    const th = 18 * scaleFactor;
+
+    stroke(features.palette.inkLight);
+    strokeWeight(0.5 * scaleFactor);
+    noFill();
+    rect(x - 5 * scaleFactor, y - 12 * scaleFactor, tw, th);
+
+    noStroke();
+    fill(features.palette.ink);
+    text(strat, x, y);
+  }
+}
+
+function drawTextScoreProsody(voice, section) {
+  // Prosodic stress marks
+  const numGroups = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let g = 0; g < numGroups; g++) {
+    const x = rnd(section.xStart + 30, section.xEnd - 100);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const numSyllables = rndInt(4, 8);
+    const spacing = 15 * scaleFactor;
+
+    for (let i = 0; i < numSyllables; i++) {
+      const sx = x + i * spacing;
+      const stressed = rndBool(0.4);
+
+      if (stressed) {
+        // Stressed syllable: accent mark
+        line(sx, y - 8 * scaleFactor, sx + 6 * scaleFactor, y - 8 * scaleFactor);
+        line(sx + 3 * scaleFactor, y - 12 * scaleFactor, sx + 3 * scaleFactor, y - 4 * scaleFactor);
+      } else {
+        // Unstressed: small circle
+        ellipse(sx + 3 * scaleFactor, y - 8 * scaleFactor, 4 * scaleFactor, 4 * scaleFactor);
+      }
+
+      // Baseline mark
+      line(sx, y, sx + 8 * scaleFactor, y);
+    }
+  }
+}
+
+function drawTextScoreConceptual(voice, section) {
+  // Conceptual art-style instructions (Fluxus, Yoko Ono)
+  const concepts = [
+    "This piece is invisible.",
+    "Listen to the sound of the earth turning.",
+    "Imagine the sound.",
+    "A piece for imaginary instruments.",
+    "The score is the performance.",
+    "Observe your own observation.",
+    "This is not a score.",
+    "Play what you will not hear.",
+    "The silence between these words is the music."
+  ];
+
+  const numConcepts = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+  textSize(10 * scaleFactor);
+  textStyle(ITALIC);
+
+  for (let i = 0; i < numConcepts; i++) {
+    const x = rnd(section.xStart + 20, section.xStart + 100);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    text(rndChoice(concepts), x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawTextScoreParenthetical(voice, section) {
+  // Parenthetical annotations
+  const annotations = [
+    "(optional)", "(ad libitum)", "(freely)", "(senza tempo)",
+    "(or not)", "(perhaps)", "(in any order)", "(tacet)",
+    "(inaudible)", "(barely audible)", "(as if from afar)",
+    "(without vibrato)", "(with mute)", "(natural harmonics)"
+  ];
+
+  const numAnnotations = Math.max(2, Math.floor(rnd(3, 7) * features.densityValue));
+
+  fill(features.palette.inkLight);
+  noStroke();
+  textFont("serif");
+  textStyle(ITALIC);
+  textSize(8 * scaleFactor);
+
+  for (let i = 0; i < numAnnotations; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 60);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    text(rndChoice(annotations), x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawTextScoreQuotes(voice, section) {
+  // Quoted fragments
+  const quotes = [
+    "\"sound\"", "\"silence\"", "\"time\"", "\"space\"",
+    "\"begin\"", "\"end\"", "\"nothing\"", "\"everything\"",
+    "\"here\"", "\"now\"", "\"listen\"", "\"imagine\""
+  ];
+
+  const numQuotes = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+
+  for (let i = 0; i < numQuotes; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 50);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const size = rnd(10, 16) * scaleFactor;
+    textSize(size);
+    text(rndChoice(quotes), x, y);
+  }
+}
+
+function drawTextScoreVerbs(voice, section) {
+  // Scattered action verbs
+  const verbs = [
+    "LISTEN", "WAIT", "BREATHE", "HOLD", "RELEASE",
+    "BEGIN", "END", "CONTINUE", "STOP", "PAUSE",
+    "THINK", "FEEL", "OBSERVE", "REMEMBER", "FORGET",
+    "PLAY", "SING", "SPEAK", "WHISPER", "SHOUT"
+  ];
+
+  const numVerbs = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("sans-serif");
+
+  for (let i = 0; i < numVerbs; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 60);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const size = rnd(8, 14) * scaleFactor;
+    textSize(size);
+    textStyle(rndBool(0.5) ? BOLD : NORMAL);
+    text(rndChoice(verbs), x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawTextScoreLayout(voice, section) {
+  // Typographic spatial layout (scattered letters/words)
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const numLetters = Math.max(3, Math.floor(rnd(5, 12) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+
+  for (let i = 0; i < numLetters; i++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 20);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const size = rnd(10, 24) * scaleFactor;
+    textSize(size);
+
+    // Rotate some letters
+    push();
+    translate(x, y);
+    rotate(rnd(-0.3, 0.3));
+    text(rndChoice(letters), 0, 0);
+    pop();
+  }
+}
+
+function drawTextScoreMinimal(voice, section) {
+  // Minimal single words, large and sparse
+  const words = [
+    "silence", "sound", "air", "space", "time",
+    "now", "then", "here", "there", "one"
+  ];
+
+  const numWords = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+  textSize(18 * scaleFactor);
+  textStyle(NORMAL);
+
+  for (let i = 0; i < numWords; i++) {
+    const x = rnd(section.xStart + 30, section.xEnd - 80);
+    const y = rnd(voice.yStart + 25, voice.yEnd - 25);
+    text(rndChoice(words), x, y);
+  }
+}
+
+function drawTextScoreQuestions(voice, section) {
+  // Question-based instructions
+  const questions = [
+    "What do you hear?",
+    "Where is the sound?",
+    "How long is silence?",
+    "Who is listening?",
+    "When does music begin?",
+    "Why this note?",
+    "Is this music?"
+  ];
+
+  const numQuestions = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+  textStyle(ITALIC);
+  textSize(10 * scaleFactor);
+
+  for (let i = 0; i < numQuestions; i++) {
+    const x = rnd(section.xStart + 15, section.xStart + 80);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    text(rndChoice(questions), x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawTextScoreNegation(voice, section) {
+  // Negation-based instructions (conceptual)
+  const negations = [
+    "do not play", "not this", "without sound",
+    "no rhythm", "no melody", "nothing",
+    "silence only", "absence", "void",
+    "neither", "nor", "un-", "non-", "anti-"
+  ];
+
+  const numNegations = Math.max(2, Math.floor(rnd(2, 5) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("serif");
+
+  for (let i = 0; i < numNegations; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 50);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    textSize(rnd(9, 13) * scaleFactor);
+    text(rndChoice(negations), x, y);
+  }
+}
+
+function drawTextScoreDuration(voice, section) {
+  // Duration indicators (lines with text)
+  const numDurations = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  fill(features.palette.ink);
+  textFont("serif");
+  textSize(8 * scaleFactor);
+
+  for (let i = 0; i < numDurations; i++) {
+    const x1 = rnd(section.xStart + 20, section.xStart + 100);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const len = rnd(50, 150) * scaleFactor;
+    const x2 = Math.min(x1 + len, section.xEnd - 20);
+
+    // Horizontal duration line
+    line(x1, y, x2, y);
+
+    // End markers
+    line(x1, y - 5 * scaleFactor, x1, y + 5 * scaleFactor);
+    line(x2, y - 5 * scaleFactor, x2, y + 5 * scaleFactor);
+
+    // Optional duration text above
+    if (rndBool(0.5)) {
+      noStroke();
+      const duration = rndChoice(["long", "short", "held", "sustained", "brief"]);
+      text(duration, (x1 + x2) / 2 - 15, y - 8 * scaleFactor);
+      stroke(features.palette.ink);
+    }
+  }
+}
+
+function drawTextScoreWhisper(voice, section) {
+  // Small, quiet text (whispered instructions)
+  const whispers = [
+    "barely", "almost", "scarcely", "just",
+    "softly", "gently", "delicately", "lightly",
+    "fading", "disappearing", "vanishing", "dissolving"
+  ];
+
+  const numWhispers = Math.max(2, Math.floor(rnd(3, 7) * features.densityValue));
+
+  fill(features.palette.inkLight);
+  noStroke();
+  textFont("serif");
+  textStyle(ITALIC);
+
+  for (let i = 0; i < numWhispers; i++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 40);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    textSize(rnd(6, 9) * scaleFactor);
+    text(rndChoice(whispers), x, y);
+  }
+  textStyle(NORMAL);
+}
+
 // ============================================================
 // MODE-SPECIFIC DRAWING: STRIPSODY (Berberian)
 // ============================================================
@@ -8354,8 +8829,30 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "textscore":
-      drawTextInstructions(voice, section);
-      if (rndBool(0.6)) drawTextCryptic(voice, section);
+      // Enhanced TextScore mode v3.11.0 - Stockhausen/Eno text notation
+      // Primary structural element (choose one)
+      const textscorePrimary = rndInt(0, 6);
+      switch (textscorePrimary) {
+        case 0: drawTextInstructions(voice, section); break;
+        case 1: drawTextScorePoetic(voice, section); break;
+        case 2: drawTextScoreStockhausen(voice, section); break;
+        case 3: drawTextScoreOblique(voice, section); break;
+        case 4: drawTextScoreConceptual(voice, section); break;
+        case 5: drawTextScoreMinimal(voice, section); break;
+        case 6: drawTextScoreNumbered(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.45)) drawTextCryptic(voice, section);
+      if (rndBool(0.40)) drawTextScoreParenthetical(voice, section);
+      if (rndBool(0.35)) drawTextScoreTime(voice, section);
+      if (rndBool(0.35)) drawTextScoreQuotes(voice, section);
+      if (rndBool(0.30)) drawTextScoreVerbs(voice, section);
+      if (rndBool(0.28)) drawTextScoreWhisper(voice, section);
+      if (rndBool(0.25)) drawTextScoreDuration(voice, section);
+      if (rndBool(0.25)) drawTextScoreProsody(voice, section);
+      if (rndBool(0.22)) drawTextScoreLayout(voice, section);
+      if (rndBool(0.20)) drawTextScoreQuestions(voice, section);
+      if (rndBool(0.18)) drawTextScoreNegation(voice, section);
       break;
 
     case "stripsody":
