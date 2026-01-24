@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.11.0
+ * Graphical Score v3.12.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -458,10 +458,15 @@ const MODES = {
   },
   stripsody: {
     name: "Stripsody",
-    composer: "Berberian",
-    description: "Comic onomatopoeia, speech bubbles, cartoon visual elements",
+    composer: "Cathy Berberian",
+    description: "Comic onomatopoeia, speech bubbles, cartoon visual elements, impact stars, action symbols",
     weight: 0.06,
-    elements: ["onomatopoeia", "speechBubbles", "comicSymbols", "actionLines"],
+    elements: [
+      "onomatopoeia", "speechBubbles", "comicSymbols", "actionLines",
+      "explosions", "stars", "speedLines", "swoosh", "faces",
+      "exclamations", "questionMarks", "hearts", "musicNotes", "lightning",
+      "spirals", "droplets", "puffs", "impact", "wobble"
+    ],
     prefersPalette: ["stripsodyPop", "parchment"]
   },
   ankhrasmation: {
@@ -8333,6 +8338,409 @@ function drawStripsodyActionLines(voice, section) {
   }
 }
 
+function drawStripsodyExplosions(voice, section) {
+  // Explosion burst shapes (comic book style)
+  const colors = features.palette.colors || ["#dd2222", "#ff8800", "#ffcc00"];
+  const numExplosions = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let i = 0; i < numExplosions; i++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const size = rnd(20, 45) * scaleFactor;
+    const points = rndInt(8, 14);
+
+    fill(rndChoice(colors));
+    stroke(features.palette.ink);
+    strokeWeight(1.5 * scaleFactor);
+
+    beginShape();
+    for (let p = 0; p < points * 2; p++) {
+      const angle = (p / (points * 2)) * TWO_PI;
+      const r = p % 2 === 0 ? size : size * rnd(0.4, 0.6);
+      vertex(cx + cos(angle) * r, cy + sin(angle) * r);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawStripsodyStars(voice, section) {
+  // Impact stars (4-8 pointed stars)
+  const colors = features.palette.colors || ["#ffcc00", "#ffffff", "#ff6600"];
+  const numStars = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  for (let i = 0; i < numStars; i++) {
+    const cx = rnd(section.xStart + 20, section.xEnd - 20);
+    const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(8, 20) * scaleFactor;
+    const points = rndInt(4, 8);
+
+    fill(rndChoice(colors));
+    noStroke();
+
+    beginShape();
+    for (let p = 0; p < points * 2; p++) {
+      const angle = (p / (points * 2)) * TWO_PI - PI / 2;
+      const r = p % 2 === 0 ? size : size * 0.4;
+      vertex(cx + cos(angle) * r, cy + sin(angle) * r);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawStripsodySpeedLines(voice, section) {
+  // Speed/motion lines (horizontal streaks)
+  const numGroups = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let g = 0; g < numGroups; g++) {
+    const cx = rnd(section.xStart + 50, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const numLines = rndInt(4, 8);
+    const spread = rnd(15, 30) * scaleFactor;
+
+    for (let i = 0; i < numLines; i++) {
+      const y = cy + (i - numLines / 2) * (spread / numLines);
+      const len = rnd(30, 80) * scaleFactor;
+      strokeWeight(rnd(0.5, 2) * scaleFactor);
+      line(cx - len, y, cx, y);
+    }
+  }
+}
+
+function drawStripsodySwoosh(voice, section) {
+  // Swoosh curves (movement arcs)
+  const numSwoosh = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(2 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numSwoosh; i++) {
+    const x1 = rnd(section.xStart + 20, section.xStart + 80);
+    const y1 = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const x2 = x1 + rnd(50, 120) * scaleFactor;
+    const y2 = y1 + rnd(-30, 30) * scaleFactor;
+    const cx = (x1 + x2) / 2;
+    const cy = y1 + rnd(-40, 40) * scaleFactor;
+
+    beginShape();
+    vertex(x1, y1);
+    quadraticVertex(cx, cy, x2, y2);
+    endShape();
+
+    // Arrow head at end
+    const angle = atan2(y2 - cy, x2 - cx);
+    const arrowSize = 8 * scaleFactor;
+    line(x2, y2, x2 - cos(angle - 0.4) * arrowSize, y2 - sin(angle - 0.4) * arrowSize);
+    line(x2, y2, x2 - cos(angle + 0.4) * arrowSize, y2 - sin(angle + 0.4) * arrowSize);
+  }
+}
+
+function drawStripsodyFaces(voice, section) {
+  // Simple expressive faces (emoticons)
+  const numFaces = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+
+  for (let i = 0; i < numFaces; i++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const size = rnd(15, 30) * scaleFactor;
+
+    // Face circle
+    noFill();
+    ellipse(cx, cy, size, size);
+
+    // Eyes
+    const eyeY = cy - size * 0.15;
+    const eyeSpacing = size * 0.2;
+    fill(features.palette.ink);
+    ellipse(cx - eyeSpacing, eyeY, size * 0.12, size * 0.12);
+    ellipse(cx + eyeSpacing, eyeY, size * 0.12, size * 0.12);
+
+    // Mouth (random expression)
+    noFill();
+    const mouthType = rndInt(0, 3);
+    const mouthY = cy + size * 0.2;
+    if (mouthType === 0) {
+      // Happy
+      arc(cx, mouthY, size * 0.4, size * 0.3, 0, PI);
+    } else if (mouthType === 1) {
+      // Surprised
+      ellipse(cx, mouthY, size * 0.2, size * 0.25);
+    } else if (mouthType === 2) {
+      // Sad
+      arc(cx, mouthY + size * 0.1, size * 0.4, size * 0.3, PI, TWO_PI);
+    } else {
+      // Straight
+      line(cx - size * 0.15, mouthY, cx + size * 0.15, mouthY);
+    }
+  }
+}
+
+function drawStripsodyExclamations(voice, section) {
+  // Exclamation marks (varying sizes)
+  const colors = features.palette.colors || ["#dd2222", "#ff6600", "#000000"];
+  const numMarks = Math.max(2, Math.floor(rnd(3, 7) * features.densityValue));
+
+  noStroke();
+
+  for (let i = 0; i < numMarks; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(12, 25) * scaleFactor;
+
+    fill(rndChoice(colors));
+
+    // Exclamation body (tapered rectangle)
+    beginShape();
+    vertex(x - size * 0.15, y - size * 0.5);
+    vertex(x + size * 0.15, y - size * 0.5);
+    vertex(x + size * 0.08, y + size * 0.25);
+    vertex(x - size * 0.08, y + size * 0.25);
+    endShape(CLOSE);
+
+    // Dot
+    ellipse(x, y + size * 0.42, size * 0.18, size * 0.18);
+  }
+}
+
+function drawStripsodyQuestionMarks(voice, section) {
+  // Question marks
+  const colors = features.palette.colors || ["#2255cc", "#9933cc", "#000000"];
+  const numMarks = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let i = 0; i < numMarks; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const size = rnd(12, 22) * scaleFactor;
+
+    stroke(rndChoice(colors));
+    strokeWeight(size * 0.15);
+    noFill();
+
+    // Question curve
+    arc(x, y - size * 0.2, size * 0.5, size * 0.5, PI + 0.3, TWO_PI + 0.5);
+    line(x + size * 0.15, y - size * 0.1, x, y + size * 0.15);
+
+    // Dot
+    noStroke();
+    fill(stroke());
+    ellipse(x, y + size * 0.35, size * 0.15, size * 0.15);
+  }
+}
+
+function drawStripsodyHearts(voice, section) {
+  // Heart shapes
+  const colors = features.palette.colors || ["#dd2222", "#ff6699", "#cc0066"];
+  const numHearts = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  noStroke();
+
+  for (let i = 0; i < numHearts; i++) {
+    const cx = rnd(section.xStart + 20, section.xEnd - 20);
+    const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(8, 18) * scaleFactor;
+
+    fill(rndChoice(colors));
+
+    beginShape();
+    vertex(cx, cy + size * 0.3);
+    bezierVertex(cx - size * 0.5, cy - size * 0.1, cx - size * 0.5, cy - size * 0.5, cx, cy - size * 0.2);
+    bezierVertex(cx + size * 0.5, cy - size * 0.5, cx + size * 0.5, cy - size * 0.1, cx, cy + size * 0.3);
+    endShape(CLOSE);
+  }
+}
+
+function drawStripsodyMusicNotes(voice, section) {
+  // Floating music notes
+  const numNotes = Math.max(2, Math.floor(rnd(3, 7) * features.densityValue));
+
+  fill(features.palette.ink);
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+
+  for (let i = 0; i < numNotes; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 15);
+    const size = rnd(8, 15) * scaleFactor;
+
+    // Note head (filled ellipse)
+    noStroke();
+    push();
+    translate(x, y);
+    rotate(-0.3);
+    ellipse(0, 0, size, size * 0.7);
+    pop();
+
+    // Stem
+    stroke(features.palette.ink);
+    line(x + size * 0.45, y - size * 0.2, x + size * 0.45, y - size * 1.5);
+
+    // Flag (optional)
+    if (rndBool(0.5)) {
+      noFill();
+      beginShape();
+      vertex(x + size * 0.45, y - size * 1.5);
+      quadraticVertex(x + size * 0.9, y - size * 1.2, x + size * 0.6, y - size * 0.8);
+      endShape();
+    }
+  }
+}
+
+function drawStripsodyLightning(voice, section) {
+  // Lightning bolt shapes
+  const colors = features.palette.colors || ["#ffcc00", "#ff6600", "#ffffff"];
+  const numBolts = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  for (let i = 0; i < numBolts; i++) {
+    const x = rnd(section.xStart + 25, section.xEnd - 25);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 25);
+    const size = rnd(15, 30) * scaleFactor;
+
+    fill(rndChoice(colors));
+    stroke(features.palette.ink);
+    strokeWeight(1 * scaleFactor);
+
+    beginShape();
+    vertex(x, y);
+    vertex(x + size * 0.3, y + size * 0.4);
+    vertex(x + size * 0.1, y + size * 0.4);
+    vertex(x + size * 0.4, y + size);
+    vertex(x + size * 0.05, y + size * 0.55);
+    vertex(x + size * 0.25, y + size * 0.55);
+    endShape(CLOSE);
+  }
+}
+
+function drawStripsodySpirals(voice, section) {
+  // Dizzy spiral marks
+  const numSpirals = Math.max(2, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numSpirals; i++) {
+    const cx = rnd(section.xStart + 20, section.xEnd - 20);
+    const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const maxR = rnd(8, 18) * scaleFactor;
+    const turns = rnd(2, 4);
+
+    beginShape();
+    for (let t = 0; t < turns * TWO_PI; t += 0.2) {
+      const r = (t / (turns * TWO_PI)) * maxR;
+      vertex(cx + cos(t) * r, cy + sin(t) * r);
+    }
+    endShape();
+  }
+}
+
+function drawStripsodyDroplets(voice, section) {
+  // Sweat/water droplets
+  const colors = features.palette.colors || ["#66ccff", "#3399ff", "#99ddff"];
+  const numDrops = Math.max(2, Math.floor(rnd(3, 7) * features.densityValue));
+
+  noStroke();
+
+  for (let i = 0; i < numDrops; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(5, 12) * scaleFactor;
+
+    fill(rndChoice(colors));
+
+    beginShape();
+    vertex(x, y - size * 0.5);
+    bezierVertex(x - size * 0.4, y, x - size * 0.4, y + size * 0.4, x, y + size * 0.5);
+    bezierVertex(x + size * 0.4, y + size * 0.4, x + size * 0.4, y, x, y - size * 0.5);
+    endShape(CLOSE);
+  }
+}
+
+function drawStripsodyPuffs(voice, section) {
+  // Smoke/cloud puffs
+  const numPuffs = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.inkLight);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let p = 0; p < numPuffs; p++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const size = rnd(15, 30) * scaleFactor;
+
+    // Cloud made of overlapping circles
+    const numCircles = rndInt(4, 7);
+    for (let i = 0; i < numCircles; i++) {
+      const angle = (i / numCircles) * TWO_PI;
+      const r = size * 0.4;
+      const ox = cx + cos(angle) * r * 0.5;
+      const oy = cy + sin(angle) * r * 0.3;
+      const circleSize = rnd(size * 0.4, size * 0.6);
+      ellipse(ox, oy, circleSize, circleSize * 0.8);
+    }
+  }
+}
+
+function drawStripsodyImpact(voice, section) {
+  // Impact radiating lines (from central point)
+  const numImpacts = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+
+  for (let i = 0; i < numImpacts; i++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const numRays = rndInt(8, 16);
+    const innerR = rnd(5, 10) * scaleFactor;
+    const outerR = rnd(20, 40) * scaleFactor;
+
+    for (let r = 0; r < numRays; r++) {
+      const angle = (r / numRays) * TWO_PI + rnd(-0.1, 0.1);
+      strokeWeight(rnd(0.5, 2) * scaleFactor);
+      line(
+        cx + cos(angle) * innerR,
+        cy + sin(angle) * innerR,
+        cx + cos(angle) * outerR * rnd(0.7, 1),
+        cy + sin(angle) * outerR * rnd(0.7, 1)
+      );
+    }
+  }
+}
+
+function drawStripsodyWobble(voice, section) {
+  // Wobble/vibration marks (wavy lines around objects)
+  const numWobbles = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let w = 0; w < numWobbles; w++) {
+    const cx = rnd(section.xStart + 25, section.xEnd - 25);
+    const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(10, 25) * scaleFactor;
+
+    // Draw 2-3 concentric wavy arcs
+    for (let layer = 0; layer < rndInt(2, 4); layer++) {
+      const r = size * (0.5 + layer * 0.25);
+      const startAngle = rnd(0, PI);
+
+      beginShape();
+      for (let a = startAngle; a < startAngle + PI * 0.8; a += 0.15) {
+        const wobbleR = r + sin(a * 8) * (3 * scaleFactor);
+        vertex(cx + cos(a) * wobbleR, cy + sin(a) * wobbleR);
+      }
+      endShape();
+    }
+  }
+}
+
 // ============================================================
 // MODE-SPECIFIC DRAWING: ANKHRASMATION (Wadada Leo Smith)
 // ============================================================
@@ -8856,9 +9264,30 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "stripsody":
-      drawStripsodyOnomatopoeia(voice, section);
-      if (rndBool(0.5)) drawStripsodyBubbles(voice, section);
-      if (rndBool(0.4)) drawStripsodyActionLines(voice, section);
+      // Enhanced Stripsody mode v3.12.0 - Cathy Berberian's comic vocal score
+      // Primary structural element (choose one)
+      const stripsodyPrimary = rndInt(0, 6);
+      switch (stripsodyPrimary) {
+        case 0: drawStripsodyOnomatopoeia(voice, section); break;
+        case 1: drawStripsodyBubbles(voice, section); break;
+        case 2: drawStripsodyExplosions(voice, section); break;
+        case 3: drawStripsodyFaces(voice, section); break;
+        case 4: drawStripsodyImpact(voice, section); break;
+        case 5: drawStripsodyLightning(voice, section); break;
+        case 6: drawStripsodyStars(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.45)) drawStripsodyActionLines(voice, section);
+      if (rndBool(0.40)) drawStripsodyExclamations(voice, section);
+      if (rndBool(0.35)) drawStripsodySpeedLines(voice, section);
+      if (rndBool(0.35)) drawStripsodySpirals(voice, section);
+      if (rndBool(0.30)) drawStripsodySwoosh(voice, section);
+      if (rndBool(0.28)) drawStripsodyMusicNotes(voice, section);
+      if (rndBool(0.25)) drawStripsodyQuestionMarks(voice, section);
+      if (rndBool(0.25)) drawStripsodyHearts(voice, section);
+      if (rndBool(0.22)) drawStripsodyDroplets(voice, section);
+      if (rndBool(0.20)) drawStripsodyPuffs(voice, section);
+      if (rndBool(0.18)) drawStripsodyWobble(voice, section);
       break;
 
     case "ankhrasmation":
