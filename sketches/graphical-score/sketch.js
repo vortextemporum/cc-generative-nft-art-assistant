@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.12.0
+ * Graphical Score v3.13.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -472,9 +472,14 @@ const MODES = {
   ankhrasmation: {
     name: "Ankhrasmation",
     composer: "Wadada Leo Smith",
-    description: "Colored duration symbols, rhythmic cells, language score notation",
+    description: "Colored duration symbols, rhythmic cells, language score notation, improvisation zones",
     weight: 0.06,
-    elements: ["durationSymbols", "coloredCells", "rhythmicUnits", "symbolicMarks"],
+    elements: [
+      "durationSymbols", "coloredCells", "rhythmicUnits", "symbolicMarks",
+      "colorBars", "diagonals", "cells", "arrows", "gradients",
+      "vertical", "rests", "connected", "crescendo", "clusters",
+      "waves", "dots", "brackets", "numbers", "parallel", "improvisationZone"
+    ],
     prefersPalette: ["ankhrasmationColor", "manuscript"]
   },
   braxton: {
@@ -8817,6 +8822,457 @@ function drawAnkhrasmationSymbols(voice, section) {
   }
 }
 
+function drawAnkhrasmationColorBars(voice, section) {
+  // Colored horizontal bars in sequence (like sentences)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00", "#00aa55", "#9933cc", "#ff6699"];
+
+  const numSequences = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  noStroke();
+
+  for (let s = 0; s < numSequences; s++) {
+    let x = rnd(section.xStart + 15, section.xStart + 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const h = rnd(6, 12) * scaleFactor;
+    const numBars = rndInt(4, 8);
+
+    for (let i = 0; i < numBars; i++) {
+      const w = rnd(15, 50) * scaleFactor;
+      fill(rndChoice(colors));
+      rect(x, y, w, h);
+      x += w + rnd(3, 8) * scaleFactor;
+      if (x > section.xEnd - 20) break;
+    }
+  }
+}
+
+function drawAnkhrasmationDiagonals(voice, section) {
+  // Diagonal direction indicators
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00"];
+
+  const numDiagonals = Math.max(2, Math.floor(rnd(3, 7) * features.densityValue));
+
+  strokeWeight(3 * scaleFactor);
+
+  for (let i = 0; i < numDiagonals; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 30);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const len = rnd(15, 35) * scaleFactor;
+    const dir = rndBool(0.5) ? 1 : -1;  // Up or down
+
+    stroke(rndChoice(colors));
+    line(x, y, x + len, y + dir * len * 0.5);
+  }
+}
+
+function drawAnkhrasmationCells(voice, section) {
+  // Rhythmic unit cells (boxed color regions)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00", "#00aa55"];
+
+  const numCells = Math.max(2, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let i = 0; i < numCells; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 50);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 25);
+    const w = rnd(20, 45) * scaleFactor;
+    const h = rnd(15, 25) * scaleFactor;
+
+    // Box outline
+    stroke(features.palette.ink);
+    strokeWeight(1 * scaleFactor);
+    noFill();
+    rect(x, y, w, h);
+
+    // Inner color marks
+    noStroke();
+    const numInner = rndInt(2, 4);
+    for (let j = 0; j < numInner; j++) {
+      fill(rndChoice(colors));
+      const ix = x + rnd(3, w - 8) * scaleFactor;
+      const iy = y + rnd(3, h - 5) * scaleFactor;
+      const iw = rnd(5, 12) * scaleFactor;
+      const ih = rnd(3, 6) * scaleFactor;
+      rect(ix, iy, iw, ih);
+    }
+  }
+}
+
+function drawAnkhrasmationArrows(voice, section) {
+  // Direction arrows (movement indicators)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#00aa55"];
+
+  const numArrows = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  for (let i = 0; i < numArrows; i++) {
+    const x = rnd(section.xStart + 25, section.xEnd - 40);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const len = rnd(20, 50) * scaleFactor;
+    const angle = rnd(-0.4, 0.4);
+
+    const c = rndChoice(colors);
+    stroke(c);
+    strokeWeight(2.5 * scaleFactor);
+
+    // Arrow line
+    const x2 = x + cos(angle) * len;
+    const y2 = y + sin(angle) * len;
+    line(x, y, x2, y2);
+
+    // Arrow head
+    const headSize = 8 * scaleFactor;
+    fill(c);
+    beginShape();
+    vertex(x2, y2);
+    vertex(x2 - cos(angle - 0.5) * headSize, y2 - sin(angle - 0.5) * headSize);
+    vertex(x2 - cos(angle + 0.5) * headSize, y2 - sin(angle + 0.5) * headSize);
+    endShape(CLOSE);
+  }
+}
+
+function drawAnkhrasmationGradients(voice, section) {
+  // Color gradient bars (intensity change)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00"];
+
+  const numGradients = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  noStroke();
+
+  for (let g = 0; g < numGradients; g++) {
+    const x = rnd(section.xStart + 20, section.xStart + 80);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 18);
+    const totalW = rnd(60, 120) * scaleFactor;
+    const h = rnd(8, 14) * scaleFactor;
+    const c = rndChoice(colors);
+
+    // Draw gradient as segments
+    const segments = 10;
+    const segW = totalW / segments;
+    for (let s = 0; s < segments; s++) {
+      const alpha = rndBool(0.5) ?
+        map(s, 0, segments - 1, 50, 255) :
+        map(s, 0, segments - 1, 255, 50);
+      fill(red(color(c)), green(color(c)), blue(color(c)), alpha);
+      rect(x + s * segW, y, segW + 1, h);
+    }
+  }
+}
+
+function drawAnkhrasmationVertical(voice, section) {
+  // Vertical accent marks
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#9933cc"];
+
+  const numMarks = Math.max(3, Math.floor(rnd(4, 9) * features.densityValue));
+
+  for (let i = 0; i < numMarks; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 20);
+    const h = rnd(10, 30) * scaleFactor;
+    const w = rnd(3, 8) * scaleFactor;
+
+    noStroke();
+    fill(rndChoice(colors));
+    rect(x, y, w, h);
+  }
+}
+
+function drawAnkhrasmationRests(voice, section) {
+  // Rest/silence indicators (empty spaces with marks)
+  const numRests = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.inkLight);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numRests; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 40);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = rnd(15, 35) * scaleFactor;
+
+    // Rest bracket
+    line(x, y - 5 * scaleFactor, x, y + 5 * scaleFactor);
+    line(x, y, x + w, y);
+    line(x + w, y - 5 * scaleFactor, x + w, y + 5 * scaleFactor);
+
+    // Optional center mark
+    if (rndBool(0.5)) {
+      ellipse(x + w / 2, y, 4 * scaleFactor, 4 * scaleFactor);
+    }
+  }
+}
+
+function drawAnkhrasmationConnected(voice, section) {
+  // Connected color sequences (phrases)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00", "#00aa55"];
+
+  const numSequences = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  for (let s = 0; s < numSequences; s++) {
+    let x = rnd(section.xStart + 15, section.xStart + 50);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const numElements = rndInt(4, 8);
+
+    stroke(features.palette.ink);
+    strokeWeight(1 * scaleFactor);
+
+    for (let i = 0; i < numElements; i++) {
+      const w = rnd(10, 25) * scaleFactor;
+      const h = rnd(6, 12) * scaleFactor;
+
+      // Colored element
+      fill(rndChoice(colors));
+      rect(x, y - h / 2, w, h);
+
+      // Connecting line
+      if (i < numElements - 1) {
+        const nextX = x + w + rnd(5, 15) * scaleFactor;
+        if (nextX < section.xEnd - 30) {
+          line(x + w, y, nextX, y);
+          x = nextX;
+        } else break;
+      }
+    }
+  }
+}
+
+function drawAnkhrasmationCrescendo(voice, section) {
+  // Growing intensity wedge marks
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00"];
+
+  const numWedges = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  noStroke();
+
+  for (let i = 0; i < numWedges; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const len = rnd(30, 60) * scaleFactor;
+    const maxH = rnd(12, 22) * scaleFactor;
+    const growing = rndBool(0.5);
+
+    fill(rndChoice(colors));
+    beginShape();
+    if (growing) {
+      // Crescendo (gets taller)
+      vertex(x, y);
+      vertex(x + len, y - maxH / 2);
+      vertex(x + len, y + maxH / 2);
+    } else {
+      // Decrescendo (gets shorter)
+      vertex(x, y - maxH / 2);
+      vertex(x, y + maxH / 2);
+      vertex(x + len, y);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawAnkhrasmationClusters(voice, section) {
+  // Grouped multi-color mark clusters
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00", "#00aa55", "#9933cc"];
+
+  const numClusters = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  noStroke();
+
+  for (let c = 0; c < numClusters; c++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const numMarks = rndInt(4, 8);
+
+    for (let i = 0; i < numMarks; i++) {
+      const ox = cx + rnd(-20, 20) * scaleFactor;
+      const oy = cy + rnd(-12, 12) * scaleFactor;
+      const w = rnd(5, 15) * scaleFactor;
+      const h = rnd(3, 8) * scaleFactor;
+
+      fill(rndChoice(colors));
+      rect(ox, oy, w, h);
+    }
+  }
+}
+
+function drawAnkhrasmationWaves(voice, section) {
+  // Wave-form duration indicators
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#00aa55"];
+
+  const numWaves = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  strokeWeight(3 * scaleFactor);
+  noFill();
+
+  for (let w = 0; w < numWaves; w++) {
+    const x = rnd(section.xStart + 15, section.xStart + 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const len = rnd(60, 120) * scaleFactor;
+    const amp = rnd(5, 12) * scaleFactor;
+
+    stroke(rndChoice(colors));
+    beginShape();
+    for (let px = 0; px < len; px += 3) {
+      const py = y + sin(px * 0.15) * amp;
+      vertex(x + px, py);
+    }
+    endShape();
+  }
+}
+
+function drawAnkhrasmationDots(voice, section) {
+  // Dot patterns (rhythmic accents)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00", "#9933cc"];
+
+  const numGroups = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  noStroke();
+
+  for (let g = 0; g < numGroups; g++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 50);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const numDots = rndInt(2, 5);
+    const spacing = rnd(8, 15) * scaleFactor;
+    const dotSize = rnd(4, 9) * scaleFactor;
+    const c = rndChoice(colors);
+
+    fill(c);
+    for (let d = 0; d < numDots; d++) {
+      ellipse(x + d * spacing, y, dotSize, dotSize);
+    }
+  }
+}
+
+function drawAnkhrasmationBrackets(voice, section) {
+  // Grouping brackets
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc"];
+
+  const numBrackets = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  strokeWeight(2 * scaleFactor);
+  noFill();
+
+  for (let b = 0; b < numBrackets; b++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 60);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 20);
+    const w = rnd(30, 70) * scaleFactor;
+    const h = rnd(15, 25) * scaleFactor;
+
+    stroke(rndChoice(colors));
+
+    // Left bracket
+    line(x + 5 * scaleFactor, y, x, y);
+    line(x, y, x, y + h);
+    line(x, y + h, x + 5 * scaleFactor, y + h);
+
+    // Right bracket
+    line(x + w - 5 * scaleFactor, y, x + w, y);
+    line(x + w, y, x + w, y + h);
+    line(x + w, y + h, x + w - 5 * scaleFactor, y + h);
+  }
+}
+
+function drawAnkhrasmationNumbers(voice, section) {
+  // Numerical indicators (unit counts)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#00aa55"];
+
+  const numNumbers = Math.max(2, Math.floor(rnd(2, 5) * features.densityValue));
+
+  textFont("sans-serif");
+
+  for (let i = 0; i < numNumbers; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 20);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 10);
+    const num = rndInt(1, 9);
+    const size = rnd(10, 18) * scaleFactor;
+
+    fill(rndChoice(colors));
+    noStroke();
+    textSize(size);
+    textStyle(BOLD);
+    text(num.toString(), x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawAnkhrasmationParallel(voice, section) {
+  // Parallel color lines (simultaneous events)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00", "#00aa55"];
+
+  const numGroups = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  noStroke();
+
+  for (let g = 0; g < numGroups; g++) {
+    const x = rnd(section.xStart + 20, section.xStart + 80);
+    const baseY = rnd(voice.yStart + 20, voice.yEnd - 30);
+    const numLines = rndInt(2, 4);
+    const spacing = rnd(6, 10) * scaleFactor;
+    const len = rnd(40, 90) * scaleFactor;
+    const h = rnd(3, 6) * scaleFactor;
+
+    for (let l = 0; l < numLines; l++) {
+      fill(colors[l % colors.length]);
+      rect(x, baseY + l * spacing, len, h);
+    }
+  }
+}
+
+function drawAnkhrasmationImprovisationZone(voice, section) {
+  // Free improvisation zone (outlined area with color)
+  const colors = features.palette.colors ||
+    ["#cc3300", "#0066cc", "#ffcc00"];
+
+  const numZones = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  for (let z = 0; z < numZones; z++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 80);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 30);
+    const w = rnd(40, 80) * scaleFactor;
+    const h = rnd(20, 35) * scaleFactor;
+
+    // Dashed outline
+    stroke(features.palette.ink);
+    strokeWeight(1 * scaleFactor);
+    noFill();
+
+    // Draw dashed rectangle
+    const dashLen = 5 * scaleFactor;
+    for (let dx = 0; dx < w; dx += dashLen * 2) {
+      line(x + dx, y, x + Math.min(dx + dashLen, w), y);
+      line(x + dx, y + h, x + Math.min(dx + dashLen, w), y + h);
+    }
+    for (let dy = 0; dy < h; dy += dashLen * 2) {
+      line(x, y + dy, x, y + Math.min(dy + dashLen, h));
+      line(x + w, y + dy, x + w, y + Math.min(dy + dashLen, h));
+    }
+
+    // Light color fill
+    noStroke();
+    const c = color(rndChoice(colors));
+    fill(red(c), green(c), blue(c), 50);
+    rect(x, y, w, h);
+
+    // "FREE" or similar text
+    if (rndBool(0.4)) {
+      fill(features.palette.inkLight);
+      textSize(8 * scaleFactor);
+      textFont("sans-serif");
+      text("FREE", x + 5 * scaleFactor, y + h / 2 + 3 * scaleFactor);
+    }
+  }
+}
+
 // ============================================================
 // MODE-SPECIFIC DRAWING: BRAXTON (Anthony Braxton)
 // ============================================================
@@ -9291,8 +9747,30 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "ankhrasmation":
-      drawAnkhrasmationDurations(voice, section);
-      if (rndBool(0.6)) drawAnkhrasmationSymbols(voice, section);
+      // Enhanced Ankhrasmation mode v3.13.0 - Wadada Leo Smith's notation
+      // Primary structural element (choose one)
+      const ankhrasmationPrimary = rndInt(0, 6);
+      switch (ankhrasmationPrimary) {
+        case 0: drawAnkhrasmationDurations(voice, section); break;
+        case 1: drawAnkhrasmationColorBars(voice, section); break;
+        case 2: drawAnkhrasmationConnected(voice, section); break;
+        case 3: drawAnkhrasmationCells(voice, section); break;
+        case 4: drawAnkhrasmationParallel(voice, section); break;
+        case 5: drawAnkhrasmationWaves(voice, section); break;
+        case 6: drawAnkhrasmationGradients(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.45)) drawAnkhrasmationSymbols(voice, section);
+      if (rndBool(0.40)) drawAnkhrasmationDots(voice, section);
+      if (rndBool(0.35)) drawAnkhrasmationVertical(voice, section);
+      if (rndBool(0.35)) drawAnkhrasmationArrows(voice, section);
+      if (rndBool(0.30)) drawAnkhrasmationDiagonals(voice, section);
+      if (rndBool(0.28)) drawAnkhrasmationCrescendo(voice, section);
+      if (rndBool(0.25)) drawAnkhrasmationClusters(voice, section);
+      if (rndBool(0.22)) drawAnkhrasmationRests(voice, section);
+      if (rndBool(0.20)) drawAnkhrasmationBrackets(voice, section);
+      if (rndBool(0.18)) drawAnkhrasmationNumbers(voice, section);
+      if (rndBool(0.15)) drawAnkhrasmationImprovisationZone(voice, section);
       break;
 
     case "braxton":
