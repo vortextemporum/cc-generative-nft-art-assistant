@@ -1,4 +1,4 @@
-# Graphical Score v3.9.0 - AI Assistant Guide
+# Graphical Score v3.10.0 - AI Assistant Guide
 
 ## Project Overview
 
@@ -264,7 +264,26 @@ graphical-score/
 - `drawOpenFormContrapuntal()` - Two-voice contrapuntal
 - `drawOpenFormLooseGrid()` - Loose grid arrangement
 - `drawOpenFormDiagonal()` - Diagonal arrangement
-- **Bussotti**: `drawBussottiCalligraphic()`, `drawBussottiFlourishes()`, `drawBussottiSplatters()`
+### Enhanced Bussotti Mode (v3.10.0 - Sylvano Bussotti)
+- `drawBussottiCalligraphic()` - Calligraphic flourish lines with variable weight
+- `drawBussottiFlourishes()` - Ornate decorative flourishes
+- `drawBussottiSplatters()` - Ink splatter effects
+- `drawBussottiGestural()` - Large gestural marks with expressive strokes
+- `drawBussottiCurvedStaff()` - Curved musical staves that bend and flow
+- `drawBussottiDrips()` - Ink drip effects with gravity trails
+- `drawBussottiDecorative()` - Decorative ornamental swashes and curls
+- `drawBussottiTextFragments()` - Italian poetic text fragments
+- `drawBussottiTheatrical()` - Theatrical performance direction marks
+- `drawBussottiSwirls()` - Swirling ink patterns
+- `drawBussottiClusters()` - Dense gestural clusters
+- `drawBussottiLoops()` - Looping calligraphic lines
+- `drawBussottiAccents()` - Dramatic accent marks
+- `drawBussottiVines()` - Vine-like decorative lines with offshoots
+- `drawBussottiStars()` - Star and asterisk decorations
+- `drawBussottiConnected()` - Connected flowing gestures
+- `drawBussottiDecorativeDots()` - Decorative dot patterns
+- `drawBussottiWaves()` - Wavy gestural lines
+- `drawBussottiCrescendo()` - Dramatic crescendo/decrescendo shapes
 - **TextScore**: `drawTextInstructions()`, `drawTextCryptic()`
 - **Stripsody**: `drawStripsodyOnomatopoeia()`, `drawStripsodyBubbles()`, `drawStripsodyActionLines()`
 - **Ankhrasmation**: `drawAnkhrasmationDurations()`, `drawAnkhrasmationSymbols()`

@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Bussotti (Sylvano Bussotti) Mode** - 16 new elements inspired by Bussotti's theatrical graphic scores (*La Passion selon Sade*, *Siciliano*, *Piano Pieces for David Tudor*):
+
+| Function | Description |
+|----------|-------------|
+| `drawBussottiGestural()` | Large gestural marks with variable weight ink strokes |
+| `drawBussottiCurvedStaff()` | Curved musical staves that bend and flow |
+| `drawBussottiDrips()` | Ink drip effects with gravity-pulled trails |
+| `drawBussottiDecorative()` | Decorative ornamental elements (swashes, curls, spirals) |
+| `drawBussottiTextFragments()` | Poetic Italian text fragments scattered in composition |
+| `drawBussottiTheatrical()` | Theatrical performance marks with stage direction symbols |
+| `drawBussottiSwirls()` | Swirling ink patterns with varying thickness |
+| `drawBussottiClusters()` | Dense gestural clusters of overlapping strokes |
+| `drawBussottiLoops()` | Looping calligraphic lines with crossings |
+| `drawBussottiAccents()` | Dramatic accent marks with varying intensity |
+| `drawBussottiVines()` | Vine-like decorative lines with offshoots |
+| `drawBussottiStars()` | Star and asterisk decorative marks |
+| `drawBussottiConnected()` | Connected flowing gestures across the section |
+| `drawBussottiDecorativeDots()` | Decorative dot patterns in organic arrangements |
+| `drawBussottiWaves()` | Wavy gestural lines with variable amplitude |
+| `drawBussottiCrescendo()` | Dramatic crescendo/decrescendo shapes |
+
+### Changed
+
+- Bussotti mode dispatcher now uses probabilistic layering with 7 primary structures
+- Mode elements list expanded from 4 to 20
+- Updated composer attribution to "Sylvano Bussotti"
+- Updated mode description to include "curved staves, ink drips"
+
+### Technical
+
+- Gestural marks use variable stroke weight for expressive quality
+- Curved staves implement bezier curves for organic bending
+- Drip effects simulate gravity with elongated forms
+- Text fragments use Italian musical/poetic vocabulary
+
+---
+
 ## [3.9.0] - 2026-01-25
 
 ### Added
