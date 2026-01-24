@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.8.0
+ * Graphical Score v3.9.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,12 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.9.0: Major enhancement to OpenForm (Earle Brown) mode with 16 new elements:
+ *         - Mobile arrangements, proportional bars, visual balance
+ *         - Trajectories, clusters, vertical stacks, horizontal streams
+ *         - Single events, size gradients, sparse/dense arrangements
+ *         - Overlapping rectangles, asymmetric balance, contrapuntal
+ *         - Loose grids, diagonal arrangements
  * v3.8.0: Major enhancement to Treatise (Cardew) mode with 18 new elements:
  *         - Lifeline, tree structures, dot clouds, parallel lines
  *         - Curved paths, solid shapes, nested shapes, zigzags
@@ -408,9 +414,15 @@ const MODES = {
   openform: {
     name: "OpenForm",
     composer: "Earle Brown",
-    description: "Floating rectangles, mobile-like spatial arrangement",
+    description: "Floating rectangles, mobile arrangements, proportional notation, visual balance",
     weight: 0.08,
-    elements: ["floatingRects", "spatialFields", "proportionalBlocks", "mobileArrangement"],
+    elements: [
+      "floatingRects", "spatialFields", "proportionalBlocks", "mobileArrangement",
+      "mobile", "proportional", "balance", "trajectory", "clusters",
+      "verticalStacks", "horizontalStream", "event", "gradient",
+      "sparse", "dense", "overlap", "asymmetric", "contrapuntal",
+      "looseGrid", "diagonal"
+    ],
     prefersPalette: ["brownMobile", "aged"]
   },
   bussotti: {
@@ -6761,6 +6773,357 @@ function drawOpenFormSpatial(voice, section) {
   }
 }
 
+// New OpenForm functions v3.9.0
+
+function drawOpenFormMobile(voice, section) {
+  // Mobile-like floating arrangement (Available Forms)
+  const numElements = Math.max(3, Math.floor(rnd(4, 10) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  // Create a balanced mobile-like distribution
+  for (let i = 0; i < numElements; i++) {
+    const x = section.xStart + (i / numElements) * section.width * 0.8 + rnd(0, section.width * 0.15);
+    const y = voice.yStart + sin(i * 0.7) * voice.height * 0.3 + voice.height * 0.5 + rnd(-10, 10) * scaleFactor;
+    const w = rnd(15, 60) * scaleFactor;
+    const h = rnd(3, 12) * scaleFactor;
+
+    rect(x, y, w, h);
+  }
+
+  // Light connecting structure (like mobile wires)
+  stroke(features.palette.ink + "33");
+  strokeWeight(0.5 * scaleFactor);
+  const pivotX = section.xCenter;
+  const pivotY = voice.yStart + 10 * scaleFactor;
+  line(pivotX - section.width * 0.3, pivotY, pivotX + section.width * 0.3, pivotY);
+}
+
+function drawOpenFormProportional(voice, section) {
+  // Proportional time-space bars
+  const numBars = Math.max(3, Math.floor(rnd(5, 12) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let i = 0; i < numBars; i++) {
+    const startX = section.xStart + (i / numBars) * section.width;
+    const duration = rnd(0.5, 2); // Proportional length
+    const w = (section.width / numBars) * duration * 0.7;
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const h = rnd(2, 8) * scaleFactor;
+
+    rect(startX, y - h / 2, w, h);
+  }
+}
+
+function drawOpenFormBalance(voice, section) {
+  // Visual weight and balance composition
+  // Heavy element on one side, lighter elements on other
+  const heavyOnLeft = rndBool(0.5);
+
+  fill(features.palette.ink);
+  noStroke();
+
+  if (heavyOnLeft) {
+    // Large element on left
+    const x = section.xStart + rnd(20, 50) * scaleFactor;
+    const y = voice.yStart + voice.height * 0.4;
+    const w = rnd(40, 80) * scaleFactor;
+    const h = rnd(20, 40) * scaleFactor;
+    rect(x, y, w, h);
+
+    // Multiple small elements on right
+    for (let i = 0; i < 5; i++) {
+      const sx = section.xEnd - rnd(30, 120) * scaleFactor;
+      const sy = rnd(voice.yStart + 15, voice.yEnd - 15);
+      const sw = rnd(10, 30) * scaleFactor;
+      const sh = rnd(2, 6) * scaleFactor;
+      rect(sx, sy, sw, sh);
+    }
+  } else {
+    // Large element on right
+    const x = section.xEnd - rnd(60, 100) * scaleFactor;
+    const y = voice.yStart + voice.height * 0.4;
+    const w = rnd(40, 80) * scaleFactor;
+    const h = rnd(20, 40) * scaleFactor;
+    rect(x, y, w, h);
+
+    // Multiple small elements on left
+    for (let i = 0; i < 5; i++) {
+      const sx = section.xStart + rnd(10, 80) * scaleFactor;
+      const sy = rnd(voice.yStart + 15, voice.yEnd - 15);
+      const sw = rnd(10, 30) * scaleFactor;
+      const sh = rnd(2, 6) * scaleFactor;
+      rect(sx, sy, sw, sh);
+    }
+  }
+}
+
+function drawOpenFormTrajectory(voice, section) {
+  // Possible paths through material (arrows suggesting movement)
+  const numArrows = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  stroke(features.palette.ink + "66");
+  strokeWeight(features.lineWeight * 0.8 * scaleFactor);
+  noFill();
+
+  for (let a = 0; a < numArrows; a++) {
+    const x1 = rnd(section.xStart + 20, section.xEnd - 80);
+    const y1 = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const x2 = x1 + rnd(40, 100) * scaleFactor;
+    const y2 = rnd(voice.yStart + 15, voice.yEnd - 15);
+
+    // Curved arrow
+    bezier(x1, y1, x1 + 20 * scaleFactor, y1 - 15 * scaleFactor, x2 - 20 * scaleFactor, y2 - 15 * scaleFactor, x2, y2);
+
+    // Arrow head
+    const angle = atan2(y2 - (y2 - 15 * scaleFactor), x2 - (x2 - 20 * scaleFactor));
+    line(x2, y2, x2 - 8 * scaleFactor * cos(angle - 0.4), y2 - 8 * scaleFactor * sin(angle - 0.4));
+    line(x2, y2, x2 - 8 * scaleFactor * cos(angle + 0.4), y2 - 8 * scaleFactor * sin(angle + 0.4));
+  }
+}
+
+function drawOpenFormClusters(voice, section) {
+  // Grouped rectangles
+  const numClusters = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let c = 0; c < numClusters; c++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const numRects = rndInt(3, 7);
+
+    for (let r = 0; r < numRects; r++) {
+      const rx = cx + rndGaussian(0, 20 * scaleFactor);
+      const ry = cy + rndGaussian(0, 15 * scaleFactor);
+      const rw = rnd(10, 40) * scaleFactor;
+      const rh = rnd(2, 8) * scaleFactor;
+      rect(rx, ry, rw, rh);
+    }
+  }
+}
+
+function drawOpenFormVerticalStacks(voice, section) {
+  // Stacked vertical bars
+  const numStacks = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let s = 0; s < numStacks; s++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 30);
+    const numBars = rndInt(2, 5);
+
+    for (let b = 0; b < numBars; b++) {
+      const y = voice.yStart + (b / numBars) * voice.height * 0.8 + 10 * scaleFactor;
+      const w = rnd(3, 8) * scaleFactor;
+      const h = rnd(10, 30) * scaleFactor;
+      rect(x + rnd(-5, 5) * scaleFactor, y, w, h);
+    }
+  }
+}
+
+function drawOpenFormHorizontalStream(voice, section) {
+  // Horizontal bar streams
+  const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+  const numBars = Math.max(3, Math.floor(rnd(5, 12) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  let x = section.xStart + 10 * scaleFactor;
+  for (let b = 0; b < numBars; b++) {
+    const w = rnd(15, 60) * scaleFactor;
+    const h = rnd(3, 10) * scaleFactor;
+    const gap = rnd(5, 25) * scaleFactor;
+
+    rect(x, y + rnd(-5, 5) * scaleFactor, w, h);
+    x += w + gap;
+
+    if (x > section.xEnd - 20) break;
+  }
+}
+
+function drawOpenFormEvent(voice, section) {
+  // Single prominent event
+  const x = rnd(section.xStart + 40, section.xEnd - 80);
+  const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+  const w = rnd(60, 120) * scaleFactor;
+  const h = rnd(15, 35) * scaleFactor;
+
+  fill(features.palette.ink);
+  noStroke();
+  rect(x, y - h / 2, w, h);
+}
+
+function drawOpenFormGradient(voice, section) {
+  // Size gradient arrangements (small to large or vice versa)
+  const numBars = Math.max(4, Math.floor(rnd(5, 10) * features.densityValue));
+  const ascending = rndBool(0.5);
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let i = 0; i < numBars; i++) {
+    const t = i / (numBars - 1);
+    const sizeFactor = ascending ? t : 1 - t;
+    const x = section.xStart + t * section.width * 0.85 + 10 * scaleFactor;
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = (15 + sizeFactor * 50) * scaleFactor;
+    const h = (2 + sizeFactor * 10) * scaleFactor;
+
+    rect(x, y, w, h);
+  }
+}
+
+function drawOpenFormSparse(voice, section) {
+  // Minimal sparse arrangement
+  const numElements = rndInt(2, 4);
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let i = 0; i < numElements; i++) {
+    const x = rnd(section.xStart + 30, section.xEnd - 50);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const w = rnd(25, 70) * scaleFactor;
+    const h = rnd(4, 12) * scaleFactor;
+
+    rect(x, y, w, h);
+  }
+}
+
+function drawOpenFormDense(voice, section) {
+  // Dense accumulation
+  const numElements = Math.floor(rnd(15, 30) * features.densityValue);
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let i = 0; i < numElements; i++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 30);
+    const y = rnd(voice.yStart + 5, voice.yEnd - 10);
+    const w = rnd(10, 40) * scaleFactor;
+    const h = rnd(2, 6) * scaleFactor;
+
+    rect(x, y, w, h);
+  }
+}
+
+function drawOpenFormOverlap(voice, section) {
+  // Overlapping transparent rectangles
+  const numRects = Math.max(3, Math.floor(rnd(4, 8) * features.densityValue));
+
+  noStroke();
+
+  for (let i = 0; i < numRects; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 60);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 30);
+    const w = rnd(40, 100) * scaleFactor;
+    const h = rnd(15, 40) * scaleFactor;
+
+    fill(features.palette.ink + "55");
+    rect(x, y, w, h);
+  }
+}
+
+function drawOpenFormAsymmetric(voice, section) {
+  // Asymmetric balance (different types on each side)
+  fill(features.palette.ink);
+  noStroke();
+
+  // Left side: vertical bars
+  for (let i = 0; i < 3; i++) {
+    const x = section.xStart + 20 + i * 15 * scaleFactor;
+    const y = rnd(voice.yStart + 10, voice.yStart + voice.height * 0.4);
+    const w = rnd(3, 6) * scaleFactor;
+    const h = rnd(20, 50) * scaleFactor;
+    rect(x, y, w, h);
+  }
+
+  // Right side: horizontal bars
+  for (let i = 0; i < 4; i++) {
+    const x = section.xEnd - rnd(50, 120) * scaleFactor;
+    const y = voice.yEnd - 30 * scaleFactor - i * 12 * scaleFactor;
+    const w = rnd(30, 80) * scaleFactor;
+    const h = rnd(3, 8) * scaleFactor;
+    rect(x, y, w, h);
+  }
+}
+
+function drawOpenFormContrapuntal(voice, section) {
+  // Two-voice contrapuntal arrangement
+  fill(features.palette.ink);
+  noStroke();
+
+  // Upper voice
+  const upperY = voice.yStart + voice.height * 0.25;
+  for (let i = 0; i < 5; i++) {
+    const x = section.xStart + (i / 4) * section.width * 0.8 + 20 * scaleFactor;
+    const w = rnd(20, 50) * scaleFactor;
+    const h = rnd(3, 8) * scaleFactor;
+    rect(x, upperY + rnd(-8, 8) * scaleFactor, w, h);
+  }
+
+  // Lower voice
+  const lowerY = voice.yStart + voice.height * 0.75;
+  for (let i = 0; i < 5; i++) {
+    const x = section.xStart + ((i + 0.5) / 4) * section.width * 0.8 + 20 * scaleFactor;
+    const w = rnd(20, 50) * scaleFactor;
+    const h = rnd(3, 8) * scaleFactor;
+    rect(x, lowerY + rnd(-8, 8) * scaleFactor, w, h);
+  }
+}
+
+function drawOpenFormLooseGrid(voice, section) {
+  // Loose grid arrangement
+  const cols = rndInt(3, 6);
+  const rows = rndInt(2, 4);
+
+  fill(features.palette.ink);
+  noStroke();
+
+  const cellW = section.width / cols;
+  const cellH = voice.height / rows;
+
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      if (rndBool(0.6)) { // Not every cell filled
+        const x = section.xStart + c * cellW + rnd(10, 30) * scaleFactor;
+        const y = voice.yStart + r * cellH + rnd(5, 15) * scaleFactor;
+        const w = rnd(15, cellW * 0.6) * scaleFactor;
+        const h = rnd(3, 10) * scaleFactor;
+        rect(x, y, w, h);
+      }
+    }
+  }
+}
+
+function drawOpenFormDiagonal(voice, section) {
+  // Diagonal arrangement
+  const numBars = Math.max(4, Math.floor(rnd(5, 10) * features.densityValue));
+  const ascending = rndBool(0.5);
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let i = 0; i < numBars; i++) {
+    const t = i / (numBars - 1);
+    const x = section.xStart + t * section.width * 0.8 + 20 * scaleFactor;
+    const y = ascending
+      ? voice.yEnd - 20 * scaleFactor - t * voice.height * 0.6
+      : voice.yStart + 20 * scaleFactor + t * voice.height * 0.6;
+    const w = rnd(20, 50) * scaleFactor;
+    const h = rnd(3, 8) * scaleFactor;
+
+    rect(x, y, w, h);
+  }
+}
+
 // ============================================================
 // MODE-SPECIFIC DRAWING: BUSSOTTI
 // ============================================================
@@ -7450,8 +7813,30 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "openform":
-      drawOpenFormRects(voice, section);
-      if (rndBool(0.5)) drawOpenFormSpatial(voice, section);
+      // Enhanced OpenForm mode v3.9.0 - Earle Brown's mobile notation
+      // Primary structural element (choose one)
+      const openformPrimary = rndInt(0, 7);
+      switch (openformPrimary) {
+        case 0: drawOpenFormRects(voice, section); break;
+        case 1: drawOpenFormMobile(voice, section); break;
+        case 2: drawOpenFormBalance(voice, section); break;
+        case 3: drawOpenFormClusters(voice, section); break;
+        case 4: drawOpenFormEvent(voice, section); break;
+        case 5: drawOpenFormDense(voice, section); break;
+        case 6: drawOpenFormSparse(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.4)) drawOpenFormSpatial(voice, section);
+      if (rndBool(0.35)) drawOpenFormProportional(voice, section);
+      if (rndBool(0.3)) drawOpenFormTrajectory(voice, section);
+      if (rndBool(0.3)) drawOpenFormVerticalStacks(voice, section);
+      if (rndBool(0.35)) drawOpenFormHorizontalStream(voice, section);
+      if (rndBool(0.3)) drawOpenFormGradient(voice, section);
+      if (rndBool(0.25)) drawOpenFormOverlap(voice, section);
+      if (rndBool(0.25)) drawOpenFormAsymmetric(voice, section);
+      if (rndBool(0.25)) drawOpenFormContrapuntal(voice, section);
+      if (rndBool(0.25)) drawOpenFormLooseGrid(voice, section);
+      if (rndBool(0.25)) drawOpenFormDiagonal(voice, section);
       break;
 
     case "bussotti":
