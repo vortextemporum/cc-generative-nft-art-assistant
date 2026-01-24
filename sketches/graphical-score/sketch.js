@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.9.0
+ * Graphical Score v3.10.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,11 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.10.0: Major enhancement to Bussotti mode with 16 new elements:
+ *          - Gestural marks, curved staves, ink drips, decorative elements
+ *          - Text fragments, theatrical marks, swirls, clusters
+ *          - Loops, accents, vines, stars, connected gestures
+ *          - Decorative dots, waves, dramatic crescendos
  * v3.9.0: Major enhancement to OpenForm (Earle Brown) mode with 16 new elements:
  *         - Mobile arrangements, proportional bars, visual balance
  *         - Trajectories, clusters, vertical stacks, horizontal streams
@@ -427,10 +432,15 @@ const MODES = {
   },
   bussotti: {
     name: "Bussotti",
-    composer: "Bussotti",
-    description: "Ornate calligraphic gestures, theatrical flourishes, artistic notation",
+    composer: "Sylvano Bussotti",
+    description: "Ornate calligraphic gestures, theatrical flourishes, artistic notation, curved staves, ink drips",
     weight: 0.07,
-    elements: ["calligraphicLines", "theatricalGestures", "ornateFlourishes", "inkSplatters"],
+    elements: [
+      "calligraphicLines", "theatricalGestures", "ornateFlourishes", "inkSplatters",
+      "gestural", "curvedStaff", "drips", "decorative", "textFragments",
+      "theatrical", "swirls", "clusters", "loops", "accents",
+      "vines", "stars", "connected", "decorativeDots", "waves", "crescendo"
+    ],
     prefersPalette: ["bussottiInk", "sepia"]
   },
   textscore: {
@@ -7214,6 +7224,482 @@ function drawBussottiSplatters(voice, section) {
   }
 }
 
+// New Bussotti functions v3.10.0
+
+function drawBussottiGestural(voice, section) {
+  // Large gestural marks
+  const numGestures = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let g = 0; g < numGestures; g++) {
+    strokeWeight(rnd(1, 4) * scaleFactor);
+    const startX = rnd(section.xStart + 20, section.xEnd - 80);
+    const startY = rnd(voice.yStart + 20, voice.yEnd - 20);
+
+    beginShape();
+    vertex(startX, startY);
+    const numPoints = rndInt(4, 8);
+    for (let p = 0; p < numPoints; p++) {
+      const px = startX + (p + 1) * rnd(15, 30) * scaleFactor;
+      const py = startY + rnd(-40, 40) * scaleFactor;
+      curveVertex(px, constrain(py, voice.yStart + 5, voice.yEnd - 5));
+    }
+    endShape();
+  }
+}
+
+function drawBussottiCurvedStaff(voice, section) {
+  // Curved musical staves that break and reform
+  const numStaves = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(0.5 * scaleFactor);
+  noFill();
+
+  for (let s = 0; s < numStaves; s++) {
+    const baseY = rnd(voice.yStart + 20, voice.yEnd - 30);
+    const numLines = rndInt(3, 5);
+    const spacing = rnd(4, 8) * scaleFactor;
+
+    for (let l = 0; l < numLines; l++) {
+      const y = baseY + l * spacing;
+      beginShape();
+      for (let t = 0; t <= 1; t += 0.02) {
+        const x = section.xStart + t * section.width;
+        const curve = sin(t * PI * rnd(1, 3)) * rnd(5, 15) * scaleFactor;
+        // Break the staff occasionally
+        if (rnd(0, 1) > 0.02) {
+          vertex(x, y + curve);
+        }
+      }
+      endShape();
+    }
+  }
+}
+
+function drawBussottiDrips(voice, section) {
+  // Ink drip effects
+  const numDrips = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let d = 0; d < numDrips; d++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const startY = rnd(voice.yStart + 10, voice.yStart + voice.height * 0.4);
+    const dripLen = rnd(20, 60) * scaleFactor;
+
+    // Drip body (elongated ellipse)
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.05) {
+      const y = startY + t * dripLen;
+      const width = (1 - t) * rnd(3, 6) * scaleFactor;
+      vertex(x - width / 2, y);
+    }
+    for (let t = 1; t >= 0; t -= 0.05) {
+      const y = startY + t * dripLen;
+      const width = (1 - t) * rnd(3, 6) * scaleFactor;
+      vertex(x + width / 2, y);
+    }
+    endShape(CLOSE);
+
+    // Drip end (teardrop)
+    ellipse(x, startY + dripLen + 3 * scaleFactor, 4 * scaleFactor, 6 * scaleFactor);
+  }
+}
+
+function drawBussottiDecorative(voice, section) {
+  // Decorative ornamental elements
+  const numOrnaments = Math.max(1, Math.floor(rnd(3, 7) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let o = 0; o < numOrnaments; o++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(8, 20) * scaleFactor;
+    const type = rndInt(0, 4);
+
+    strokeWeight(features.lineWeight * scaleFactor);
+
+    if (type === 0) {
+      // Treble clef-like curl
+      arc(x, y, size, size, PI, TWO_PI);
+      arc(x, y + size * 0.5, size * 0.6, size * 0.6, 0, PI);
+    } else if (type === 1) {
+      // Trill mark
+      for (let i = 0; i < 4; i++) {
+        arc(x + i * size * 0.3, y, size * 0.3, size * 0.4, 0, PI);
+      }
+    } else if (type === 2) {
+      // Fermata-like
+      arc(x, y, size, size * 0.6, PI, TWO_PI);
+      fill(features.palette.ink);
+      ellipse(x, y - 2 * scaleFactor, 3 * scaleFactor, 3 * scaleFactor);
+      noFill();
+    } else {
+      // Mordent
+      beginShape();
+      vertex(x - size, y);
+      vertex(x - size * 0.5, y - size * 0.4);
+      vertex(x, y);
+      vertex(x + size * 0.5, y - size * 0.4);
+      vertex(x + size, y);
+      endShape();
+    }
+  }
+}
+
+function drawBussottiTextFragments(voice, section) {
+  // Poetic text fragments
+  const fragments = ["sospiro", "dolce", "agitato", "lento", "morendo",
+                     "con fuoco", "piano", "forte", "subito", "sempre"];
+  const numFragments = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textStyle(ITALIC);
+
+  for (let f = 0; f < numFragments; f++) {
+    const x = rnd(section.xStart + 30, section.xEnd - 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    textSize(rnd(7, 12) * scaleFactor);
+    text(rndChoice(fragments), x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawBussottiTheatrical(voice, section) {
+  // Theatrical performance marks
+  const numMarks = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+
+  for (let m = 0; m < numMarks; m++) {
+    const x = rnd(section.xStart + 25, section.xEnd - 25);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const type = rndInt(0, 4);
+
+    strokeWeight(features.lineWeight * scaleFactor);
+    noFill();
+
+    if (type === 0) {
+      // Stage direction arrow
+      line(x, y, x + 25 * scaleFactor, y);
+      line(x + 20 * scaleFactor, y - 5 * scaleFactor, x + 25 * scaleFactor, y);
+      line(x + 20 * scaleFactor, y + 5 * scaleFactor, x + 25 * scaleFactor, y);
+    } else if (type === 1) {
+      // Pause/breath mark
+      arc(x, y, 15 * scaleFactor, 20 * scaleFactor, -HALF_PI, HALF_PI);
+    } else if (type === 2) {
+      // Gesture bracket
+      beginShape();
+      vertex(x, y - 10 * scaleFactor);
+      bezierVertex(x - 10 * scaleFactor, y, x - 10 * scaleFactor, y, x, y + 10 * scaleFactor);
+      endShape();
+    } else {
+      // Eye symbol (watching)
+      ellipse(x, y, 15 * scaleFactor, 8 * scaleFactor);
+      fill(features.palette.ink);
+      ellipse(x, y, 4 * scaleFactor, 4 * scaleFactor);
+      noFill();
+    }
+  }
+}
+
+function drawBussottiSwirls(voice, section) {
+  // Swirling ink patterns
+  const numSwirls = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let s = 0; s < numSwirls; s++) {
+    strokeWeight(rnd(0.5, 2) * scaleFactor);
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const turns = rnd(1.5, 3);
+    const maxR = rnd(15, 35) * scaleFactor;
+
+    beginShape();
+    for (let a = 0; a <= turns * TWO_PI; a += 0.1) {
+      const r = (a / (turns * TWO_PI)) * maxR;
+      const wobble = sin(a * 3) * r * 0.1;
+      vertex(cx + cos(a) * (r + wobble), cy + sin(a) * (r + wobble));
+    }
+    endShape();
+  }
+}
+
+function drawBussottiClusters(voice, section) {
+  // Dense gestural clusters
+  const numClusters = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let c = 0; c < numClusters; c++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const numStrokes = rndInt(8, 20);
+
+    for (let s = 0; s < numStrokes; s++) {
+      strokeWeight(rnd(0.3, 1.5) * scaleFactor);
+      const angle = rnd(0, TWO_PI);
+      const len = rnd(10, 30) * scaleFactor;
+      const startDist = rnd(0, 10) * scaleFactor;
+
+      const x1 = cx + cos(angle) * startDist;
+      const y1 = cy + sin(angle) * startDist;
+      const x2 = cx + cos(angle) * (startDist + len);
+      const y2 = cy + sin(angle) * (startDist + len);
+
+      line(x1, y1, x2, y2);
+    }
+  }
+}
+
+function drawBussottiLoops(voice, section) {
+  // Looping calligraphic lines
+  const numLoops = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(rnd(1, 2) * scaleFactor);
+  noFill();
+
+  for (let l = 0; l < numLoops; l++) {
+    const startX = rnd(section.xStart + 20, section.xEnd - 80);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const numCurves = rndInt(2, 4);
+    const loopSize = rnd(10, 20) * scaleFactor;
+
+    beginShape();
+    vertex(startX, y);
+    for (let c = 0; c < numCurves; c++) {
+      const cx = startX + (c + 1) * loopSize * 2;
+      bezierVertex(cx - loopSize, y - loopSize, cx + loopSize, y - loopSize, cx, y);
+    }
+    endShape();
+  }
+}
+
+function drawBussottiAccents(voice, section) {
+  // Dramatic accent marks
+  const numAccents = Math.max(2, Math.floor(rnd(4, 10) * features.densityValue));
+
+  stroke(features.palette.ink);
+  fill(features.palette.ink);
+
+  for (let a = 0; a < numAccents; a++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const type = rndInt(0, 4);
+    const size = rnd(5, 12) * scaleFactor;
+
+    strokeWeight(features.lineWeight * scaleFactor);
+
+    if (type === 0) {
+      // Sforzando wedge
+      noFill();
+      beginShape();
+      vertex(x - size, y);
+      vertex(x, y - size * 0.6);
+      vertex(x + size, y);
+      endShape();
+    } else if (type === 1) {
+      // Accent mark >
+      noFill();
+      line(x - size, y - size * 0.4, x, y);
+      line(x, y, x - size, y + size * 0.4);
+    } else if (type === 2) {
+      // Staccatissimo
+      noStroke();
+      triangle(x, y - size, x - size * 0.3, y, x + size * 0.3, y);
+      stroke(features.palette.ink);
+    } else {
+      // Marcato
+      noFill();
+      line(x - size * 0.5, y + size * 0.5, x, y - size * 0.5);
+      line(x, y - size * 0.5, x + size * 0.5, y + size * 0.5);
+    }
+  }
+}
+
+function drawBussottiVines(voice, section) {
+  // Vine-like decorative lines
+  const numVines = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  for (let v = 0; v < numVines; v++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 100);
+    const startY = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const vineLen = rnd(60, 120) * scaleFactor;
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * vineLen;
+      const y = startY + sin(t * TWO_PI * 2) * 10 * scaleFactor;
+      vertex(x, y);
+
+      // Small leaves/tendrils
+      if (rnd(0, 1) < 0.1) {
+        const leafAngle = rnd(-HALF_PI, HALF_PI);
+        const leafLen = rnd(5, 10) * scaleFactor;
+        line(x, y, x + cos(leafAngle) * leafLen, y + sin(leafAngle) * leafLen);
+      }
+    }
+    endShape();
+  }
+}
+
+function drawBussottiStars(voice, section) {
+  // Star/asterisk decorations
+  const numStars = Math.max(2, Math.floor(rnd(3, 8) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+
+  for (let s = 0; s < numStars; s++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const size = rnd(4, 10) * scaleFactor;
+    const numRays = rndInt(4, 8);
+
+    for (let r = 0; r < numRays; r++) {
+      const angle = (r / numRays) * TWO_PI;
+      line(x, y, x + cos(angle) * size, y + sin(angle) * size);
+    }
+  }
+}
+
+function drawBussottiConnected(voice, section) {
+  // Connected flowing gestures
+  const numConnections = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(rnd(1, 2) * scaleFactor);
+  noFill();
+
+  let prevX = rnd(section.xStart + 20, section.xStart + 50);
+  let prevY = rnd(voice.yStart + 20, voice.yEnd - 20);
+
+  for (let c = 0; c < numConnections; c++) {
+    const nextX = prevX + rnd(30, 80) * scaleFactor;
+    const nextY = rnd(voice.yStart + 15, voice.yEnd - 15);
+
+    if (nextX < section.xEnd - 20) {
+      const cx1 = prevX + (nextX - prevX) * 0.3;
+      const cy1 = prevY + rnd(-20, 20) * scaleFactor;
+      const cx2 = prevX + (nextX - prevX) * 0.7;
+      const cy2 = nextY + rnd(-20, 20) * scaleFactor;
+
+      bezier(prevX, prevY, cx1, cy1, cx2, cy2, nextX, nextY);
+
+      // Small mark at connection point
+      fill(features.palette.ink);
+      ellipse(nextX, nextY, 3 * scaleFactor, 3 * scaleFactor);
+      noFill();
+
+      prevX = nextX;
+      prevY = nextY;
+    }
+  }
+}
+
+function drawBussottiDecorativeDots(voice, section) {
+  // Decorative dot patterns
+  const numPatterns = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let p = 0; p < numPatterns; p++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const patternType = rndInt(0, 3);
+
+    if (patternType === 0) {
+      // Circle of dots
+      const numDots = rndInt(5, 10);
+      const radius = rnd(10, 20) * scaleFactor;
+      for (let d = 0; d < numDots; d++) {
+        const angle = (d / numDots) * TWO_PI;
+        ellipse(cx + cos(angle) * radius, cy + sin(angle) * radius, 3 * scaleFactor, 3 * scaleFactor);
+      }
+    } else if (patternType === 1) {
+      // Diagonal line of dots
+      for (let d = 0; d < 5; d++) {
+        ellipse(cx + d * 8 * scaleFactor, cy + d * 5 * scaleFactor, 3 * scaleFactor, 3 * scaleFactor);
+      }
+    } else {
+      // Cluster of dots
+      for (let d = 0; d < 8; d++) {
+        ellipse(cx + rndGaussian(0, 10 * scaleFactor), cy + rndGaussian(0, 8 * scaleFactor), 2 * scaleFactor, 2 * scaleFactor);
+      }
+    }
+  }
+}
+
+function drawBussottiWaves(voice, section) {
+  // Wavy gestural lines
+  const numWaves = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let w = 0; w < numWaves; w++) {
+    strokeWeight(rnd(0.5, 2) * scaleFactor);
+    const startX = rnd(section.xStart + 15, section.xEnd - 80);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const waveLen = rnd(50, 100) * scaleFactor;
+    const amplitude = rnd(8, 20) * scaleFactor;
+    const frequency = rnd(2, 5);
+
+    beginShape();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const x = startX + t * waveLen;
+      const yOffset = sin(t * TWO_PI * frequency) * amplitude * (1 - t * 0.5);
+      vertex(x, y + yOffset);
+    }
+    endShape();
+  }
+}
+
+function drawBussottiCrescendo(voice, section) {
+  // Dramatic crescendo shapes
+  const numCrescendos = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  fill(features.palette.ink + "44");
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+
+  for (let c = 0; c < numCrescendos; c++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 80);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const w = rnd(50, 100) * scaleFactor;
+    const h = rnd(15, 30) * scaleFactor;
+    const isGrowing = rndBool(0.5);
+
+    beginShape();
+    if (isGrowing) {
+      vertex(x, y);
+      vertex(x + w, y - h);
+      vertex(x + w, y + h);
+    } else {
+      vertex(x, y - h);
+      vertex(x, y + h);
+      vertex(x + w, y);
+    }
+    endShape(CLOSE);
+  }
+}
+
 // ============================================================
 // MODE-SPECIFIC DRAWING: TEXTSCORE (Stockhausen/Eno)
 // ============================================================
@@ -7840,9 +8326,31 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "bussotti":
-      drawBussottiCalligraphic(voice, section);
-      if (rndBool(0.5)) drawBussottiFlourishes(voice, section);
-      if (rndBool(0.3)) drawBussottiSplatters(voice, section);
+      // Enhanced Bussotti mode v3.10.0 - Sylvano Bussotti's theatrical notation
+      // Primary structural element (choose one)
+      const bussottiPrimary = rndInt(0, 6);
+      switch (bussottiPrimary) {
+        case 0: drawBussottiCalligraphic(voice, section); break;
+        case 1: drawBussottiGestural(voice, section); break;
+        case 2: drawBussottiCurvedStaff(voice, section); break;
+        case 3: drawBussottiSwirls(voice, section); break;
+        case 4: drawBussottiConnected(voice, section); break;
+        case 5: drawBussottiLoops(voice, section); break;
+        case 6: drawBussottiTheatrical(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.45)) drawBussottiFlourishes(voice, section);
+      if (rndBool(0.40)) drawBussottiDecorative(voice, section);
+      if (rndBool(0.35)) drawBussottiDrips(voice, section);
+      if (rndBool(0.35)) drawBussottiAccents(voice, section);
+      if (rndBool(0.30)) drawBussottiSplatters(voice, section);
+      if (rndBool(0.30)) drawBussottiClusters(voice, section);
+      if (rndBool(0.28)) drawBussottiVines(voice, section);
+      if (rndBool(0.25)) drawBussottiWaves(voice, section);
+      if (rndBool(0.25)) drawBussottiStars(voice, section);
+      if (rndBool(0.22)) drawBussottiDecorativeDots(voice, section);
+      if (rndBool(0.20)) drawBussottiTextFragments(voice, section);
+      if (rndBool(0.18)) drawBussottiCrescendo(voice, section);
       break;
 
     case "textscore":
