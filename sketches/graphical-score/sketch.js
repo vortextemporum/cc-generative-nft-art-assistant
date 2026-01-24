@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.2.0
+ * Graphical Score v3.3.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,14 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.3.0: Major enhancement to Chance (Cage) mode with 20 new elements:
+ *         - Fontana Mix grid, transparent overlays, I Ching hexagrams
+ *         - Star chart tracings (Atlas Eclipticalis), silence boxes (4'33")
+ *         - Mesostic text, Ryoanji tracings, prepared piano symbols
+ *         - Time brackets, chance operation marks, circus overlays
+ *         - Indeterminacy symbols, event notation, notation types
+ *         - Mycological forms, number piece brackets, radio static
+ *         - Water walk symbols, Zen circles (Ensō), anarchy symbols
  * v3.2.0: Major enhancement to Graph (Feldman) mode with 18 new elements:
  *         - Ictus marks, register bands, time brackets, proportional grids
  *         - Diamond noteheads, cluster brackets, dynamic gradients
@@ -33,7 +41,7 @@
  * v2.2.0: Refined paper aesthetics, fixed header layout, musical metadata
  * v2.1.0: Enhanced Spectral mode with engraved hatching, stippling
  *
- * @version 3.2.0
+ * @version 3.3.0
  */
 
 // ============================================================
@@ -293,10 +301,16 @@ const MODES = {
   chance: {
     name: "Chance",
     composer: "Cage",
-    description: "Overlapping curves and dots, intersection derivation, layers",
+    description: "I Ching operations, star charts, prepared piano, silence, Zen circles",
     weight: 0.15,
-    elements: ["curvedLines", "dotFields", "intersections", "transparentLayers"],
-    prefersPalette: ["cageTransparent", "blueprint"]
+    elements: [
+      "curvedLines", "dotFields", "intersections", "fontanaMixGrid", "transparentOverlays",
+      "iChingHexagrams", "starChartTracings", "silenceBoxes", "mesosticText", "ryoanjiTracings",
+      "preparedPianoSymbols", "cageTimeBrackets", "chanceOperationMarks", "circusOverlays",
+      "indeterminacySymbols", "eventNotation", "notationTypes", "mycologicalForms",
+      "numberPieceBrackets", "radioStaticDots", "waterWalkSymbols", "zenCircles", "anarchySymbols"
+    ],
+    prefersPalette: ["cageTransparent", "blueprint", "manuscript"]
   },
   spectral: {
     name: "Spectral",
@@ -2018,6 +2032,834 @@ function drawChanceIntersections(voice, section) {
     noFill();
     ellipse(x, y, size * 2, size * 2);
   }
+}
+
+// ============================================================
+// ENHANCED CHANCE MODE FUNCTIONS (v3.3.0)
+// Inspired by John Cage's graphic scores and chance operations
+// ============================================================
+
+// --- 1. Fontana Mix Grid (measurement overlay) ---
+function drawFontanaMixGrid(voice, section) {
+  stroke(features.palette.ink + "20");
+  strokeWeight(0.5 * scaleFactor);
+
+  // Vertical grid lines with numbers
+  const gridSpacing = rnd(25, 45) * scaleFactor;
+  let gridNum = 1;
+
+  for (let gx = section.xStart; gx <= section.xEnd; gx += gridSpacing) {
+    line(gx, voice.yStart, gx, voice.yEnd);
+
+    // Number at top
+    if (rndBool(0.4)) {
+      fill(features.palette.ink + "40");
+      noStroke();
+      textSize(5 * scaleFactor);
+      textAlign(CENTER, BOTTOM);
+      text(gridNum, gx, voice.yStart - 2 * scaleFactor);
+      stroke(features.palette.ink + "20");
+    }
+    gridNum++;
+  }
+
+  // Horizontal grid lines (fewer)
+  for (let gy = voice.yStart; gy <= voice.yEnd; gy += gridSpacing * 1.5) {
+    line(section.xStart, gy, section.xEnd, gy);
+  }
+
+  // Diagonal measurement line (Fontana Mix characteristic)
+  if (rndBool(0.5)) {
+    stroke(features.palette.ink + "30");
+    strokeWeight(0.8 * scaleFactor);
+    const diagX1 = rnd(section.xStart, section.xCenter);
+    const diagX2 = rnd(section.xCenter, section.xEnd);
+    line(diagX1, voice.yEnd, diagX2, voice.yStart);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 2. Transparent Overlays (Variations series) ---
+function drawTransparentOverlays(voice, section) {
+  const numOverlays = rndInt(2, 5);
+
+  noStroke();
+
+  for (let i = 0; i < numOverlays; i++) {
+    // Very transparent fill
+    const alpha = rndInt(10, 30);
+    fill(features.palette.ink + alpha.toString(16).padStart(2, '0'));
+
+    const shapeType = rndInt(0, 3);
+    const ox = rnd(section.xStart, section.xEnd - 50);
+    const oy = rnd(voice.yStart, voice.yEnd - 30);
+    const ow = rnd(40, 120) * scaleFactor;
+    const oh = rnd(25, 60) * scaleFactor;
+
+    switch (shapeType) {
+      case 0: // Rectangle
+        rect(ox, oy, ow, oh);
+        break;
+      case 1: // Ellipse
+        ellipse(ox + ow/2, oy + oh/2, ow, oh);
+        break;
+      case 2: // Irregular polygon
+        beginShape();
+        for (let v = 0; v < 5; v++) {
+          vertex(ox + rnd(0, ow), oy + rnd(0, oh));
+        }
+        endShape(CLOSE);
+        break;
+      case 3: // Curved blob
+        beginShape();
+        for (let a = 0; a < TWO_PI; a += PI/4) {
+          const br = rnd(0.3, 1) * min(ow, oh) / 2;
+          curveVertex(ox + ow/2 + cos(a) * br, oy + oh/2 + sin(a) * br);
+        }
+        endShape(CLOSE);
+        break;
+    }
+  }
+}
+
+// --- 3. I Ching Hexagrams ---
+function drawIChingHexagrams(voice, section) {
+  const numHexagrams = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+
+  for (let i = 0; i < numHexagrams; i++) {
+    const hx = rnd(section.xStart + 20, section.xEnd - 30);
+    const hy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const lineWidth = 18 * scaleFactor;
+    const lineSpacing = 4 * scaleFactor;
+    const gapWidth = 4 * scaleFactor;
+
+    // Generate random hexagram (6 lines, each solid or broken)
+    for (let ln = 0; ln < 6; ln++) {
+      const lineY = hy - (ln - 2.5) * lineSpacing;
+      const isBroken = rndBool(0.5);
+
+      if (isBroken) {
+        // Broken line (yin) - two segments with gap
+        line(hx - lineWidth/2, lineY, hx - gapWidth/2, lineY);
+        line(hx + gapWidth/2, lineY, hx + lineWidth/2, lineY);
+      } else {
+        // Solid line (yang)
+        line(hx - lineWidth/2, lineY, hx + lineWidth/2, lineY);
+      }
+    }
+
+    // Optional hexagram number
+    if (rndBool(0.3)) {
+      fill(features.palette.ink + "60");
+      noStroke();
+      textSize(6 * scaleFactor);
+      textAlign(CENTER, TOP);
+      text(rndInt(1, 64), hx, hy + 15 * scaleFactor);
+      stroke(features.palette.ink);
+      textAlign(LEFT, TOP);
+    }
+  }
+}
+
+// --- 4. Star Chart Tracings (Atlas Eclipticalis) ---
+function drawStarChartTracings(voice, section) {
+  // Generate "stars" (dots of varying magnitude)
+  const numStars = Math.max(5, Math.floor(rnd(15, 40) * features.densityValue));
+  const stars = [];
+
+  fill(features.palette.ink);
+  noStroke();
+
+  for (let i = 0; i < numStars; i++) {
+    const star = {
+      x: rnd(section.xStart + 10, section.xEnd - 10),
+      y: rnd(voice.yStart + 10, voice.yEnd - 10),
+      magnitude: rnd(1, 5) // Brightness/size
+    };
+    stars.push(star);
+
+    // Draw star based on magnitude
+    const starSize = (6 - star.magnitude) * scaleFactor;
+    ellipse(star.x, star.y, starSize, starSize);
+  }
+
+  // Connect some stars like constellations
+  stroke(features.palette.ink + "30");
+  strokeWeight(0.5 * scaleFactor);
+
+  const numConnections = Math.floor(numStars * 0.4);
+  for (let i = 0; i < numConnections; i++) {
+    const s1 = rndChoice(stars);
+    const s2 = rndChoice(stars);
+    if (s1 !== s2 && dist(s1.x, s1.y, s2.x, s2.y) < 80 * scaleFactor) {
+      line(s1.x, s1.y, s2.x, s2.y);
+    }
+  }
+}
+
+// --- 5. Silence Boxes (4'33" style) ---
+function drawSilenceBoxes(voice, section) {
+  const numBoxes = Math.max(1, Math.floor(rnd(1, 4) * features.densityValue * 0.5));
+
+  for (let i = 0; i < numBoxes; i++) {
+    const bx = rnd(section.xStart + 15, section.xEnd - 60);
+    const boxWidth = rnd(35, 80) * scaleFactor;
+    const boxHeight = voice.height * rnd(0.4, 0.8);
+    const by = voice.yStart + (voice.height - boxHeight) / 2;
+
+    // Empty box with thin border
+    stroke(features.palette.ink + "40");
+    strokeWeight(0.8 * scaleFactor);
+    noFill();
+    rect(bx, by, boxWidth, boxHeight);
+
+    // "TACET" or duration marking
+    fill(features.palette.ink + "50");
+    noStroke();
+    textSize(7 * scaleFactor);
+    textAlign(CENTER, CENTER);
+
+    const marking = rndChoice(["TACET", "tacet", "silence", "—", "∅", "4'33\""]);
+    text(marking, bx + boxWidth/2, by + boxHeight/2);
+
+    // Optional movement number
+    if (rndBool(0.4)) {
+      textSize(5 * scaleFactor);
+      text(rndChoice(["I", "II", "III"]), bx + boxWidth/2, by - 8 * scaleFactor);
+    }
+
+    textAlign(LEFT, TOP);
+  }
+}
+
+// --- 6. Mesostic Text ---
+function drawMesosticText(voice, section) {
+  const words = [
+    "SILENCE", "CHANCE", "MUSIC", "SOUND", "TIME", "SPACE", "LISTEN",
+    "NOTHING", "EMPTY", "CAGE", "ZEN", "MUSHROOM", "NATURE"
+  ];
+
+  const spineWord = rndChoice(words);
+  const mx = rnd(section.xStart + 30, section.xEnd - 50);
+  const startY = voice.yStart + 10 * scaleFactor;
+
+  fill(features.palette.ink);
+  noStroke();
+  textAlign(CENTER, TOP);
+
+  // Draw vertical spine word with horizontal extensions
+  for (let i = 0; i < spineWord.length; i++) {
+    const charY = startY + i * 12 * scaleFactor;
+    if (charY > voice.yEnd - 10) break;
+
+    // Spine letter (bold/larger)
+    textSize(9 * scaleFactor);
+    textStyle(BOLD);
+    text(spineWord[i], mx, charY);
+
+    // Random letters before and after (smaller, lighter)
+    textStyle(NORMAL);
+    textSize(7 * scaleFactor);
+    fill(features.palette.ink + "60");
+
+    const before = rndInt(0, 4);
+    const after = rndInt(0, 4);
+
+    for (let b = before; b > 0; b--) {
+      const ch = String.fromCharCode(97 + rndInt(0, 25));
+      text(ch, mx - b * 8 * scaleFactor, charY);
+    }
+
+    for (let a = 1; a <= after; a++) {
+      const ch = String.fromCharCode(97 + rndInt(0, 25));
+      text(ch, mx + a * 8 * scaleFactor, charY);
+    }
+
+    fill(features.palette.ink);
+  }
+
+  textStyle(NORMAL);
+  textAlign(LEFT, TOP);
+}
+
+// --- 7. Ryoanji Tracings (rock outlines) ---
+function drawRyoanjiTracings(voice, section) {
+  const numRocks = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  stroke(features.palette.ink + "70");
+  strokeWeight(0.8 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numRocks; i++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const baseSize = rnd(15, 40) * scaleFactor;
+
+    // Draw organic rock shape with multiple tracings
+    const numTracings = rndInt(2, 5);
+
+    for (let t = 0; t < numTracings; t++) {
+      const offset = t * 2 * scaleFactor;
+
+      beginShape();
+      const points = rndInt(8, 15);
+      for (let p = 0; p <= points; p++) {
+        const angle = (p / points) * TWO_PI;
+        const r = baseSize * (0.6 + 0.4 * noise(angle * 2 + i * 10 + t));
+        curveVertex(cx + cos(angle) * (r + offset), cy + sin(angle) * (r + offset) * 0.7);
+      }
+      endShape(CLOSE);
+    }
+  }
+}
+
+// --- 8. Prepared Piano Symbols ---
+function drawPreparedPianoSymbols(voice, section) {
+  const numSymbols = Math.max(1, Math.floor(rnd(4, 10) * features.densityValue));
+
+  const preparations = [
+    { symbol: "●—", name: "bolt" },
+    { symbol: "◯", name: "rubber" },
+    { symbol: "╳", name: "mute" },
+    { symbol: "∿", name: "screw" },
+    { symbol: "▬", name: "felt" },
+    { symbol: "◊", name: "plastic" },
+    { symbol: "⊙", name: "coin" }
+  ];
+
+  for (let i = 0; i < numSymbols; i++) {
+    const px = rnd(section.xStart + 15, section.xEnd - 25);
+    const py = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const prep = rndChoice(preparations);
+
+    // Draw preparation indicator
+    fill(features.palette.ink);
+    noStroke();
+    textSize(10 * scaleFactor);
+    textAlign(CENTER, CENTER);
+    text(prep.symbol, px, py);
+
+    // Optional label
+    if (rndBool(0.25)) {
+      textSize(5 * scaleFactor);
+      fill(features.palette.ink + "60");
+      text(prep.name, px, py + 10 * scaleFactor);
+    }
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 9. Cage Time Brackets ---
+function drawCageTimeBrackets(voice, section) {
+  const numBrackets = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink + "80");
+  strokeWeight(1 * scaleFactor);
+
+  for (let i = 0; i < numBrackets; i++) {
+    const bx = rnd(section.xStart + 15, section.xEnd - 80);
+    const bracketWidth = rnd(40, 100) * scaleFactor;
+    const by = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const bracketHeight = 8 * scaleFactor;
+
+    // Bracket shape with flexible ends
+    noFill();
+
+    // Left bracket with time
+    line(bx, by - bracketHeight, bx, by + bracketHeight);
+    line(bx, by - bracketHeight, bx + 5 * scaleFactor, by - bracketHeight);
+    line(bx, by + bracketHeight, bx + 5 * scaleFactor, by + bracketHeight);
+
+    // Right bracket with time
+    line(bx + bracketWidth, by - bracketHeight, bx + bracketWidth, by + bracketHeight);
+    line(bx + bracketWidth, by - bracketHeight, bx + bracketWidth - 5 * scaleFactor, by - bracketHeight);
+    line(bx + bracketWidth, by + bracketHeight, bx + bracketWidth - 5 * scaleFactor, by + bracketHeight);
+
+    // Time markings
+    fill(features.palette.ink + "70");
+    noStroke();
+    textSize(5 * scaleFactor);
+    textAlign(CENTER, CENTER);
+
+    const startMin = rndInt(0, 5);
+    const startSec = rndInt(0, 59);
+    const endMin = startMin + rndInt(0, 3);
+    const endSec = rndInt(0, 59);
+
+    text(`${startMin}'${startSec.toString().padStart(2, '0')}"`, bx, by - bracketHeight - 5 * scaleFactor);
+    text(`${endMin}'${endSec.toString().padStart(2, '0')}"`, bx + bracketWidth, by - bracketHeight - 5 * scaleFactor);
+
+    stroke(features.palette.ink + "80");
+    textAlign(LEFT, TOP);
+  }
+}
+
+// --- 10. Chance Operation Marks ---
+function drawChanceOperationMarks(voice, section) {
+  const numMarks = Math.max(1, Math.floor(rnd(4, 10) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textAlign(CENTER, CENTER);
+
+  const chanceSymbols = [
+    "⚀", "⚁", "⚂", "⚃", "⚄", "⚅", // Dice
+    "☰", "☱", "☲", "☳", "☴", "☵", "☶", "☷", // Trigrams
+    "○●", "●○", // Coin tosses
+    "?", "⟳", "↺", "∞" // Choice/random
+  ];
+
+  for (let i = 0; i < numMarks; i++) {
+    const cx = rnd(section.xStart + 15, section.xEnd - 15);
+    const cy = rnd(voice.yStart + 12, voice.yEnd - 12);
+
+    textSize(rnd(10, 16) * scaleFactor);
+    text(rndChoice(chanceSymbols), cx, cy);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 11. Circus Overlays (independent parts) ---
+function drawCircusOverlays(voice, section) {
+  const numParts = rndInt(3, 6);
+
+  // Draw independent, overlapping "parts"
+  for (let p = 0; p < numParts; p++) {
+    const partX = rnd(section.xStart, section.xEnd - 40);
+    const partWidth = rnd(30, 80) * scaleFactor;
+    const partY = rnd(voice.yStart + 5, voice.yEnd - 20);
+    const partHeight = rnd(15, 40) * scaleFactor;
+
+    // Light boundary
+    stroke(features.palette.ink + "25");
+    strokeWeight(0.5 * scaleFactor);
+    noFill();
+    rect(partX, partY, partWidth, partHeight);
+
+    // Content inside part (random symbols/lines)
+    const contentType = rndInt(0, 3);
+
+    switch (contentType) {
+      case 0: // Dots
+        fill(features.palette.ink + "50");
+        noStroke();
+        for (let d = 0; d < rndInt(3, 8); d++) {
+          ellipse(partX + rnd(5, partWidth - 5), partY + rnd(5, partHeight - 5),
+                  rnd(2, 4) * scaleFactor, rnd(2, 4) * scaleFactor);
+        }
+        break;
+
+      case 1: // Lines
+        stroke(features.palette.ink + "40");
+        for (let l = 0; l < rndInt(2, 5); l++) {
+          line(partX + rnd(0, partWidth), partY + rnd(0, partHeight),
+               partX + rnd(0, partWidth), partY + rnd(0, partHeight));
+        }
+        break;
+
+      case 2: // Letter/number
+        fill(features.palette.ink + "40");
+        noStroke();
+        textSize(12 * scaleFactor);
+        textAlign(CENTER, CENTER);
+        text(String.fromCharCode(65 + p), partX + partWidth/2, partY + partHeight/2);
+        textAlign(LEFT, TOP);
+        break;
+
+      case 3: // Squiggle
+        stroke(features.palette.ink + "35");
+        strokeWeight(0.8 * scaleFactor);
+        noFill();
+        beginShape();
+        for (let s = 0; s < 6; s++) {
+          curveVertex(partX + rnd(0, partWidth), partY + rnd(0, partHeight));
+        }
+        endShape();
+        break;
+    }
+  }
+}
+
+// --- 12. Indeterminacy Symbols ---
+function drawIndeterminacySymbols(voice, section) {
+  const numSymbols = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  const indeterminateMarks = [
+    "ad lib.", "?", "~", "↔", "⟳", "[ ]", "...", "etc.", "○/●", "±"
+  ];
+
+  fill(features.palette.ink + "80");
+  noStroke();
+  textSize(8 * scaleFactor);
+  textAlign(CENTER, CENTER);
+
+  for (let i = 0; i < numSymbols; i++) {
+    const ix = rnd(section.xStart + 20, section.xEnd - 20);
+    const iy = rnd(voice.yStart + 12, voice.yEnd - 12);
+    text(rndChoice(indeterminateMarks), ix, iy);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 13. Event Notation (Happenings) ---
+function drawEventNotation(voice, section) {
+  const numEvents = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  const events = [
+    "open window", "drop object", "walk", "pause", "listen", "breathe",
+    "touch", "look", "wait", "move", "stop", "begin", "end", "repeat",
+    "any sound", "silence", "speak", "gesture", "observe"
+  ];
+
+  for (let i = 0; i < numEvents; i++) {
+    const ex = rnd(section.xStart + 25, section.xEnd - 50);
+    const ey = rnd(voice.yStart + 15, voice.yEnd - 15);
+
+    // Event box
+    stroke(features.palette.ink + "50");
+    strokeWeight(0.8 * scaleFactor);
+    noFill();
+
+    const event = rndChoice(events);
+    textSize(7 * scaleFactor);
+    const textW = textWidth(event) + 10 * scaleFactor;
+    const boxH = 14 * scaleFactor;
+
+    rect(ex, ey - boxH/2, textW, boxH, 2 * scaleFactor);
+
+    // Event text
+    fill(features.palette.ink + "70");
+    noStroke();
+    textAlign(LEFT, CENTER);
+    text(event, ex + 5 * scaleFactor, ey);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 14. Notation Types (Concert for Piano) ---
+function drawNotationTypes(voice, section) {
+  const numTypes = Math.max(1, Math.floor(rnd(4, 10) * features.densityValue));
+
+  for (let i = 0; i < numTypes; i++) {
+    const nx = rnd(section.xStart + 15, section.xEnd - 25);
+    const ny = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const notationType = rndInt(0, 7);
+
+    stroke(features.palette.ink);
+    strokeWeight(1 * scaleFactor);
+
+    switch (notationType) {
+      case 0: // Point cluster
+        noStroke();
+        fill(features.palette.ink);
+        for (let p = 0; p < rndInt(3, 7); p++) {
+          ellipse(nx + rnd(-8, 8) * scaleFactor, ny + rnd(-8, 8) * scaleFactor,
+                  rnd(2, 4) * scaleFactor, rnd(2, 4) * scaleFactor);
+        }
+        break;
+
+      case 1: // Ascending line
+        noFill();
+        line(nx, ny + 10 * scaleFactor, nx + 20 * scaleFactor, ny - 10 * scaleFactor);
+        break;
+
+      case 2: // Wavy line
+        noFill();
+        beginShape();
+        for (let w = 0; w < 5; w++) {
+          vertex(nx + w * 8 * scaleFactor, ny + sin(w * PI) * 5 * scaleFactor);
+        }
+        endShape();
+        break;
+
+      case 3: // Bracket with number
+        noFill();
+        line(nx, ny - 8 * scaleFactor, nx, ny + 8 * scaleFactor);
+        line(nx, ny - 8 * scaleFactor, nx + 3 * scaleFactor, ny - 8 * scaleFactor);
+        fill(features.palette.ink);
+        noStroke();
+        textSize(6 * scaleFactor);
+        textAlign(LEFT, CENTER);
+        text(rndInt(1, 12), nx + 5 * scaleFactor, ny);
+        break;
+
+      case 4: // X with circle
+        noFill();
+        line(nx - 5 * scaleFactor, ny - 5 * scaleFactor, nx + 5 * scaleFactor, ny + 5 * scaleFactor);
+        line(nx - 5 * scaleFactor, ny + 5 * scaleFactor, nx + 5 * scaleFactor, ny - 5 * scaleFactor);
+        ellipse(nx, ny, 14 * scaleFactor, 14 * scaleFactor);
+        break;
+
+      case 5: // Arrow
+        noFill();
+        line(nx, ny, nx + 20 * scaleFactor, ny);
+        line(nx + 15 * scaleFactor, ny - 4 * scaleFactor, nx + 20 * scaleFactor, ny);
+        line(nx + 15 * scaleFactor, ny + 4 * scaleFactor, nx + 20 * scaleFactor, ny);
+        break;
+
+      case 6: // Grid cell
+        noFill();
+        rect(nx, ny - 6 * scaleFactor, 12 * scaleFactor, 12 * scaleFactor);
+        if (rndBool(0.5)) {
+          fill(features.palette.ink + "50");
+          ellipse(nx + 6 * scaleFactor, ny, 4 * scaleFactor, 4 * scaleFactor);
+        }
+        break;
+
+      case 7: // Stem with flag
+        noFill();
+        line(nx, ny + 10 * scaleFactor, nx, ny - 10 * scaleFactor);
+        line(nx, ny - 10 * scaleFactor, nx + 8 * scaleFactor, ny - 5 * scaleFactor);
+        fill(features.palette.ink);
+        ellipse(nx, ny + 10 * scaleFactor, 5 * scaleFactor, 4 * scaleFactor);
+        break;
+    }
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 15. Mycological Forms (Cage was a mycologist) ---
+function drawMycologicalForms(voice, section) {
+  const numMushrooms = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  for (let i = 0; i < numMushrooms; i++) {
+    const mx = rnd(section.xStart + 25, section.xEnd - 25);
+    const my = rnd(voice.yStart + 25, voice.yEnd - 15);
+    const msize = rnd(12, 25) * scaleFactor;
+
+    stroke(features.palette.ink + "70");
+    strokeWeight(0.8 * scaleFactor);
+    noFill();
+
+    // Mushroom cap (various shapes)
+    const capType = rndInt(0, 3);
+
+    switch (capType) {
+      case 0: // Dome cap
+        arc(mx, my, msize * 2, msize * 1.2, PI, TWO_PI);
+        break;
+      case 1: // Flat cap
+        beginShape();
+        vertex(mx - msize, my);
+        bezierVertex(mx - msize * 0.5, my - msize * 0.3, mx + msize * 0.5, my - msize * 0.3, mx + msize, my);
+        endShape();
+        break;
+      case 2: // Wavy cap
+        beginShape();
+        for (let a = PI; a <= TWO_PI; a += PI/8) {
+          const wr = msize * (1 + sin(a * 4) * 0.15);
+          vertex(mx + cos(a) * wr, my + sin(a) * wr * 0.6);
+        }
+        endShape();
+        break;
+      case 3: // Conical cap
+        triangle(mx - msize, my, mx, my - msize * 0.8, mx + msize, my);
+        break;
+    }
+
+    // Stem
+    const stemHeight = msize * rnd(0.8, 1.5);
+    line(mx - msize * 0.15, my, mx - msize * 0.2, my + stemHeight);
+    line(mx + msize * 0.15, my, mx + msize * 0.2, my + stemHeight);
+
+    // Optional gills or dots on cap
+    if (rndBool(0.4)) {
+      const numDots = rndInt(3, 7);
+      fill(features.palette.ink + "40");
+      noStroke();
+      for (let d = 0; d < numDots; d++) {
+        const dotAngle = rnd(PI * 1.2, PI * 1.8);
+        const dotR = rnd(0.3, 0.8) * msize;
+        ellipse(mx + cos(dotAngle) * dotR, my + sin(dotAngle) * dotR * 0.5,
+                2 * scaleFactor, 2 * scaleFactor);
+      }
+    }
+  }
+}
+
+// --- 16. Number Piece Brackets ---
+function drawNumberPieceBrackets(voice, section) {
+  const numBrackets = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  // Floating time windows in the style of Cage's number pieces
+  for (let i = 0; i < numBrackets; i++) {
+    const bx = rnd(section.xStart + 20, section.xEnd - 70);
+    const by = rnd(voice.yStart + 10, voice.yEnd - 20);
+    const bracketW = rnd(40, 90) * scaleFactor;
+    const bracketH = rnd(15, 30) * scaleFactor;
+
+    // Soft rounded rectangle
+    stroke(features.palette.ink + "40");
+    strokeWeight(1 * scaleFactor);
+    noFill();
+    rect(bx, by, bracketW, bracketH, 3 * scaleFactor);
+
+    // Time range notation
+    fill(features.palette.ink + "60");
+    noStroke();
+    textSize(6 * scaleFactor);
+    textAlign(LEFT, TOP);
+
+    const t1 = rndInt(0, 10);
+    const t2 = t1 + rndInt(1, 5);
+    text(`${t1}'—${t2}'`, bx + 3 * scaleFactor, by + 2 * scaleFactor);
+
+    // Sound indication inside
+    textAlign(CENTER, CENTER);
+    textSize(8 * scaleFactor);
+    fill(features.palette.ink + "50");
+
+    const sounds = ["tone", "noise", "—", "○", "any", "held"];
+    text(rndChoice(sounds), bx + bracketW/2, by + bracketH/2 + 3 * scaleFactor);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 17. Radio Static Dots (Imaginary Landscape) ---
+function drawRadioStaticDots(voice, section) {
+  // Dense field of varying-size dots like radio static
+  const numDots = Math.max(10, Math.floor(features.densityValue * 80));
+
+  noStroke();
+
+  for (let i = 0; i < numDots; i++) {
+    const dx = rnd(section.xStart, section.xEnd);
+    const dy = rnd(voice.yStart, voice.yEnd);
+
+    // Varying opacity based on "signal strength"
+    const signal = rnd(0, 1);
+    const opacity = Math.floor(signal * 60 + 10);
+    fill(features.palette.ink + opacity.toString(16).padStart(2, '0'));
+
+    // Size varies with signal
+    const dotSize = (0.5 + signal * 2) * scaleFactor;
+    ellipse(dx, dy, dotSize, dotSize);
+  }
+
+  // Occasional horizontal "scan lines"
+  if (rndBool(0.5)) {
+    stroke(features.palette.ink + "15");
+    strokeWeight(0.5 * scaleFactor);
+    const numLines = rndInt(2, 5);
+    for (let l = 0; l < numLines; l++) {
+      const lineY = rnd(voice.yStart, voice.yEnd);
+      line(section.xStart, lineY, section.xEnd, lineY);
+    }
+  }
+}
+
+// --- 18. Water Walk Symbols (action notation) ---
+function drawWaterWalkSymbols(voice, section) {
+  const numActions = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  const actions = [
+    { icon: "♬", label: "piano" },
+    { icon: "≋", label: "water" },
+    { icon: "◐", label: "radio" },
+    { icon: "⏱", label: "timer" },
+    { icon: "⍾", label: "bell" },
+    { icon: "♨", label: "steam" },
+    { icon: "❄", label: "ice" },
+    { icon: "→", label: "move" },
+    { icon: "⬤", label: "strike" },
+    { icon: "∿", label: "pour" }
+  ];
+
+  for (let i = 0; i < numActions; i++) {
+    const ax = rnd(section.xStart + 20, section.xEnd - 40);
+    const ay = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const action = rndChoice(actions);
+
+    // Action icon
+    fill(features.palette.ink);
+    noStroke();
+    textSize(12 * scaleFactor);
+    textAlign(CENTER, CENTER);
+    text(action.icon, ax, ay);
+
+    // Label below
+    if (rndBool(0.4)) {
+      textSize(5 * scaleFactor);
+      fill(features.palette.ink + "60");
+      text(action.label, ax, ay + 12 * scaleFactor);
+    }
+
+    // Timeline arrow
+    if (rndBool(0.5)) {
+      stroke(features.palette.ink + "40");
+      strokeWeight(0.8 * scaleFactor);
+      const arrowLen = rnd(15, 35) * scaleFactor;
+      line(ax + 10 * scaleFactor, ay, ax + 10 * scaleFactor + arrowLen, ay);
+    }
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 19. Zen Circles (Ensō) - Cage's Zen influence ---
+function drawZenCircles(voice, section) {
+  const numCircles = Math.max(1, Math.floor(rnd(1, 4) * features.densityValue));
+
+  for (let i = 0; i < numCircles; i++) {
+    const cx = rnd(section.xStart + 30, section.xEnd - 30);
+    const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const radius = rnd(15, 35) * scaleFactor;
+
+    // Ensō - incomplete circle with brush-like stroke
+    stroke(features.palette.ink + "80");
+    strokeWeight(rnd(2, 5) * scaleFactor);
+    noFill();
+
+    // Draw most of circle but leave gap (zen incompleteness)
+    const startAngle = rnd(0, TWO_PI);
+    const arcLength = rnd(PI * 1.4, PI * 1.9); // Not quite complete
+
+    arc(cx, cy, radius * 2, radius * 2, startAngle, startAngle + arcLength);
+
+    // Brush "tail" effect at end
+    if (rndBool(0.6)) {
+      const tailAngle = startAngle + arcLength;
+      const tailX = cx + cos(tailAngle) * radius;
+      const tailY = cy + sin(tailAngle) * radius;
+      strokeWeight(rnd(0.5, 1.5) * scaleFactor);
+      line(tailX, tailY,
+           tailX + cos(tailAngle + 0.3) * 8 * scaleFactor,
+           tailY + sin(tailAngle + 0.3) * 8 * scaleFactor);
+    }
+  }
+}
+
+// --- 20. Anarchy/Freedom Symbols (Cage's anarchist influence) ---
+function drawAnarchySymbols(voice, section) {
+  const numSymbols = Math.max(1, Math.floor(rnd(3, 7) * features.densityValue));
+
+  const freedomMarks = [
+    "free", "any", "all", "none", "open", "∞",
+    "⊕", "≈", "∴", "∵", "⇌", "⤳"
+  ];
+
+  for (let i = 0; i < numSymbols; i++) {
+    const fx = rnd(section.xStart + 15, section.xEnd - 20);
+    const fy = rnd(voice.yStart + 12, voice.yEnd - 12);
+
+    fill(features.palette.ink + "70");
+    noStroke();
+    textSize(rnd(7, 11) * scaleFactor);
+    textAlign(CENTER, CENTER);
+    text(rndChoice(freedomMarks), fx, fy);
+  }
+
+  textAlign(LEFT, TOP);
 }
 
 // ============================================================
@@ -3762,9 +4604,44 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "chance":
-      drawChanceCurves(voice, section);
-      drawChanceDots(voice, section);
-      if (rndBool(0.5)) drawChanceIntersections(voice, section);
+      // Enhanced Chance mode v3.3.0 - John Cage's graphic scores
+      // Primary structural element (choose one)
+      const chancePrimary = rndInt(0, 6);
+      switch (chancePrimary) {
+        case 0: drawChanceCurves(voice, section); break;
+        case 1: drawFontanaMixGrid(voice, section); break;
+        case 2: drawStarChartTracings(voice, section); break;
+        case 3: drawCircusOverlays(voice, section); break;
+        case 4: drawTransparentOverlays(voice, section); break;
+        case 5: drawNotationTypes(voice, section); break;
+        case 6: drawRadioStaticDots(voice, section); break;
+      }
+
+      // Dot/point elements (Cage loved scattered points)
+      if (rndBool(0.5)) drawChanceDots(voice, section);
+      if (rndBool(0.3)) drawChanceIntersections(voice, section);
+
+      // Cage's systems and operations
+      if (rndBool(0.3)) drawIChingHexagrams(voice, section);
+      if (rndBool(0.25)) drawChanceOperationMarks(voice, section);
+      if (rndBool(0.25)) drawCageTimeBrackets(voice, section);
+      if (rndBool(0.2)) drawNumberPieceBrackets(voice, section);
+
+      // Silence and indeterminacy
+      if (rndBool(0.25)) drawSilenceBoxes(voice, section);
+      if (rndBool(0.25)) drawIndeterminacySymbols(voice, section);
+      if (rndBool(0.2)) drawEventNotation(voice, section);
+
+      // Specific Cage works
+      if (rndBool(0.2)) drawRyoanjiTracings(voice, section);
+      if (rndBool(0.2)) drawPreparedPianoSymbols(voice, section);
+      if (rndBool(0.15)) drawWaterWalkSymbols(voice, section);
+
+      // Cage's interests and influences
+      if (rndBool(0.2)) drawMycologicalForms(voice, section);
+      if (rndBool(0.2)) drawZenCircles(voice, section);
+      if (rndBool(0.15)) drawMesosticText(voice, section);
+      if (rndBool(0.15)) drawAnarchySymbols(voice, section);
       break;
 
     case "spectral":
