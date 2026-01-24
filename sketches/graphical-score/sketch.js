@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.1.1
+ * Graphical Score v3.2.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,12 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.2.0: Major enhancement to Graph (Feldman) mode with 18 new elements:
+ *         - Ictus marks, register bands, time brackets, proportional grids
+ *         - Diamond noteheads, cluster brackets, dynamic gradients
+ *         - Sustain lines, tremolo marks, instrument labels, empty boxes
+ *         - Connecting lines, soft attack marks, decay trails
+ *         - Duration stacks, pedal markings, breath marks, harmonic halos
  * v3.1.1: Fixed empty score bug - raised density floor and added minimum element counts
  * v3.1.0: Major enhancement to Spiral mode with 10 new elements:
  *         - Multiple spiral types (logarithmic, double, arms, Fermat)
@@ -27,7 +33,7 @@
  * v2.2.0: Refined paper aesthetics, fixed header layout, musical metadata
  * v2.1.0: Enhanced Spectral mode with engraved hatching, stippling
  *
- * @version 3.1.1
+ * @version 3.2.0
  */
 
 // ============================================================
@@ -273,10 +279,16 @@ const MODES = {
   graph: {
     name: "Graph",
     composer: "Feldman",
-    description: "Grid boxes, sparse pointillist, circuit-diagram aesthetic",
+    description: "Sparse pointillist grid, time brackets, soft attacks, decay trails",
     weight: 0.15,
-    elements: ["gridBoxes", "sparsePoints", "registerLevels", "circuitLines"],
-    prefersPalette: ["aged", "manuscript"]
+    elements: [
+      "gridBoxes", "sparsePoints", "ictusMarks", "registerBands", "timeBrackets",
+      "proportionalGrid", "diamondNotes", "clusterBrackets", "dynamicGradients",
+      "sustainLines", "tremoloMarks", "instrumentLabels", "emptyBoxes",
+      "connectingLines", "softAttackMarks", "decayTrails", "durationStacks",
+      "pedalMarkings", "breathMarks", "harmonicHalos"
+    ],
+    prefersPalette: ["aged", "manuscript", "parchment"]
   },
   chance: {
     name: "Chance",
@@ -1250,6 +1262,688 @@ function drawSparsePoints(voice, section) {
       strokeWeight(0.5 * scaleFactor);
       const duration = rnd(15, 50) * scaleFactor;
       line(x + size/2, y, x + size/2 + duration, y);
+    }
+  }
+}
+
+// ============================================================
+// ENHANCED GRAPH MODE FUNCTIONS (v3.2.0)
+// Inspired by Morton Feldman's Projections & Intersections
+// ============================================================
+
+// --- 1. Ictus Marks (attack indicators) ---
+function drawIctusMarks(voice, section) {
+  const numMarks = Math.max(1, Math.floor(rnd(4, 12) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.2 * scaleFactor);
+
+  for (let i = 0; i < numMarks; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const height = rnd(8, 18) * scaleFactor;
+
+    // Vertical ictus line
+    line(x, y - height/2, x, y + height/2);
+
+    // Sometimes add small notehead
+    if (rndBool(0.6)) {
+      fill(features.palette.ink);
+      noStroke();
+      ellipse(x, y, 4 * scaleFactor, 3 * scaleFactor);
+      stroke(features.palette.ink);
+    }
+
+    // Sometimes add accent mark above
+    if (rndBool(0.3)) {
+      strokeWeight(1.5 * scaleFactor);
+      line(x - 3 * scaleFactor, y - height/2 - 4 * scaleFactor,
+           x, y - height/2 - 7 * scaleFactor);
+      line(x, y - height/2 - 7 * scaleFactor,
+           x + 3 * scaleFactor, y - height/2 - 4 * scaleFactor);
+      strokeWeight(1.2 * scaleFactor);
+    }
+  }
+}
+
+// --- 2. Register Bands (high/mid/low zones with labels) ---
+function drawRegisterBands(voice, section) {
+  const registers = ["H", "M", "L"]; // High, Middle, Low
+  const bandHeight = voice.height / 3;
+
+  // Draw horizontal dividing lines
+  stroke(features.palette.ink + "30");
+  strokeWeight(0.5 * scaleFactor);
+
+  for (let i = 1; i < 3; i++) {
+    const y = voice.yStart + i * bandHeight;
+    // Dashed line
+    for (let x = section.xStart; x < section.xEnd; x += 8 * scaleFactor) {
+      line(x, y, Math.min(x + 4 * scaleFactor, section.xEnd), y);
+    }
+  }
+
+  // Add register labels on left margin
+  fill(features.palette.ink + "60");
+  noStroke();
+  textSize(7 * scaleFactor);
+  textAlign(CENTER, CENTER);
+
+  for (let i = 0; i < 3; i++) {
+    const y = voice.yStart + i * bandHeight + bandHeight/2;
+    text(registers[i], section.xStart - 8 * scaleFactor, y);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 3. Time Brackets [ ] ---
+function drawTimeBrackets(voice, section) {
+  const numBrackets = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numBrackets; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 60);
+    const bracketWidth = rnd(30, 80) * scaleFactor;
+    const y = rndBool(0.5) ? voice.yStart + 5 * scaleFactor : voice.yEnd - 5 * scaleFactor;
+    const bracketHeight = 6 * scaleFactor;
+    const direction = y < voice.yCenter ? 1 : -1;
+
+    // Left bracket [
+    line(x, y, x, y + bracketHeight * direction);
+    line(x, y, x + 4 * scaleFactor, y);
+
+    // Right bracket ]
+    line(x + bracketWidth, y, x + bracketWidth, y + bracketHeight * direction);
+    line(x + bracketWidth, y, x + bracketWidth - 4 * scaleFactor, y);
+
+    // Optional time indication
+    if (rndBool(0.5)) {
+      fill(features.palette.ink + "80");
+      textSize(6 * scaleFactor);
+      textAlign(CENTER, CENTER);
+      const timeText = rndChoice(["0'00\"", "1'30\"", "~30\"", "free", "slow", "15\"-20\""]);
+      text(timeText, x + bracketWidth/2, y + bracketHeight * direction * 1.5);
+      textAlign(LEFT, TOP);
+      noFill();
+    }
+  }
+}
+
+// --- 4. Proportional Spacing (variable column widths) ---
+function drawProportionalGrid(voice, section) {
+  stroke(features.palette.ink + "25");
+  strokeWeight(0.5 * scaleFactor);
+
+  let x = section.xStart;
+  const columns = [];
+
+  // Generate variable-width columns
+  while (x < section.xEnd - 10) {
+    const colWidth = rnd(12, 45) * scaleFactor;
+    if (x + colWidth <= section.xEnd) {
+      columns.push({ x, width: colWidth });
+    }
+    x += colWidth;
+  }
+
+  // Draw columns
+  for (const col of columns) {
+    line(col.x, voice.yStart, col.x, voice.yEnd);
+
+    // Occasionally add a note or mark in the column
+    if (rndBool(0.25 * features.densityValue)) {
+      fill(features.palette.ink + "50");
+      noStroke();
+      const noteY = rnd(voice.yStart + 8, voice.yEnd - 8);
+      const noteSize = rnd(3, 6) * scaleFactor;
+      ellipse(col.x + col.width/2, noteY, noteSize, noteSize * 0.7);
+      stroke(features.palette.ink + "25");
+    }
+  }
+}
+
+// --- 5. Diamond Noteheads (harmonics) ---
+function drawDiamondNotes(voice, section) {
+  const numDiamonds = Math.max(1, Math.floor(rnd(3, 10) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+
+  for (let i = 0; i < numDiamonds; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 12, voice.yEnd - 12);
+    const size = rnd(5, 10) * scaleFactor;
+
+    // Diamond shape
+    const filled = rndBool(0.3);
+    if (filled) {
+      fill(features.palette.ink);
+    } else {
+      noFill();
+    }
+
+    quad(x, y - size/2,
+         x + size/2, y,
+         x, y + size/2,
+         x - size/2, y);
+
+    // Optional stem
+    if (rndBool(0.5)) {
+      const stemDir = rndBool(0.5) ? -1 : 1;
+      line(x + size/2 * (stemDir > 0 ? 1 : -1), y,
+           x + size/2 * (stemDir > 0 ? 1 : -1), y + stemDir * size * 2.5);
+    }
+
+    // Optional "harmonic" indicator (small circle)
+    if (rndBool(0.3)) {
+      noFill();
+      ellipse(x, y - size, 4 * scaleFactor, 4 * scaleFactor);
+    }
+  }
+}
+
+// --- 6. Cluster Brackets (grouping pitches) ---
+function drawClusterBrackets(voice, section) {
+  const numClusters = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let i = 0; i < numClusters; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const clusterHeight = rnd(15, 40) * scaleFactor;
+    const centerY = rnd(voice.yStart + clusterHeight/2 + 5, voice.yEnd - clusterHeight/2 - 5);
+
+    // Curly bracket
+    strokeWeight(1.2 * scaleFactor);
+    const bracketX = x - 8 * scaleFactor;
+
+    // Top curve
+    beginShape();
+    noFill();
+    vertex(bracketX + 4 * scaleFactor, centerY - clusterHeight/2);
+    bezierVertex(
+      bracketX, centerY - clusterHeight/2,
+      bracketX, centerY - clusterHeight/4,
+      bracketX - 2 * scaleFactor, centerY
+    );
+    endShape();
+
+    // Bottom curve
+    beginShape();
+    vertex(bracketX - 2 * scaleFactor, centerY);
+    bezierVertex(
+      bracketX, centerY + clusterHeight/4,
+      bracketX, centerY + clusterHeight/2,
+      bracketX + 4 * scaleFactor, centerY + clusterHeight/2
+    );
+    endShape();
+
+    // Notes inside bracket
+    fill(features.palette.ink);
+    noStroke();
+    const numNotes = rndInt(2, 5);
+    for (let n = 0; n < numNotes; n++) {
+      const noteY = centerY - clusterHeight/2 + (n + 0.5) * (clusterHeight / numNotes);
+      ellipse(x, noteY, 5 * scaleFactor, 4 * scaleFactor);
+    }
+    stroke(features.palette.ink);
+  }
+}
+
+// --- 7. Dynamic Gradients (hairpins over boxes) ---
+function drawDynamicGradients(voice, section) {
+  const numHairpins = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  stroke(features.palette.ink + "80");
+  strokeWeight(0.8 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numHairpins; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 60);
+    const hairpinWidth = rnd(30, 70) * scaleFactor;
+    const y = rnd(voice.yStart + 8, voice.yEnd - 8);
+    const hairpinHeight = 4 * scaleFactor;
+
+    const isCrescendo = rndBool(0.5);
+
+    if (isCrescendo) {
+      // < crescendo
+      line(x, y, x + hairpinWidth, y - hairpinHeight);
+      line(x, y, x + hairpinWidth, y + hairpinHeight);
+    } else {
+      // > decrescendo
+      line(x, y - hairpinHeight, x + hairpinWidth, y);
+      line(x, y + hairpinHeight, x + hairpinWidth, y);
+    }
+
+    // Optional dynamic marking
+    if (rndBool(0.4)) {
+      fill(features.palette.ink + "70");
+      textSize(7 * scaleFactor);
+      textAlign(CENTER, CENTER);
+      const dynamic = isCrescendo ?
+        rndChoice(["pp", "p", "ppp"]) :
+        rndChoice(["mp", "mf", "p"]);
+      const textX = isCrescendo ? x - 8 * scaleFactor : x + hairpinWidth + 8 * scaleFactor;
+      text(dynamic, textX, y);
+      textAlign(LEFT, TOP);
+      noFill();
+    }
+  }
+}
+
+// --- 8. Sustain Lines (long horizontal ties) ---
+function drawSustainLines(voice, section) {
+  const numLines = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  for (let i = 0; i < numLines; i++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 80);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const lineLength = rnd(40, 120) * scaleFactor;
+
+    // Starting notehead
+    fill(features.palette.ink);
+    noStroke();
+    ellipse(x, y, 5 * scaleFactor, 4 * scaleFactor);
+
+    // Sustain line (slightly wavy or straight)
+    stroke(features.palette.ink + "70");
+    strokeWeight(0.8 * scaleFactor);
+    noFill();
+
+    if (rndBool(0.3)) {
+      // Wavy tie
+      beginShape();
+      for (let t = 0; t <= 1; t += 0.05) {
+        const px = x + 3 * scaleFactor + t * lineLength;
+        const py = y + sin(t * PI * 2) * 2 * scaleFactor;
+        vertex(px, py);
+      }
+      endShape();
+    } else {
+      // Straight line with slight curve
+      beginShape();
+      vertex(x + 3 * scaleFactor, y);
+      bezierVertex(
+        x + lineLength * 0.3, y - 3 * scaleFactor,
+        x + lineLength * 0.7, y - 3 * scaleFactor,
+        x + lineLength, y
+      );
+      endShape();
+    }
+
+    // Optional ending notehead
+    if (rndBool(0.4)) {
+      fill(features.palette.ink + "60");
+      noStroke();
+      ellipse(x + lineLength, y, 4 * scaleFactor, 3 * scaleFactor);
+    }
+  }
+}
+
+// --- 9. Tremolo Indicators ---
+function drawTremoloMarks(voice, section) {
+  const numTremolos = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+
+  for (let i = 0; i < numTremolos; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+
+    // Notehead
+    fill(features.palette.ink);
+    noStroke();
+    ellipse(x, y, 6 * scaleFactor, 5 * scaleFactor);
+
+    // Tremolo slashes on stem
+    stroke(features.palette.ink);
+    strokeWeight(1.5 * scaleFactor);
+
+    const stemX = x + 3 * scaleFactor;
+    const stemTop = y - 15 * scaleFactor;
+    line(stemX, y, stemX, stemTop);
+
+    const numSlashes = rndInt(1, 3);
+    for (let s = 0; s < numSlashes; s++) {
+      const slashY = stemTop + 5 * scaleFactor + s * 4 * scaleFactor;
+      line(stemX - 4 * scaleFactor, slashY + 3 * scaleFactor,
+           stemX + 4 * scaleFactor, slashY - 3 * scaleFactor);
+    }
+  }
+}
+
+// --- 10. Instrument Labels ---
+function drawInstrumentLabels(voice, section) {
+  const instruments = [
+    "vln.", "vla.", "vc.", "cb.", "fl.", "ob.", "cl.", "bsn.",
+    "hn.", "tpt.", "tbn.", "perc.", "pno.", "cel.", "hp.", "vib."
+  ];
+
+  fill(features.palette.ink + "70");
+  noStroke();
+  textSize(7 * scaleFactor);
+  textAlign(RIGHT, CENTER);
+
+  // Place instrument label at voice start
+  const instrument = rndChoice(instruments);
+  text(instrument, section.xStart - 12 * scaleFactor, voice.yCenter);
+
+  // Occasionally add playing technique
+  if (rndBool(0.4)) {
+    textSize(5 * scaleFactor);
+    const technique = rndChoice([
+      "pizz.", "arco", "sul pont.", "con sord.", "harm.", "ord.",
+      "flz.", "muta", "l.v.", "secco", "dolce", "sotto voce"
+    ]);
+    text(technique, section.xStart - 12 * scaleFactor, voice.yCenter + 10 * scaleFactor);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 11. Empty Box Emphasis (silence representation) ---
+function drawEmptyBoxes(voice, section) {
+  const numBoxes = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue * 0.5));
+
+  for (let i = 0; i < numBoxes; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 40);
+    const boxWidth = rnd(20, 50) * scaleFactor;
+    const boxHeight = rnd(15, 30) * scaleFactor;
+    const y = rnd(voice.yStart + 10, voice.yEnd - boxHeight - 10);
+
+    // Empty box with emphasized border
+    stroke(features.palette.ink + "50");
+    strokeWeight(1.5 * scaleFactor);
+    noFill();
+    rect(x, y, boxWidth, boxHeight);
+
+    // Inner lighter box
+    stroke(features.palette.ink + "20");
+    strokeWeight(0.5 * scaleFactor);
+    rect(x + 3 * scaleFactor, y + 3 * scaleFactor,
+         boxWidth - 6 * scaleFactor, boxHeight - 6 * scaleFactor);
+
+    // Optional "tacet" or rest indicator
+    if (rndBool(0.3)) {
+      fill(features.palette.ink + "40");
+      textSize(6 * scaleFactor);
+      textAlign(CENTER, CENTER);
+      text(rndChoice(["∅", "tacet", "—", "○"]), x + boxWidth/2, y + boxHeight/2);
+      textAlign(LEFT, TOP);
+    }
+  }
+}
+
+// --- 12. Connecting Lines (voice leading) ---
+function drawConnectingLines(voice, section) {
+  const numConnections = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  // Generate some note positions first
+  const notes = [];
+  for (let i = 0; i < numConnections + 1; i++) {
+    notes.push({
+      x: section.xStart + (i + 0.5) * (section.width / (numConnections + 1)),
+      y: rnd(voice.yStart + 12, voice.yEnd - 12)
+    });
+  }
+
+  // Draw noteheads
+  fill(features.palette.ink);
+  noStroke();
+  for (const note of notes) {
+    ellipse(note.x, note.y, 5 * scaleFactor, 4 * scaleFactor);
+  }
+
+  // Draw connecting lines between consecutive notes
+  stroke(features.palette.ink + "40");
+  strokeWeight(0.7 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < notes.length - 1; i++) {
+    if (rndBool(0.7)) {
+      const n1 = notes[i];
+      const n2 = notes[i + 1];
+
+      // Slightly curved connecting line
+      beginShape();
+      vertex(n1.x + 3 * scaleFactor, n1.y);
+      const midX = (n1.x + n2.x) / 2;
+      const midY = (n1.y + n2.y) / 2 + rnd(-8, 8) * scaleFactor;
+      quadraticVertex(midX, midY, n2.x - 3 * scaleFactor, n2.y);
+      endShape();
+    }
+  }
+}
+
+// --- 13. Soft Attack Marks (pianissimo indicators) ---
+function drawSoftAttackMarks(voice, section) {
+  const numMarks = Math.max(1, Math.floor(rnd(4, 12) * features.densityValue));
+
+  for (let i = 0; i < numMarks; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const size = rnd(4, 8) * scaleFactor;
+
+    // Soft attack: open circle (not filled)
+    stroke(features.palette.ink + "80");
+    strokeWeight(0.8 * scaleFactor);
+    noFill();
+    ellipse(x, y, size, size * 0.8);
+
+    // Sometimes add very small "o" or "pp" marking
+    if (rndBool(0.3)) {
+      fill(features.palette.ink + "50");
+      noStroke();
+      textSize(5 * scaleFactor);
+      textAlign(CENTER, CENTER);
+      text(rndChoice(["o", "pp", "ppp", "°"]), x, y + size);
+      textAlign(LEFT, TOP);
+    }
+  }
+}
+
+// --- 14. Decay Trails (fading resonance) ---
+function drawDecayTrails(voice, section) {
+  const numTrails = Math.max(1, Math.floor(rnd(3, 7) * features.densityValue));
+
+  for (let i = 0; i < numTrails; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 80);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const trailLength = rnd(40, 100) * scaleFactor;
+
+    // Starting note
+    fill(features.palette.ink);
+    noStroke();
+    ellipse(x, y, 5 * scaleFactor, 4 * scaleFactor);
+
+    // Decay trail with fading opacity
+    noFill();
+    strokeWeight(1 * scaleFactor);
+
+    const segments = 8;
+    for (let s = 0; s < segments; s++) {
+      const t1 = s / segments;
+      const t2 = (s + 1) / segments;
+      const opacity = Math.floor(100 * (1 - t1));
+      stroke(features.palette.ink + opacity.toString(16).padStart(2, '0'));
+
+      const x1 = x + 3 * scaleFactor + t1 * trailLength;
+      const x2 = x + 3 * scaleFactor + t2 * trailLength;
+      const waveY1 = y + sin(t1 * PI * 3) * 2 * scaleFactor * (1 - t1);
+      const waveY2 = y + sin(t2 * PI * 3) * 2 * scaleFactor * (1 - t2);
+
+      line(x1, waveY1, x2, waveY2);
+    }
+
+    // Dotted end (dying away)
+    if (rndBool(0.4)) {
+      fill(features.palette.ink + "20");
+      noStroke();
+      for (let d = 0; d < 3; d++) {
+        ellipse(x + trailLength + 5 * scaleFactor + d * 4 * scaleFactor, y,
+                2 * scaleFactor, 2 * scaleFactor);
+      }
+    }
+  }
+}
+
+// --- 15. Vertical Duration Stacks ---
+function drawDurationStacks(voice, section) {
+  const numStacks = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  for (let i = 0; i < numStacks; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const stackHeight = voice.height * rnd(0.4, 0.8);
+    const centerY = voice.yCenter;
+    const numNotes = rndInt(2, 6);
+
+    // Vertical stem
+    stroke(features.palette.ink + "60");
+    strokeWeight(0.8 * scaleFactor);
+    line(x, centerY - stackHeight/2, x, centerY + stackHeight/2);
+
+    // Notes stacked vertically
+    fill(features.palette.ink);
+    noStroke();
+
+    for (let n = 0; n < numNotes; n++) {
+      const noteY = centerY - stackHeight/2 + (n + 0.5) * (stackHeight / numNotes);
+      const noteType = rndInt(0, 2);
+
+      if (noteType === 0) {
+        // Filled
+        ellipse(x, noteY, 5 * scaleFactor, 4 * scaleFactor);
+      } else if (noteType === 1) {
+        // Open
+        stroke(features.palette.ink);
+        strokeWeight(1 * scaleFactor);
+        noFill();
+        ellipse(x, noteY, 5 * scaleFactor, 4 * scaleFactor);
+        fill(features.palette.ink);
+        noStroke();
+      } else {
+        // Diamond
+        stroke(features.palette.ink);
+        strokeWeight(0.8 * scaleFactor);
+        noFill();
+        quad(x, noteY - 3 * scaleFactor,
+             x + 3 * scaleFactor, noteY,
+             x, noteY + 3 * scaleFactor,
+             x - 3 * scaleFactor, noteY);
+        fill(features.palette.ink);
+        noStroke();
+      }
+    }
+
+    // Duration number
+    if (rndBool(0.4)) {
+      fill(features.palette.ink + "70");
+      textSize(6 * scaleFactor);
+      textAlign(CENTER, CENTER);
+      text(rndInt(1, 8), x, centerY + stackHeight/2 + 8 * scaleFactor);
+      textAlign(LEFT, TOP);
+    }
+  }
+}
+
+// --- 16. Pedal Markings ---
+function drawPedalMarkings(voice, section) {
+  const numPedals = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink + "70");
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  const pedalY = voice.yEnd + 5 * scaleFactor;
+
+  for (let i = 0; i < numPedals; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 60);
+    const pedalWidth = rnd(30, 80) * scaleFactor;
+
+    // Ped. marking
+    fill(features.palette.ink + "70");
+    noStroke();
+    textSize(8 * scaleFactor);
+    textAlign(LEFT, CENTER);
+    text("Ped.", x, pedalY);
+
+    // Pedal line
+    stroke(features.palette.ink + "50");
+    strokeWeight(0.8 * scaleFactor);
+    line(x + 18 * scaleFactor, pedalY, x + pedalWidth, pedalY);
+
+    // Release mark (*)
+    noStroke();
+    textAlign(CENTER, CENTER);
+    text("*", x + pedalWidth + 5 * scaleFactor, pedalY);
+
+    textAlign(LEFT, TOP);
+  }
+}
+
+// --- 17. Breath/Pause Marks ---
+function drawBreathMarks(voice, section) {
+  const numMarks = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  fill(features.palette.ink + "80");
+  noStroke();
+  textSize(14 * scaleFactor);
+  textAlign(CENTER, CENTER);
+
+  const breathSymbols = [",", "'", "//", "◦"];
+
+  for (let i = 0; i < numMarks; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const y = rndBool(0.5) ? voice.yStart - 2 * scaleFactor : voice.yEnd + 2 * scaleFactor;
+
+    const symbol = rndChoice(breathSymbols);
+    text(symbol, x, y);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 18. Harmonic Halos (overtone visualization) ---
+function drawHarmonicHalos(voice, section) {
+  const numHalos = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  for (let i = 0; i < numHalos; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const baseSize = rnd(4, 7) * scaleFactor;
+
+    // Central note
+    fill(features.palette.ink);
+    noStroke();
+    ellipse(x, y, baseSize, baseSize * 0.8);
+
+    // Concentric halo rings (fading out)
+    noFill();
+    const numRings = rndInt(2, 4);
+
+    for (let r = 1; r <= numRings; r++) {
+      const ringSize = baseSize + r * 6 * scaleFactor;
+      const opacity = Math.floor(60 - r * 15);
+      stroke(features.palette.ink + opacity.toString(16).padStart(2, '0'));
+      strokeWeight((0.8 - r * 0.15) * scaleFactor);
+      ellipse(x, y, ringSize, ringSize * 0.8);
+    }
+
+    // Optional partial number
+    if (rndBool(0.3)) {
+      fill(features.palette.ink + "50");
+      noStroke();
+      textSize(5 * scaleFactor);
+      textAlign(CENTER, CENTER);
+      text(rndChoice(["2", "3", "4", "5", "7", "11"]), x, y - baseSize - numRings * 3 * scaleFactor);
+      textAlign(LEFT, TOP);
     }
   }
 }
@@ -3032,8 +3726,39 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "graph":
-      drawGraphBoxes(voice, section);
-      drawSparsePoints(voice, section);
+      // Enhanced Graph mode v3.2.0 - Feldman's Projections/Intersections
+      // Primary structural element (choose one)
+      const graphPrimary = rndInt(0, 4);
+      switch (graphPrimary) {
+        case 0: drawGraphBoxes(voice, section); break;
+        case 1: drawProportionalGrid(voice, section); break;
+        case 2: drawDurationStacks(voice, section); break;
+        case 3: drawConnectingLines(voice, section); break;
+        case 4: drawEmptyBoxes(voice, section); break;
+      }
+
+      // Note types (probabilistic, soft Feldman aesthetic)
+      if (rndBool(0.5)) drawSparsePoints(voice, section);
+      if (rndBool(0.35)) drawDiamondNotes(voice, section);
+      if (rndBool(0.3)) drawSoftAttackMarks(voice, section);
+      if (rndBool(0.25)) drawHarmonicHalos(voice, section);
+
+      // Duration/timing elements
+      if (rndBool(0.35)) drawTimeBrackets(voice, section);
+      if (rndBool(0.3)) drawSustainLines(voice, section);
+      if (rndBool(0.25)) drawDecayTrails(voice, section);
+
+      // Dynamics and articulation
+      if (rndBool(0.3)) drawDynamicGradients(voice, section);
+      if (rndBool(0.25)) drawIctusMarks(voice, section);
+      if (rndBool(0.2)) drawTremoloMarks(voice, section);
+      if (rndBool(0.2)) drawClusterBrackets(voice, section);
+
+      // Structural/contextual elements
+      if (rndBool(0.3)) drawRegisterBands(voice, section);
+      if (rndBool(0.25)) drawBreathMarks(voice, section);
+      if (rndBool(0.15)) drawInstrumentLabels(voice, section);
+      if (rndBool(0.15)) drawPedalMarkings(voice, section);
       break;
 
     case "chance":
@@ -3169,9 +3894,9 @@ function drawNotationMarks() {
   const opusNum = rndInt(1, 99);
   const workTitles = [
     `Op. ${opusNum}`,
-    `No. ${rndInt(1, 12)}`,
+    `No. ${rndInt(1, 999)}`,
     `Study ${rndChoice(["I", "II", "III", "IV", "V"])}`,
-    `Fragment ${rndInt(1, 7)}`,
+    `Fragment ${rndInt(1, 999)}`,
     `Étude`,
     `Notation ${rndChoice(["α", "β", "γ", "δ"])}`,
     `Score ${rndInt(1, 50)}`
