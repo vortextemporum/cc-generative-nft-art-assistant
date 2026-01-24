@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.0.1
+ * Graphical Score v3.1.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,17 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.1.0: Major enhancement to Spiral mode with 10 new elements:
+ *         - Multiple spiral types (logarithmic, double, arms, Fermat)
+ *         - Text along spiral paths (Crumb-style poetic fragments)
+ *         - Segmented spirals with rest gaps
+ *         - Musical noteheads along spiral curves
+ *         - Zodiac/mystical/alchemical symbols
+ *         - Mandala-like patterns with rotational symmetry
+ *         - Fibonacci/golden ratio spirals
+ *         - Spiral sections within wedges
+ *         - Eye/circular imagery ("Eye of the Whale")
+ *         - Beaming across spiral note groups
  * v3.0.1: Changed canvas to A3 landscape format (√2 aspect ratio)
  * v3.0.0: Added 7 new modes based on research (Cardew, Brown, Bussotti,
  *         Stockhausen/Eno, Berberian, Wadada Leo Smith, Anthony Braxton)
@@ -15,7 +26,7 @@
  * v2.2.0: Refined paper aesthetics, fixed header layout, musical metadata
  * v2.1.0: Enhanced Spectral mode with engraved hatching, stippling
  *
- * @version 3.0.1
+ * @version 3.1.0
  */
 
 // ============================================================
@@ -285,10 +296,14 @@ const MODES = {
   spiral: {
     name: "Spiral",
     composer: "Crumb",
-    description: "Circular patterns, numerological structure, ritualistic symbols",
-    weight: 0.10,
-    elements: ["spiralPaths", "circularNotation", "numerology", "ritualSymbols"],
-    prefersPalette: ["crumbRitual", "parchment"]
+    description: "Circular/spiral notation, mandalas, eye imagery, mystical symbols",
+    weight: 0.12,
+    elements: [
+      "spiralPaths", "spiralVariants", "spiralText", "segmentedSpiral",
+      "spiralNoteheads", "circularNotation", "mysticalSymbols", "mandalaPattern",
+      "fibonacciSpiral", "spiralWedges", "crumbEye", "spiralBeaming", "ritualSymbols"
+    ],
+    prefersPalette: ["crumbRitual", "parchment", "manuscript"]
   },
 
   // New modes added in v3.0.0
@@ -1751,6 +1766,677 @@ function drawRitualSymbols(voice, section) {
 }
 
 // ============================================================
+// ENHANCED SPIRAL MODE FUNCTIONS (v3.1.0)
+// Inspired by George Crumb's circular/spiral notation
+// ============================================================
+
+// --- 1. Multiple Spiral Types ---
+function drawSpiralVariants(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxRadius = Math.min(section.width, voice.height) * 0.4;
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  const spiralType = rndInt(0, 3);
+
+  switch (spiralType) {
+    case 0: // Logarithmic spiral (more organic, shell-like)
+      beginShape();
+      const a = 0.1;
+      const b = 0.15;
+      const logTurns = rnd(2, 4);
+      for (let angle = 0; angle < logTurns * TWO_PI; angle += 0.05) {
+        const r = a * Math.exp(b * angle) * maxRadius * 0.3;
+        if (r <= maxRadius) {
+          vertex(centerX + cos(angle) * r, centerY + sin(angle) * r);
+        }
+      }
+      endShape();
+      break;
+
+    case 1: // Double spiral (yin-yang like)
+      for (let s = 0; s < 2; s++) {
+        beginShape();
+        const turns = rnd(1.5, 3);
+        const offset = s * PI;
+        for (let i = 0; i < 80; i++) {
+          const t = i / 80;
+          const angle = t * turns * TWO_PI + offset;
+          const radius = t * maxRadius;
+          vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+        }
+        endShape();
+      }
+      break;
+
+    case 2: // Spiral arms (galaxy-like)
+      const numArms = rndInt(3, 6);
+      for (let arm = 0; arm < numArms; arm++) {
+        beginShape();
+        const armOffset = (arm / numArms) * TWO_PI;
+        const turns = rnd(0.8, 1.5);
+        for (let i = 0; i < 60; i++) {
+          const t = i / 60;
+          const angle = t * turns * TWO_PI + armOffset;
+          const radius = t * maxRadius;
+          vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+        }
+        endShape();
+      }
+      break;
+
+    case 3: // Fermat spiral (sunflower pattern)
+      const goldenAngle = PI * (3 - Math.sqrt(5));
+      const numPoints = Math.floor(rnd(50, 150) * features.densityValue);
+      fill(features.palette.ink);
+      noStroke();
+      for (let i = 1; i < numPoints; i++) {
+        const angle = i * goldenAngle;
+        const r = Math.sqrt(i) * maxRadius * 0.08;
+        if (r <= maxRadius) {
+          const size = map(i, 1, numPoints, 2, 5) * scaleFactor;
+          ellipse(centerX + cos(angle) * r, centerY + sin(angle) * r, size, size);
+        }
+      }
+      break;
+  }
+}
+
+// --- 2. Text Along Spiral Path ---
+function drawSpiralText(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxRadius = Math.min(section.width, voice.height) * 0.38;
+
+  // Crumb-style mystical/poetic text fragments
+  const textOptions = [
+    "vox balaenae", "night of the electric insects", "spiral galaxy",
+    "ancient voices of children", "makrokosmos", "dream sequence",
+    "the magic circle", "music of shadows", "dark angels",
+    "celestial mechanics", "sea snail", "dream images",
+    "primeval sounds", "voices from corona", "eleven echoes of autumn"
+  ];
+
+  const syllables = rndChoice(textOptions).split(" ");
+
+  fill(features.palette.ink);
+  noStroke();
+  textAlign(CENTER, CENTER);
+
+  const turns = rnd(1, 2.5);
+  const totalLength = syllables.length;
+
+  for (let i = 0; i < totalLength; i++) {
+    const t = (i + 0.5) / totalLength;
+    const angle = t * turns * TWO_PI - HALF_PI;
+    const radius = (0.2 + t * 0.8) * maxRadius;
+    const x = centerX + cos(angle) * radius;
+    const y = centerY + sin(angle) * radius;
+
+    push();
+    translate(x, y);
+    rotate(angle + HALF_PI);
+    textSize(rnd(8, 14) * scaleFactor);
+    text(syllables[i], 0, 0);
+    pop();
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 3. Segmented Spirals (with rests/gaps) ---
+function drawSegmentedSpiral(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxRadius = Math.min(section.width, voice.height) * 0.4;
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * 1.5 * scaleFactor);
+  noFill();
+
+  const turns = rnd(2, 4);
+  const numSegments = rndInt(5, 12);
+  const gapRatio = rnd(0.15, 0.35);
+
+  for (let seg = 0; seg < numSegments; seg++) {
+    const segStart = seg / numSegments;
+    const segEnd = (seg + 1 - gapRatio) / numSegments;
+
+    beginShape();
+    for (let t = segStart; t <= segEnd; t += 0.01) {
+      const angle = t * turns * TWO_PI;
+      const radius = t * maxRadius;
+      vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+    }
+    endShape();
+
+    // Add rest symbols in gaps
+    if (rndBool(0.5) && seg < numSegments - 1) {
+      const gapMid = (segEnd + (seg + 1) / numSegments) / 2;
+      const gapAngle = gapMid * turns * TWO_PI;
+      const gapRadius = gapMid * maxRadius;
+      const gx = centerX + cos(gapAngle) * gapRadius;
+      const gy = centerY + sin(gapAngle) * gapRadius;
+
+      // Draw rest symbol (simple slash or squiggle)
+      push();
+      translate(gx, gy);
+      rotate(gapAngle);
+      strokeWeight(1.5 * scaleFactor);
+      if (rndBool(0.5)) {
+        line(-4 * scaleFactor, -4 * scaleFactor, 4 * scaleFactor, 4 * scaleFactor);
+      } else {
+        noFill();
+        arc(0, 0, 8 * scaleFactor, 8 * scaleFactor, 0, PI);
+      }
+      pop();
+    }
+  }
+}
+
+// --- 4. Musical Noteheads Along Spiral ---
+function drawSpiralNoteheads(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxRadius = Math.min(section.width, voice.height) * 0.4;
+
+  const turns = rnd(1.5, 3);
+  const numNotes = Math.floor(rnd(8, 20) * features.densityValue);
+
+  stroke(features.palette.ink);
+  fill(features.palette.ink);
+
+  for (let i = 0; i < numNotes; i++) {
+    const t = (i + 0.5) / numNotes;
+    const angle = t * turns * TWO_PI;
+    const radius = t * maxRadius;
+    const x = centerX + cos(angle) * radius;
+    const y = centerY + sin(angle) * radius;
+
+    const noteType = rndInt(0, 4);
+    const noteSize = rnd(4, 8) * scaleFactor;
+
+    push();
+    translate(x, y);
+    rotate(angle + HALF_PI);
+
+    switch (noteType) {
+      case 0: // Filled notehead (quarter/half)
+        ellipse(0, 0, noteSize * 1.3, noteSize);
+        break;
+
+      case 1: // Open notehead (whole note)
+        noFill();
+        strokeWeight(1.2 * scaleFactor);
+        ellipse(0, 0, noteSize * 1.4, noteSize);
+        break;
+
+      case 2: // Diamond notehead (harmonic)
+        noFill();
+        strokeWeight(1 * scaleFactor);
+        quad(0, -noteSize/2, noteSize/2, 0, 0, noteSize/2, -noteSize/2, 0);
+        break;
+
+      case 3: // X notehead (percussion)
+        strokeWeight(1.5 * scaleFactor);
+        line(-noteSize/2, -noteSize/2, noteSize/2, noteSize/2);
+        line(-noteSize/2, noteSize/2, noteSize/2, -noteSize/2);
+        break;
+
+      case 4: // Triangle notehead
+        noFill();
+        strokeWeight(1 * scaleFactor);
+        triangle(0, -noteSize/2, -noteSize/2, noteSize/2, noteSize/2, noteSize/2);
+        break;
+    }
+
+    // Sometimes add a stem
+    if (rndBool(0.4) && noteType < 3) {
+      strokeWeight(1 * scaleFactor);
+      line(noteSize * 0.6, 0, noteSize * 0.6, -noteSize * 2);
+    }
+
+    pop();
+  }
+}
+
+// --- 5. Enhanced Mystical/Zodiac/Alchemical Symbols ---
+function drawMysticalSymbols(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const radius = Math.min(section.width, voice.height) * 0.35;
+
+  // Zodiac symbols
+  const zodiac = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+  // Planetary symbols
+  const planets = ["☉", "☽", "☿", "♀", "♂", "♃", "♄", "⛢", "♆", "♇"];
+  // Alchemical/mystical
+  const alchemy = ["☉", "☽", "🜁", "🜂", "🜃", "🜄", "☿", "♁", "⚶", "⚷"];
+  // Crumb-style symbols
+  const crumbSymbols = ["✶", "✴", "✵", "✷", "✸", "❋", "✺", "✹", "⊛", "⊕", "⊗", "⊙"];
+
+  const symbolSets = [zodiac, planets, alchemy, crumbSymbols];
+  const chosenSet = rndChoice(symbolSets);
+
+  fill(features.palette.accent || features.palette.ink);
+  noStroke();
+  textAlign(CENTER, CENTER);
+
+  // Arrange symbols in a circle
+  const numSymbols = Math.min(chosenSet.length, rndInt(6, 12));
+  const useSubset = rndBool(0.5);
+
+  for (let i = 0; i < numSymbols; i++) {
+    const angle = (i / numSymbols) * TWO_PI - HALF_PI;
+    const r = radius * rnd(0.6, 1);
+    const x = centerX + cos(angle) * r;
+    const y = centerY + sin(angle) * r;
+
+    textSize(rnd(10, 18) * scaleFactor);
+    const sym = useSubset ? rndChoice(chosenSet) : chosenSet[i % chosenSet.length];
+    text(sym, x, y);
+  }
+
+  // Add center symbol
+  if (rndBool(0.6)) {
+    textSize(rnd(16, 24) * scaleFactor);
+    text(rndChoice(["☉", "⊙", "✴", "◉", "☽"]), centerX, centerY);
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 6. Mandala-like Patterns ---
+function drawMandalaPattern(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxRadius = Math.min(section.width, voice.height) * 0.42;
+
+  stroke(features.palette.ink);
+  noFill();
+
+  // Multiple layers of rotational symmetry
+  const symmetry = rndChoice([4, 6, 8, 12]);
+  const numLayers = rndInt(3, 6);
+
+  for (let layer = 1; layer <= numLayers; layer++) {
+    const layerRadius = (layer / numLayers) * maxRadius;
+    const layerWeight = map(layer, 1, numLayers, 0.5, 2);
+    strokeWeight(layerWeight * scaleFactor);
+
+    // Circular base
+    if (rndBool(0.7)) {
+      ellipse(centerX, centerY, layerRadius * 2, layerRadius * 2);
+    }
+
+    // Symmetric elements
+    for (let i = 0; i < symmetry; i++) {
+      const angle = (i / symmetry) * TWO_PI;
+
+      push();
+      translate(centerX, centerY);
+      rotate(angle);
+
+      const elementType = rndInt(0, 4);
+
+      switch (elementType) {
+        case 0: // Petal
+          beginShape();
+          vertex(0, 0);
+          bezierVertex(
+            layerRadius * 0.3, -layerRadius * 0.2,
+            layerRadius * 0.7, -layerRadius * 0.1,
+            layerRadius, 0
+          );
+          bezierVertex(
+            layerRadius * 0.7, layerRadius * 0.1,
+            layerRadius * 0.3, layerRadius * 0.2,
+            0, 0
+          );
+          endShape();
+          break;
+
+        case 1: // Line with dot
+          line(layerRadius * 0.3, 0, layerRadius * 0.9, 0);
+          fill(features.palette.ink);
+          ellipse(layerRadius, 0, 4 * scaleFactor, 4 * scaleFactor);
+          noFill();
+          break;
+
+        case 2: // Arc
+          arc(0, 0, layerRadius * 1.5, layerRadius * 1.5,
+              -PI/symmetry * 0.8, PI/symmetry * 0.8);
+          break;
+
+        case 3: // Triangle pointing outward
+          triangle(
+            layerRadius * 0.5, 0,
+            layerRadius * 0.8, -layerRadius * 0.15,
+            layerRadius * 0.8, layerRadius * 0.15
+          );
+          break;
+
+        case 4: // Small circles
+          ellipse(layerRadius * 0.7, 0, layerRadius * 0.15, layerRadius * 0.15);
+          break;
+      }
+
+      pop();
+    }
+  }
+
+  // Center decoration
+  fill(features.palette.ink);
+  ellipse(centerX, centerY, maxRadius * 0.08, maxRadius * 0.08);
+}
+
+// --- 7. Fibonacci/Golden Ratio Spiral ---
+function drawFibonacciSpiral(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxSize = Math.min(section.width, voice.height) * 0.8;
+
+  stroke(features.palette.ink);
+  strokeWeight(features.lineWeight * scaleFactor);
+  noFill();
+
+  // Fibonacci sequence for box sizes
+  const fib = [1, 1, 2, 3, 5, 8, 13, 21, 34];
+  const scale = maxSize / (fib[fib.length - 1] * 2.5);
+  const numBoxes = rndInt(5, 8);
+
+  let x = centerX;
+  let y = centerY;
+  let direction = 0; // 0=right, 1=down, 2=left, 3=up
+
+  // Draw fibonacci boxes with quarter-circle arcs
+  beginShape();
+  let firstPoint = true;
+
+  for (let i = 0; i < numBoxes; i++) {
+    const size = fib[i] * scale;
+
+    // Draw the box (light stroke)
+    if (rndBool(0.6)) {
+      strokeWeight(0.5 * scaleFactor);
+      stroke(features.palette.ink + "40");
+      rect(x, y, size, size);
+    }
+
+    // Draw arc
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * 1.2 * scaleFactor);
+
+    let arcX, arcY, startAngle, endAngle;
+
+    switch (direction) {
+      case 0: arcX = x + size; arcY = y + size; startAngle = PI; endAngle = PI + HALF_PI; break;
+      case 1: arcX = x; arcY = y + size; startAngle = PI + HALF_PI; endAngle = TWO_PI; break;
+      case 2: arcX = x; arcY = y; startAngle = 0; endAngle = HALF_PI; break;
+      case 3: arcX = x + size; arcY = y; startAngle = HALF_PI; endAngle = PI; break;
+    }
+
+    arc(arcX, arcY, size * 2, size * 2, startAngle, endAngle);
+
+    // Move to next position
+    switch (direction) {
+      case 0: x += size; break;
+      case 1: y += size; break;
+      case 2: x -= fib[i + 1] * scale; break;
+      case 3: y -= fib[i + 1] * scale; break;
+    }
+
+    direction = (direction + 1) % 4;
+  }
+
+  // Add golden ratio annotation
+  if (rndBool(0.4)) {
+    fill(features.palette.ink + "80");
+    noStroke();
+    textSize(10 * scaleFactor);
+    textAlign(CENTER, CENTER);
+    text("φ", centerX, centerY);
+    textAlign(LEFT, TOP);
+  }
+}
+
+// --- 8. Spiral Sections in Wedges ---
+function drawSpiralWedges(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxRadius = Math.min(section.width, voice.height) * 0.4;
+
+  const numWedges = rndChoice([3, 4, 5, 6, 7, 8]);
+  const wedgeAngle = TWO_PI / numWedges;
+
+  stroke(features.palette.ink);
+  noFill();
+
+  for (let w = 0; w < numWedges; w++) {
+    const startAngle = w * wedgeAngle - HALF_PI;
+    const endAngle = startAngle + wedgeAngle;
+
+    // Wedge outline
+    strokeWeight(0.8 * scaleFactor);
+    stroke(features.palette.ink + "60");
+    line(centerX, centerY,
+         centerX + cos(startAngle) * maxRadius,
+         centerY + sin(startAngle) * maxRadius);
+
+    // Spiral within wedge
+    if (rndBool(0.7)) {
+      stroke(features.palette.ink);
+      strokeWeight(features.lineWeight * scaleFactor);
+
+      beginShape();
+      const turns = rnd(0.8, 1.5);
+      for (let i = 0; i <= 40; i++) {
+        const t = i / 40;
+        const angle = startAngle + t * wedgeAngle * 0.9 + wedgeAngle * 0.05;
+        const spiralAngle = t * turns * PI;
+        const radius = (0.2 + t * 0.7) * maxRadius * (0.8 + 0.2 * sin(spiralAngle * 3));
+        vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+      }
+      endShape();
+    }
+
+    // Add notation marks in wedge
+    if (rndBool(0.5)) {
+      fill(features.palette.ink);
+      noStroke();
+      const numMarks = rndInt(2, 5);
+      for (let m = 0; m < numMarks; m++) {
+        const angle = startAngle + rnd(0.1, 0.9) * wedgeAngle;
+        const r = rnd(0.3, 0.85) * maxRadius;
+        ellipse(centerX + cos(angle) * r, centerY + sin(angle) * r,
+                rnd(2, 4) * scaleFactor, rnd(2, 4) * scaleFactor);
+      }
+      noFill();
+      stroke(features.palette.ink);
+    }
+  }
+
+  // Outer circle
+  strokeWeight(1.5 * scaleFactor);
+  stroke(features.palette.ink);
+  ellipse(centerX, centerY, maxRadius * 2, maxRadius * 2);
+}
+
+// --- 9. Eye/Circular Imagery (Crumb's "Eye of the Whale") ---
+function drawCrumbEye(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const eyeWidth = Math.min(section.width, voice.height) * 0.7;
+  const eyeHeight = eyeWidth * rnd(0.4, 0.6);
+
+  stroke(features.palette.ink);
+  noFill();
+
+  // Outer eye shape
+  strokeWeight(features.lineWeight * 1.5 * scaleFactor);
+  beginShape();
+  for (let a = 0; a <= TWO_PI; a += 0.1) {
+    const r = eyeWidth / 2 * (1 - 0.5 * pow(sin(a), 2));
+    const x = centerX + cos(a) * r;
+    const y = centerY + sin(a) * r * (eyeHeight / eyeWidth * 2);
+    vertex(x, y);
+  }
+  endShape(CLOSE);
+
+  // Iris
+  const irisRadius = eyeHeight * 0.6;
+  strokeWeight(1 * scaleFactor);
+  ellipse(centerX, centerY, irisRadius * 2, irisRadius * 2);
+
+  // Pupil
+  fill(features.palette.ink);
+  const pupilRadius = irisRadius * 0.4;
+  ellipse(centerX, centerY, pupilRadius * 2, pupilRadius * 2);
+
+  // Iris texture (radial lines)
+  noFill();
+  stroke(features.palette.ink + "80");
+  strokeWeight(0.5 * scaleFactor);
+  const numRays = rndInt(12, 24);
+  for (let i = 0; i < numRays; i++) {
+    const angle = (i / numRays) * TWO_PI;
+    const innerR = pupilRadius * 1.1;
+    const outerR = irisRadius * 0.95;
+    line(
+      centerX + cos(angle) * innerR,
+      centerY + sin(angle) * innerR,
+      centerX + cos(angle) * outerR,
+      centerY + sin(angle) * outerR
+    );
+  }
+
+  // Musical notation around eye
+  fill(features.palette.ink);
+  noStroke();
+  textAlign(CENTER, CENTER);
+
+  const notationRadius = eyeWidth / 2 * 1.1;
+  const numNotes = Math.floor(rnd(6, 12) * features.densityValue);
+
+  for (let i = 0; i < numNotes; i++) {
+    const angle = (i / numNotes) * TWO_PI;
+    const x = centerX + cos(angle) * notationRadius;
+    const y = centerY + sin(angle) * notationRadius * (eyeHeight / eyeWidth * 2) * 1.2;
+
+    // Draw small notehead
+    ellipse(x, y, rnd(3, 6) * scaleFactor, rnd(3, 5) * scaleFactor);
+  }
+
+  // Eyelid lines (Crumb often adds decorative lines)
+  if (rndBool(0.6)) {
+    stroke(features.palette.ink + "60");
+    strokeWeight(0.8 * scaleFactor);
+    noFill();
+
+    // Upper lid lines
+    for (let l = 1; l <= 2; l++) {
+      beginShape();
+      for (let a = PI * 0.15; a <= PI * 0.85; a += 0.1) {
+        const r = (eyeWidth / 2 + l * 8 * scaleFactor) * (1 - 0.5 * pow(sin(a), 2));
+        vertex(centerX + cos(a + PI) * r, centerY + sin(a + PI) * r * (eyeHeight / eyeWidth * 2));
+      }
+      endShape();
+    }
+  }
+
+  textAlign(LEFT, TOP);
+}
+
+// --- 10. Beaming Across Spiral ---
+function drawSpiralBeaming(voice, section) {
+  const centerX = section.xCenter;
+  const centerY = voice.yCenter;
+  const maxRadius = Math.min(section.width, voice.height) * 0.4;
+
+  const turns = rnd(1.5, 2.5);
+  const numBeamGroups = rndInt(3, 6);
+
+  stroke(features.palette.ink);
+  fill(features.palette.ink);
+
+  for (let g = 0; g < numBeamGroups; g++) {
+    const groupStart = g / numBeamGroups;
+    const groupEnd = (g + 0.8) / numBeamGroups;
+    const notesInGroup = rndInt(2, 5);
+
+    const notePositions = [];
+
+    // Calculate note positions along spiral
+    for (let n = 0; n < notesInGroup; n++) {
+      const t = groupStart + (n / (notesInGroup - 1 || 1)) * (groupEnd - groupStart);
+      const angle = t * turns * TWO_PI;
+      const radius = t * maxRadius;
+      notePositions.push({
+        x: centerX + cos(angle) * radius,
+        y: centerY + sin(angle) * radius,
+        angle: angle
+      });
+    }
+
+    // Draw noteheads
+    const noteSize = rnd(4, 7) * scaleFactor;
+    const stemLength = noteSize * 3;
+    const stemDir = rndBool(0.5) ? -1 : 1; // up or down
+
+    for (let n = 0; n < notePositions.length; n++) {
+      const pos = notePositions[n];
+
+      // Notehead
+      push();
+      translate(pos.x, pos.y);
+      rotate(pos.angle + HALF_PI);
+      ellipse(0, 0, noteSize * 1.3, noteSize);
+
+      // Stem
+      strokeWeight(1.2 * scaleFactor);
+      line(noteSize * 0.5, 0, noteSize * 0.5, stemLength * stemDir);
+      pop();
+    }
+
+    // Draw beam connecting stems
+    if (notesInGroup >= 2) {
+      strokeWeight(2.5 * scaleFactor);
+
+      // Calculate beam endpoints (at stem tips)
+      const beamPoints = notePositions.map((pos, n) => {
+        const stemEndX = pos.x + cos(pos.angle + HALF_PI) * noteSize * 0.5 +
+                         cos(pos.angle + PI) * stemLength * stemDir;
+        const stemEndY = pos.y + sin(pos.angle + HALF_PI) * noteSize * 0.5 +
+                         sin(pos.angle + PI) * stemLength * stemDir;
+        return { x: stemEndX, y: stemEndY };
+      });
+
+      // Draw primary beam
+      beginShape();
+      noFill();
+      for (const pt of beamPoints) {
+        vertex(pt.x, pt.y);
+      }
+      endShape();
+
+      // Sometimes add secondary beam
+      if (rndBool(0.4)) {
+        strokeWeight(2 * scaleFactor);
+        const offset = 4 * scaleFactor * stemDir;
+        beginShape();
+        for (const pt of beamPoints) {
+          vertex(pt.x, pt.y - offset);
+        }
+        endShape();
+      }
+    }
+  }
+}
+
+// ============================================================
 // MODE-SPECIFIC DRAWING: TREATISE (Cardew)
 // ============================================================
 
@@ -2371,12 +3057,29 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "spiral":
-      if (rndBool(0.5)) {
-        drawSpiralPaths(voice, section);
-      } else {
-        drawCircularNotation(voice, section);
+      // Enhanced spiral mode v3.1.0 - Crumb-inspired circular notation
+      // Primary element: choose one main spiral/circular structure
+      const spiralPrimary = rndInt(0, 5);
+      switch (spiralPrimary) {
+        case 0: drawSpiralPaths(voice, section); break;
+        case 1: drawSpiralVariants(voice, section); break;
+        case 2: drawCircularNotation(voice, section); break;
+        case 3: drawMandalaPattern(voice, section); break;
+        case 4: drawCrumbEye(voice, section); break;
+        case 5: drawFibonacciSpiral(voice, section); break;
       }
-      if (rndBool(0.4)) drawRitualSymbols(voice, section);
+
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.35)) drawSegmentedSpiral(voice, section);
+      if (rndBool(0.3)) drawSpiralNoteheads(voice, section);
+      if (rndBool(0.25)) drawSpiralText(voice, section);
+      if (rndBool(0.25)) drawSpiralWedges(voice, section);
+      if (rndBool(0.3)) drawSpiralBeaming(voice, section);
+
+      // Decorative symbols (choose one type)
+      if (rndBool(0.5)) {
+        rndBool(0.6) ? drawMysticalSymbols(voice, section) : drawRitualSymbols(voice, section);
+      }
       break;
 
     // New modes (v3.0.0)
