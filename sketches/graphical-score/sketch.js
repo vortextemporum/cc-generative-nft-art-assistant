@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.13.0
+ * Graphical Score v3.14.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -485,9 +485,14 @@ const MODES = {
   braxton: {
     name: "Braxton",
     composer: "Anthony Braxton",
-    description: "Diagrammatic notation, schematic symbols, technical drawing aesthetic",
+    description: "Diagrammatic notation, schematic symbols, technical drawing aesthetic, modular structures",
     weight: 0.06,
-    elements: ["diagramSymbols", "schematicLines", "languageTypes", "technicalMarks"],
+    elements: [
+      "diagramSymbols", "schematicLines", "languageTypes", "technicalMarks",
+      "compositionNumber", "connectors", "technical", "flowArrows", "circuit",
+      "angleBrackets", "parallel", "containment", "zones", "pathways",
+      "modular", "verticalStack", "horizontalSpread", "intersections", "labels", "rotational"
+    ],
     prefersPalette: ["braxtonDiagram", "blueprint"]
   }
 };
@@ -9378,6 +9383,501 @@ function drawBraxtonLanguageTypes(voice, section) {
   }
 }
 
+function drawBraxtonCompositionNumber(voice, section) {
+  // Composition number titles (like Braxton's opus numbering)
+  const numNumbers = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("monospace");
+  textSize(12 * scaleFactor);
+  textStyle(BOLD);
+
+  for (let i = 0; i < numNumbers; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 60);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 10);
+
+    // Generate composition number format
+    const num = rndInt(1, 500);
+    const letter = String.fromCharCode(65 + rndInt(0, 25));
+    const format = rndInt(0, 3);
+
+    let compositionNum;
+    if (format === 0) compositionNum = `No. ${num}`;
+    else if (format === 1) compositionNum = `${num}${letter}`;
+    else if (format === 2) compositionNum = `(${num})`;
+    else compositionNum = `Comp. ${num}`;
+
+    text(compositionNum, x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawBraxtonConnectors(voice, section) {
+  // Connection lines between elements
+  const numConnectors = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+
+  for (let i = 0; i < numConnectors; i++) {
+    const x1 = rnd(section.xStart + 20, section.xEnd - 80);
+    const y1 = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const len = rnd(40, 80) * scaleFactor;
+    const angle = rnd(-0.3, 0.3);
+
+    const x2 = x1 + cos(angle) * len;
+    const y2 = y1 + sin(angle) * len;
+
+    // Line with end marks
+    line(x1, y1, x2, y2);
+
+    // Small circles at ends
+    noFill();
+    ellipse(x1, y1, 5 * scaleFactor, 5 * scaleFactor);
+    ellipse(x2, y2, 5 * scaleFactor, 5 * scaleFactor);
+  }
+}
+
+function drawBraxtonTechnicalMarks(voice, section) {
+  // Technical drawing marks (dimensions, angles)
+  const numMarks = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(0.75 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numMarks; i++) {
+    const x = rnd(section.xStart + 25, section.xEnd - 60);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const size = rnd(25, 50) * scaleFactor;
+
+    // Dimension line with extensions
+    line(x, y, x + size, y);
+    line(x, y - 8 * scaleFactor, x, y + 8 * scaleFactor);
+    line(x + size, y - 8 * scaleFactor, x + size, y + 8 * scaleFactor);
+
+    // Small arrows
+    const arrowSize = 3 * scaleFactor;
+    line(x, y, x + arrowSize, y - arrowSize);
+    line(x, y, x + arrowSize, y + arrowSize);
+    line(x + size, y, x + size - arrowSize, y - arrowSize);
+    line(x + size, y, x + size - arrowSize, y + arrowSize);
+  }
+}
+
+function drawBraxtonFlowArrows(voice, section) {
+  // Flow/direction arrows
+  const numArrows = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+
+  for (let i = 0; i < numArrows; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 40);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const len = rnd(20, 40) * scaleFactor;
+    const direction = rndInt(0, 3); // right, down, left, up
+
+    let dx = 0, dy = 0;
+    if (direction === 0) dx = len;
+    else if (direction === 1) dy = len;
+    else if (direction === 2) dx = -len;
+    else dy = -len;
+
+    // Arrow shaft
+    line(x, y, x + dx, y + dy);
+
+    // Arrow head
+    const headSize = 6 * scaleFactor;
+    if (direction === 0) {
+      line(x + dx, y + dy, x + dx - headSize, y + dy - headSize / 2);
+      line(x + dx, y + dy, x + dx - headSize, y + dy + headSize / 2);
+    } else if (direction === 1) {
+      line(x + dx, y + dy, x + dx - headSize / 2, y + dy - headSize);
+      line(x + dx, y + dy, x + dx + headSize / 2, y + dy - headSize);
+    } else if (direction === 2) {
+      line(x + dx, y + dy, x + dx + headSize, y + dy - headSize / 2);
+      line(x + dx, y + dy, x + dx + headSize, y + dy + headSize / 2);
+    } else {
+      line(x + dx, y + dy, x + dx - headSize / 2, y + dy + headSize);
+      line(x + dx, y + dy, x + dx + headSize / 2, y + dy + headSize);
+    }
+  }
+}
+
+function drawBraxtonCircuitElements(voice, section) {
+  // Circuit-like schematic symbols
+  const numElements = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numElements; i++) {
+    const x = rnd(section.xStart + 30, section.xEnd - 40);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const size = rnd(15, 30) * scaleFactor;
+    const elemType = rndInt(0, 4);
+
+    switch (elemType) {
+      case 0: // Resistor zigzag
+        beginShape();
+        vertex(x, y);
+        for (let j = 0; j < 5; j++) {
+          vertex(x + (j + 0.5) * size / 5, y + (j % 2 === 0 ? -5 : 5) * scaleFactor);
+        }
+        vertex(x + size, y);
+        endShape();
+        break;
+      case 1: // Capacitor
+        line(x, y, x + size * 0.4, y);
+        line(x + size * 0.4, y - 8 * scaleFactor, x + size * 0.4, y + 8 * scaleFactor);
+        line(x + size * 0.6, y - 8 * scaleFactor, x + size * 0.6, y + 8 * scaleFactor);
+        line(x + size * 0.6, y, x + size, y);
+        break;
+      case 2: // Inductor coils
+        for (let j = 0; j < 4; j++) {
+          arc(x + j * size / 4 + size / 8, y, size / 4, size / 2, PI, 0);
+        }
+        break;
+      case 3: // Ground symbol
+        line(x + size / 2, y - 10 * scaleFactor, x + size / 2, y);
+        line(x + size / 2 - 10 * scaleFactor, y, x + size / 2 + 10 * scaleFactor, y);
+        line(x + size / 2 - 6 * scaleFactor, y + 4 * scaleFactor, x + size / 2 + 6 * scaleFactor, y + 4 * scaleFactor);
+        line(x + size / 2 - 3 * scaleFactor, y + 8 * scaleFactor, x + size / 2 + 3 * scaleFactor, y + 8 * scaleFactor);
+        break;
+      case 4: // Op-amp triangle
+        triangle(x, y - 10 * scaleFactor, x, y + 10 * scaleFactor, x + size, y);
+        break;
+    }
+  }
+}
+
+function drawBraxtonAngleBrackets(voice, section) {
+  // Angle bracket structures
+  const numBrackets = Math.max(2, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numBrackets; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 30);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(10, 25) * scaleFactor;
+    const type = rndInt(0, 2);
+
+    if (type === 0) { // < bracket
+      line(x + size, y - size, x, y);
+      line(x, y, x + size, y + size);
+    } else if (type === 1) { // > bracket
+      line(x, y - size, x + size, y);
+      line(x + size, y, x, y + size);
+    } else { // ^ bracket
+      line(x, y + size / 2, x + size / 2, y - size / 2);
+      line(x + size / 2, y - size / 2, x + size, y + size / 2);
+    }
+  }
+}
+
+function drawBraxtonParallelStructures(voice, section) {
+  // Parallel structural lines
+  const numGroups = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+
+  for (let g = 0; g < numGroups; g++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 60);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 30);
+    const len = rnd(40, 80) * scaleFactor;
+    const numLines = rndInt(3, 6);
+    const spacing = rnd(4, 8) * scaleFactor;
+
+    for (let l = 0; l < numLines; l++) {
+      line(x, y + l * spacing, x + len, y + l * spacing);
+    }
+
+    // Vertical connectors at ends
+    line(x, y, x, y + (numLines - 1) * spacing);
+    line(x + len, y, x + len, y + (numLines - 1) * spacing);
+  }
+}
+
+function drawBraxtonContainment(voice, section) {
+  // Containment shapes (brackets, boxes, circles)
+  const numShapes = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numShapes; i++) {
+    const x = rnd(section.xStart + 25, section.xEnd - 50);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 25);
+    const w = rnd(25, 50) * scaleFactor;
+    const h = rnd(20, 35) * scaleFactor;
+    const type = rndInt(0, 3);
+
+    switch (type) {
+      case 0: // Rectangle
+        rect(x, y, w, h);
+        break;
+      case 1: // Ellipse
+        ellipse(x + w / 2, y + h / 2, w, h);
+        break;
+      case 2: // Square brackets [ ]
+        line(x, y, x + 8 * scaleFactor, y);
+        line(x, y, x, y + h);
+        line(x, y + h, x + 8 * scaleFactor, y + h);
+        line(x + w, y, x + w - 8 * scaleFactor, y);
+        line(x + w, y, x + w, y + h);
+        line(x + w, y + h, x + w - 8 * scaleFactor, y + h);
+        break;
+      case 3: // Rounded rect
+        rect(x, y, w, h, 5 * scaleFactor);
+        break;
+    }
+  }
+}
+
+function drawBraxtonZones(voice, section) {
+  // Zone/region markers with labels
+  const numZones = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  for (let z = 0; z < numZones; z++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 80);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 35);
+    const w = rnd(50, 100) * scaleFactor;
+    const h = rnd(25, 40) * scaleFactor;
+
+    // Dashed outline
+    stroke(features.palette.ink);
+    strokeWeight(0.75 * scaleFactor);
+    noFill();
+
+    const dashLen = 4 * scaleFactor;
+    for (let dx = 0; dx < w; dx += dashLen * 2) {
+      line(x + dx, y, x + Math.min(dx + dashLen, w), y);
+      line(x + dx, y + h, x + Math.min(dx + dashLen, w), y + h);
+    }
+    for (let dy = 0; dy < h; dy += dashLen * 2) {
+      line(x, y + dy, x, y + Math.min(dy + dashLen, h));
+      line(x + w, y + dy, x + w, y + Math.min(dy + dashLen, h));
+    }
+
+    // Zone label
+    fill(features.palette.ink);
+    noStroke();
+    textFont("monospace");
+    textSize(8 * scaleFactor);
+    text(`ZONE ${String.fromCharCode(65 + z)}`, x + 5 * scaleFactor, y + 12 * scaleFactor);
+  }
+}
+
+function drawBraxtonPathways(voice, section) {
+  // Pathway/route indicators
+  const numPaths = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+  noFill();
+
+  for (let p = 0; p < numPaths; p++) {
+    const x1 = rnd(section.xStart + 20, section.xStart + 60);
+    const y1 = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const x2 = x1 + rnd(50, 100) * scaleFactor;
+    const y2 = y1 + rnd(-20, 20) * scaleFactor;
+
+    // Curved path
+    const cx = (x1 + x2) / 2;
+    const cy = y1 + rnd(-25, 25) * scaleFactor;
+
+    beginShape();
+    vertex(x1, y1);
+    quadraticVertex(cx, cy, x2, y2);
+    endShape();
+
+    // Start/end markers
+    fill(features.palette.ink);
+    ellipse(x1, y1, 6 * scaleFactor, 6 * scaleFactor);
+    noFill();
+    ellipse(x2, y2, 6 * scaleFactor, 6 * scaleFactor);
+  }
+}
+
+function drawBraxtonModular(voice, section) {
+  // Modular building block shapes
+  const numBlocks = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+
+  for (let i = 0; i < numBlocks; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 35);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 25);
+    const size = rnd(12, 25) * scaleFactor;
+    const type = rndInt(0, 4);
+
+    noFill();
+    switch (type) {
+      case 0: // Square
+        rect(x, y, size, size);
+        break;
+      case 1: // Circle
+        ellipse(x + size / 2, y + size / 2, size, size);
+        break;
+      case 2: // Triangle
+        triangle(x + size / 2, y, x, y + size, x + size, y + size);
+        break;
+      case 3: // Diamond
+        beginShape();
+        vertex(x + size / 2, y);
+        vertex(x + size, y + size / 2);
+        vertex(x + size / 2, y + size);
+        vertex(x, y + size / 2);
+        endShape(CLOSE);
+        break;
+      case 4: // Hexagon
+        beginShape();
+        for (let a = 0; a < 6; a++) {
+          const angle = a * TWO_PI / 6 - PI / 6;
+          vertex(x + size / 2 + cos(angle) * size / 2, y + size / 2 + sin(angle) * size / 2);
+        }
+        endShape(CLOSE);
+        break;
+    }
+  }
+}
+
+function drawBraxtonVerticalStack(voice, section) {
+  // Vertical stack structures
+  const numStacks = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let s = 0; s < numStacks; s++) {
+    const x = rnd(section.xStart + 25, section.xEnd - 40);
+    const baseY = rnd(voice.yStart + 10, voice.yStart + 20);
+    const numLevels = rndInt(3, 6);
+    const w = rnd(20, 35) * scaleFactor;
+    const h = rnd(8, 14) * scaleFactor;
+
+    for (let l = 0; l < numLevels; l++) {
+      const y = baseY + l * h;
+      if (y + h > voice.yEnd - 5) break;
+      rect(x, y, w, h);
+    }
+  }
+}
+
+function drawBraxtonHorizontalSpread(voice, section) {
+  // Horizontal spread patterns
+  const numSpreads = Math.max(1, Math.floor(rnd(1, 2) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let s = 0; s < numSpreads; s++) {
+    const startX = rnd(section.xStart + 20, section.xStart + 60);
+    const y = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const numElements = rndInt(4, 8);
+    const spacing = rnd(15, 25) * scaleFactor;
+    const size = rnd(10, 18) * scaleFactor;
+
+    for (let i = 0; i < numElements; i++) {
+      const x = startX + i * spacing;
+      if (x + size > section.xEnd - 10) break;
+      ellipse(x + size / 2, y, size, size);
+    }
+
+    // Connecting line
+    line(startX, y, startX + (numElements - 1) * spacing + size, y);
+  }
+}
+
+function drawBraxtonIntersections(voice, section) {
+  // Intersection/crossing marks
+  const numIntersections = Math.max(2, Math.floor(rnd(3, 6) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+
+  for (let i = 0; i < numIntersections; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const size = rnd(8, 18) * scaleFactor;
+    const type = rndInt(0, 2);
+
+    if (type === 0) { // X cross
+      line(x - size / 2, y - size / 2, x + size / 2, y + size / 2);
+      line(x - size / 2, y + size / 2, x + size / 2, y - size / 2);
+    } else if (type === 1) { // + cross
+      line(x - size / 2, y, x + size / 2, y);
+      line(x, y - size / 2, x, y + size / 2);
+    } else { // * star
+      line(x - size / 2, y, x + size / 2, y);
+      line(x, y - size / 2, x, y + size / 2);
+      line(x - size / 3, y - size / 3, x + size / 3, y + size / 3);
+      line(x - size / 3, y + size / 3, x + size / 3, y - size / 3);
+    }
+  }
+}
+
+function drawBraxtonLabels(voice, section) {
+  // Text labels and identifiers
+  const labels = ["A", "B", "C", "D", "I", "II", "III", "IV", "α", "β", "γ", "δ", "X", "Y", "Z"];
+  const numLabels = Math.max(2, Math.floor(rnd(3, 7) * features.densityValue));
+
+  fill(features.palette.ink);
+  noStroke();
+  textFont("monospace");
+  textSize(10 * scaleFactor);
+  textStyle(BOLD);
+
+  for (let i = 0; i < numLabels; i++) {
+    const x = rnd(section.xStart + 15, section.xEnd - 20);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 10);
+    text(rndChoice(labels), x, y);
+  }
+  textStyle(NORMAL);
+}
+
+function drawBraxtonRotational(voice, section) {
+  // Rotational symmetry elements
+  const numElements = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let e = 0; e < numElements; e++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 25, voice.yEnd - 25);
+    const size = rnd(20, 40) * scaleFactor;
+    const numArms = rndInt(3, 6);
+
+    for (let a = 0; a < numArms; a++) {
+      const angle = (a / numArms) * TWO_PI;
+      const x2 = cx + cos(angle) * size;
+      const y2 = cy + sin(angle) * size;
+      line(cx, cy, x2, y2);
+
+      // Small mark at end
+      const markSize = 4 * scaleFactor;
+      if (rndBool(0.5)) {
+        ellipse(x2, y2, markSize, markSize);
+      } else {
+        rect(x2 - markSize / 2, y2 - markSize / 2, markSize, markSize);
+      }
+    }
+  }
+}
+
 // ============================================================
 // MODE DISPATCHER
 // ============================================================
@@ -9774,8 +10274,30 @@ function drawModeElements(mode, voice, section) {
       break;
 
     case "braxton":
-      drawBraxtonDiagrams(voice, section);
-      if (rndBool(0.5)) drawBraxtonLanguageTypes(voice, section);
+      // Enhanced Braxton mode v3.14.0 - Anthony Braxton's diagrammatic notation
+      // Primary structural element (choose one)
+      const braxtonPrimary = rndInt(0, 6);
+      switch (braxtonPrimary) {
+        case 0: drawBraxtonDiagrams(voice, section); break;
+        case 1: drawBraxtonCircuitElements(voice, section); break;
+        case 2: drawBraxtonParallelStructures(voice, section); break;
+        case 3: drawBraxtonContainment(voice, section); break;
+        case 4: drawBraxtonModular(voice, section); break;
+        case 5: drawBraxtonVerticalStack(voice, section); break;
+        case 6: drawBraxtonRotational(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.45)) drawBraxtonLanguageTypes(voice, section);
+      if (rndBool(0.40)) drawBraxtonConnectors(voice, section);
+      if (rndBool(0.35)) drawBraxtonLabels(voice, section);
+      if (rndBool(0.35)) drawBraxtonFlowArrows(voice, section);
+      if (rndBool(0.30)) drawBraxtonAngleBrackets(voice, section);
+      if (rndBool(0.28)) drawBraxtonIntersections(voice, section);
+      if (rndBool(0.25)) drawBraxtonTechnicalMarks(voice, section);
+      if (rndBool(0.22)) drawBraxtonZones(voice, section);
+      if (rndBool(0.20)) drawBraxtonPathways(voice, section);
+      if (rndBool(0.18)) drawBraxtonHorizontalSpread(voice, section);
+      if (rndBool(0.15)) drawBraxtonCompositionNumber(voice, section);
       break;
   }
 }
