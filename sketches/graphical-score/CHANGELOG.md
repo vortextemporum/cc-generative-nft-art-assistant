@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2026-01-25
+
+### Added
+
+**Major Enhancement to Treatise (Cardew) Mode** - 18 new elements inspired by Cornelius Cardew's 193-page graphic score *Treatise* (1963-1967):
+
+| Function | Description |
+|----------|-------------|
+| `drawTreatiseLifeline()` | Central horizontal lifeline with small marks |
+| `drawTreatiseTree()` | Tree/branching structures with trunk and branches |
+| `drawTreatiseClouds()` | Dense clusters of small marks (dots, lines, circles) |
+| `drawTreatiseParallelLines()` | Groups of parallel lines (staff-like) |
+| `drawTreatiseCurvedPath()` | Flowing bezier curved paths |
+| `drawTreatiseSolids()` | Solid filled shapes (circles, squares, triangles) |
+| `drawTreatiseNests()` | Nested concentric circles |
+| `drawTreatiseZigzag()` | Zigzag patterns |
+| `drawTreatiseWedge()` | Triangular wedge shapes |
+| `drawTreatiseScatteredDots()` | Scattered dots across the section |
+| `drawTreatiseGrid()` | Grid patterns with occasional cell marks |
+| `drawTreatiseAngle()` | Angular constructions (two lines from center) |
+| `drawTreatiseSymbols()` | Abstract symbols (plus, X, arc, asterisk, arrow) |
+| `drawTreatiseMass()` | Dense black irregular mass areas |
+| `drawTreatiseConnectors()` | Lines connecting elements with end markers |
+| `drawTreatiseBrackets()` | Bracket shapes [ and ] |
+| `drawTreatiseSmallSpiral()` | Small spiral elements |
+| `drawTreatiseBlocks()` | Rectangular blocks (December 1952 style) |
+
+### Changed
+
+- Treatise mode dispatcher now uses probabilistic layering with 6 primary structures
+- Mode elements list expanded from 4 to 22
+- Updated mode description to include "lifeline, tree structures, grids"
+
+### Technical
+
+- Tree structures support upward and downward growth directions
+- Cloud marks use Gaussian distribution for natural clustering
+- Lifeline runs through section with optional marks along it
+
+---
+
 ## [3.7.0] - 2026-01-25
 
 ### Added

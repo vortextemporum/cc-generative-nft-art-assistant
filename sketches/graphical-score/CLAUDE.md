@@ -1,11 +1,11 @@
-# Graphical Score v3.7.0 - AI Assistant Guide
+# Graphical Score v3.8.0 - AI Assistant Guide
 
 ## Project Overview
 
 A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.7.0
+**Current Version:** 3.8.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
 ## The 14 Modes
@@ -225,6 +225,26 @@ graphical-score/
 
 ### Mode Drawing (v3.0.0 New Modes)
 - **Treatise**: `drawTreatiseGeometric()`, `drawTreatiseNumbers()`, `drawTreatiseThickLines()`
+
+### Enhanced Treatise Mode (v3.8.0 - Cardew)
+- `drawTreatiseLifeline()` - Central horizontal lifeline with marks
+- `drawTreatiseTree()` - Tree/branching structures
+- `drawTreatiseClouds()` - Dense clusters of small marks
+- `drawTreatiseParallelLines()` - Groups of parallel lines
+- `drawTreatiseCurvedPath()` - Flowing bezier curved paths
+- `drawTreatiseSolids()` - Solid filled shapes
+- `drawTreatiseNests()` - Nested concentric circles
+- `drawTreatiseZigzag()` - Zigzag patterns
+- `drawTreatiseWedge()` - Triangular wedge shapes
+- `drawTreatiseScatteredDots()` - Scattered dots
+- `drawTreatiseGrid()` - Grid patterns with cell marks
+- `drawTreatiseAngle()` - Angular constructions
+- `drawTreatiseSymbols()` - Abstract symbols (plus, X, arc, asterisk)
+- `drawTreatiseMass()` - Dense black irregular masses
+- `drawTreatiseConnectors()` - Lines connecting elements
+- `drawTreatiseBrackets()` - Bracket shapes [ and ]
+- `drawTreatiseSmallSpiral()` - Small spiral elements
+- `drawTreatiseBlocks()` - Rectangular blocks
 - **OpenForm**: `drawOpenFormRects()`, `drawOpenFormSpatial()`
 - **Bussotti**: `drawBussottiCalligraphic()`, `drawBussottiFlourishes()`, `drawBussottiSplatters()`
 - **TextScore**: `drawTextInstructions()`, `drawTextCryptic()`
