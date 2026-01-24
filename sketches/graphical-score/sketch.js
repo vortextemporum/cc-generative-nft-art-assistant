@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.3.0
+ * Graphical Score v3.4.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -8,6 +8,13 @@
  *
  * Features layered hybrid blending system
  *
+ * v3.4.0: Major enhancement to Artikulation (Ligeti/Wehinger) mode with 18 new elements:
+ *         - Call/response patterns, timbral stripes, glitch patterns
+ *         - Speech-like fragments, density clouds, attack/decay envelopes
+ *         - Connector lines, crescendo/decrescendo wedges, interrupted fragments
+ *         - Overlapping regions, texture gradients, pulsation rhythms
+ *         - Morphing shapes, static bursts, timbre legends
+ *         - Vertical sync markers, electronic motifs, spatial panning indicators
  * v3.3.0: Major enhancement to Chance (Cage) mode with 20 new elements:
  *         - Fontana Mix grid, transparent overlays, I Ching hexagrams
  *         - Star chart tracings (Atlas Eclipticalis), silence boxes (4'33")
@@ -263,9 +270,15 @@ const MODES = {
   artikulation: {
     name: "Artikulation",
     composer: "Ligeti/Wehinger",
-    description: "Color-coded timbral blocks, dense clusters, call/response",
+    description: "Color-coded timbral blocks, dense clusters, call/response, electronic patterns",
     weight: 0.15,
-    elements: ["colorBlocks", "timbralClusters", "callResponse", "denseClouds"],
+    elements: [
+      "colorBlocks", "timbralClusters", "callResponse", "densityClouds",
+      "timbralStripes", "glitchPatterns", "speechFragments", "attackDecay",
+      "connectors", "wedges", "interrupted", "overlaps", "textureGradient",
+      "pulsation", "morphing", "staticBursts", "timbreLegend", "verticalSync",
+      "electronicMotifs", "spatialPanning"
+    ],
     prefersPalette: ["wehinger", "manuscript"]
   },
   upic: {
@@ -1037,6 +1050,513 @@ function drawArtikulationClusters(voice, section) {
         rect(mx, my, size, size * 0.5);
       }
     }
+  }
+}
+
+// New Artikulation functions v3.4.0
+
+function drawArtikulationCallResponse(voice, section) {
+  // Call and response patterns between color groups (Wehinger's dialogue structures)
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55", "#ffaa00", "#9944aa", "#ff6644"];
+  const numPairs = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let i = 0; i < numPairs; i++) {
+    const callColor = rndChoice(colors);
+    const responseColor = rndChoice(colors.filter(c => c !== callColor));
+
+    // Call element (left side)
+    const callX = rnd(section.xStart + 10, section.xStart + (section.xEnd - section.xStart) * 0.4);
+    const callY = rnd(voice.yStart + 10, voice.yEnd - 20);
+    const callW = rnd(20, 50) * scaleFactor;
+    const callH = rnd(10, 25) * scaleFactor;
+
+    fill(callColor + "cc");
+    noStroke();
+    beginShape();
+    vertex(callX, callY + callH / 2);
+    vertex(callX + callW * 0.2, callY);
+    vertex(callX + callW, callY + callH * 0.2);
+    vertex(callX + callW * 1.1, callY + callH / 2);
+    vertex(callX + callW, callY + callH * 0.8);
+    vertex(callX + callW * 0.2, callY + callH);
+    endShape(CLOSE);
+
+    // Response element (right side, slightly delayed/offset)
+    const responseX = callX + callW + rnd(30, 80) * scaleFactor;
+    const responseY = callY + rnd(-10, 10) * scaleFactor;
+    const responseW = rnd(15, 40) * scaleFactor;
+    const responseH = rnd(8, 20) * scaleFactor;
+
+    fill(responseColor + "cc");
+    beginShape();
+    vertex(responseX, responseY);
+    vertex(responseX + responseW, responseY + responseH * 0.3);
+    vertex(responseX + responseW * 0.8, responseY + responseH);
+    vertex(responseX - responseW * 0.1, responseY + responseH * 0.7);
+    endShape(CLOSE);
+
+    // Connecting dotted line
+    stroke(features.palette.inkLight || features.palette.ink + "44");
+    strokeWeight(0.5 * scaleFactor);
+    drawingContext.setLineDash([3 * scaleFactor, 3 * scaleFactor]);
+    line(callX + callW * 1.1, callY + callH / 2, responseX, responseY + responseH / 2);
+    drawingContext.setLineDash([]);
+  }
+}
+
+function drawArtikulationTimbralStripes(voice, section) {
+  // Horizontal stripes for sustained electronic timbres
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55", "#ffaa00"];
+  const numStripes = Math.max(1, Math.floor(rnd(2, 6) * features.densityValue));
+
+  noStroke();
+  for (let i = 0; i < numStripes; i++) {
+    const col = rndChoice(colors);
+    const x = rnd(section.xStart, section.xEnd - 100);
+    const y = rnd(voice.yStart + 5, voice.yEnd - 10);
+    const w = rnd(60, 180) * scaleFactor;
+    const h = rnd(4, 12) * scaleFactor;
+
+    // Gradient stripe
+    for (let j = 0; j < w; j += 2 * scaleFactor) {
+      const alpha = map(j, 0, w, 0.2, 0.8);
+      fill(col + hex(Math.floor(alpha * 255), 2));
+      rect(x + j, y, 3 * scaleFactor, h);
+    }
+  }
+}
+
+function drawArtikulationGlitchPatterns(voice, section) {
+  // Short stuttering electronic bursts (Ligeti's electronic artifacts)
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#ffaa00"];
+  const numBursts = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+
+  for (let i = 0; i < numBursts; i++) {
+    const col = rndChoice(colors);
+    const x = rnd(section.xStart + 10, section.xEnd - 40);
+    const y = rnd(voice.yStart + 5, voice.yEnd - 15);
+    const burstWidth = rnd(20, 60) * scaleFactor;
+    const numGlitches = rndInt(4, 12);
+
+    for (let j = 0; j < numGlitches; j++) {
+      const gx = x + rnd(0, burstWidth);
+      const gy = y + rnd(-5, 5) * scaleFactor;
+      const gw = rnd(1, 6) * scaleFactor;
+      const gh = rnd(3, 15) * scaleFactor;
+
+      fill(col + "bb");
+      noStroke();
+      rect(gx, gy, gw, gh);
+    }
+  }
+}
+
+function drawArtikulationSpeechFragments(voice, section) {
+  // Speech-like contour lines (Ligeti's phonetic influences)
+  const numFragments = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1.5 * scaleFactor);
+  noFill();
+
+  for (let i = 0; i < numFragments; i++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 80);
+    const baseY = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const fragmentW = rnd(40, 100) * scaleFactor;
+
+    beginShape();
+    const numPoints = rndInt(6, 12);
+    for (let j = 0; j <= numPoints; j++) {
+      const px = startX + (j / numPoints) * fragmentW;
+      // Speech-like ups and downs
+      const py = baseY + sin(j * rnd(0.5, 2)) * rnd(5, 15) * scaleFactor;
+      curveVertex(px, py);
+    }
+    endShape();
+  }
+}
+
+function drawArtikulationDensityClouds(voice, section) {
+  // Gaussian density clouds with color mixing
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55", "#ffaa00", "#9944aa"];
+  const numClouds = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let c = 0; c < numClouds; c++) {
+    const cx = rnd(section.xStart + 40, section.xEnd - 40);
+    const cy = rnd(voice.yStart + 20, voice.yEnd - 20);
+    const cloudColors = [rndChoice(colors), rndChoice(colors)];
+    const numParticles = Math.floor(rnd(40, 100) * features.densityValue);
+
+    noStroke();
+    for (let i = 0; i < numParticles; i++) {
+      const col = rndChoice(cloudColors);
+      const px = cx + rndGaussian(0, 30 * scaleFactor);
+      const py = cy + rndGaussian(0, 15 * scaleFactor);
+      const size = rnd(1, 4) * scaleFactor;
+      const alpha = rnd(0.3, 0.7);
+
+      fill(col + hex(Math.floor(alpha * 255), 2));
+      ellipse(px, py, size, size);
+    }
+  }
+}
+
+function drawArtikulationAttackDecay(voice, section) {
+  // Attack/decay envelope shapes
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55", "#ffaa00"];
+  const numEnvelopes = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let i = 0; i < numEnvelopes; i++) {
+    const col = rndChoice(colors);
+    const x = rnd(section.xStart + 10, section.xEnd - 60);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 20);
+    const w = rnd(30, 80) * scaleFactor;
+    const h = rnd(15, 30) * scaleFactor;
+
+    // Attack time (sharp or slow)
+    const attackRatio = rnd(0.05, 0.3);
+
+    fill(col + "99");
+    noStroke();
+    beginShape();
+    vertex(x, y + h); // Start at bottom
+    vertex(x + w * attackRatio, y); // Attack peak
+    // Decay curve
+    for (let j = 0; j <= 10; j++) {
+      const px = x + w * attackRatio + (w * (1 - attackRatio)) * (j / 10);
+      const decay = pow(1 - j / 10, 0.5); // Exponential decay
+      vertex(px, y + h * (1 - decay));
+    }
+    vertex(x + w, y + h);
+    endShape(CLOSE);
+  }
+}
+
+function drawArtikulationConnectors(voice, section) {
+  // Lines connecting related sound events
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55"];
+  const numConnections = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+
+  for (let i = 0; i < numConnections; i++) {
+    const col = rndChoice(colors);
+    const x1 = rnd(section.xStart + 20, section.xEnd - 100);
+    const y1 = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const x2 = x1 + rnd(50, 150) * scaleFactor;
+    const y2 = rnd(voice.yStart + 10, voice.yEnd - 10);
+
+    // Small shapes at endpoints
+    fill(col + "cc");
+    noStroke();
+    ellipse(x1, y1, 8 * scaleFactor, 6 * scaleFactor);
+    ellipse(x2, y2, 8 * scaleFactor, 6 * scaleFactor);
+
+    // Curved connector
+    stroke(col + "88");
+    strokeWeight(1 * scaleFactor);
+    noFill();
+    const midX = (x1 + x2) / 2;
+    const midY = Math.min(y1, y2) - rnd(10, 25) * scaleFactor;
+    bezier(x1, y1, midX, midY, midX, midY, x2, y2);
+  }
+}
+
+function drawArtikulationWedges(voice, section) {
+  // Crescendo/diminuendo wedges
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#ffaa00"];
+  const numWedges = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  for (let i = 0; i < numWedges; i++) {
+    const col = rndChoice(colors);
+    const x = rnd(section.xStart + 10, section.xEnd - 80);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = rnd(40, 100) * scaleFactor;
+    const h = rnd(12, 25) * scaleFactor;
+    const isCrescendo = rndBool(0.5);
+
+    fill(col + "88");
+    noStroke();
+    beginShape();
+    if (isCrescendo) {
+      vertex(x, y);
+      vertex(x + w, y - h / 2);
+      vertex(x + w, y + h / 2);
+    } else {
+      vertex(x, y - h / 2);
+      vertex(x, y + h / 2);
+      vertex(x + w, y);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawArtikulationInterrupted(voice, section) {
+  // Interrupted/fragmented elements (electronic stuttering)
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55", "#ffaa00"];
+  const numFragments = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  for (let i = 0; i < numFragments; i++) {
+    const col = rndChoice(colors);
+    const startX = rnd(section.xStart + 10, section.xEnd - 100);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 15);
+    const totalW = rnd(60, 120) * scaleFactor;
+    const h = rnd(8, 18) * scaleFactor;
+    const numSegments = rndInt(3, 7);
+
+    fill(col + "aa");
+    noStroke();
+
+    let x = startX;
+    for (let j = 0; j < numSegments; j++) {
+      const segW = totalW / numSegments * rnd(0.4, 0.8);
+      rect(x, y, segW, h, 2 * scaleFactor);
+      x += totalW / numSegments;
+    }
+  }
+}
+
+function drawArtikulationOverlaps(voice, section) {
+  // Overlapping colored transparent regions
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55", "#ffaa00", "#9944aa"];
+  const numOverlaps = Math.max(1, Math.floor(rnd(2, 4) * features.densityValue));
+
+  noStroke();
+  for (let i = 0; i < numOverlaps; i++) {
+    const col = rndChoice(colors);
+    const x = rnd(section.xStart + 10, section.xEnd - 60);
+    const y = rnd(voice.yStart + 5, voice.yEnd - 25);
+    const w = rnd(40, 100) * scaleFactor;
+    const h = rnd(20, 40) * scaleFactor;
+
+    fill(col + "44");
+    beginShape();
+    const numVertices = rndInt(5, 8);
+    for (let j = 0; j < numVertices; j++) {
+      const angle = (j / numVertices) * TWO_PI;
+      const r = (j % 2 === 0 ? w / 2 : w / 3) + rnd(-5, 5) * scaleFactor;
+      vertex(x + w / 2 + cos(angle) * r, y + h / 2 + sin(angle) * r * 0.6);
+    }
+    endShape(CLOSE);
+  }
+}
+
+function drawArtikulationTextureGradient(voice, section) {
+  // Textural density gradients
+  const col = rndChoice(features.palette.colors || ["#cc3333", "#3366cc"]);
+  const numGradients = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  for (let g = 0; g < numGradients; g++) {
+    const startX = rnd(section.xStart + 10, section.xEnd - 100);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 20);
+    const w = rnd(80, 150) * scaleFactor;
+    const h = rnd(15, 30) * scaleFactor;
+
+    noStroke();
+    for (let i = 0; i < 50; i++) {
+      const t = i / 50;
+      const density = sin(t * PI); // Dense in middle, sparse at edges
+
+      if (rnd(0, 1) < density) {
+        const px = startX + t * w;
+        const py = y + rnd(-h / 2, h / 2);
+        const size = rnd(1, 3) * scaleFactor * density;
+        fill(col + hex(Math.floor(density * 200), 2));
+        ellipse(px, py, size, size);
+      }
+    }
+  }
+}
+
+function drawArtikulationPulsation(voice, section) {
+  // Rhythmic pulsing elements
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#ffaa00"];
+  const col = rndChoice(colors);
+  const numPulses = Math.max(3, Math.floor(rnd(5, 12) * features.densityValue));
+  const startX = rnd(section.xStart + 10, section.xEnd - 150);
+  const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+  const spacing = rnd(10, 20) * scaleFactor;
+
+  noStroke();
+  for (let i = 0; i < numPulses; i++) {
+    const size = rnd(4, 10) * scaleFactor;
+    const alpha = rndBool(0.3) ? 0.9 : rnd(0.4, 0.7); // Some accented
+    fill(col + hex(Math.floor(alpha * 255), 2));
+    ellipse(startX + i * spacing, y, size, size * 0.8);
+  }
+}
+
+function drawArtikulationMorphing(voice, section) {
+  // Shapes that morph/transform across time
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55"];
+  const col = rndChoice(colors);
+  const x = rnd(section.xStart + 10, section.xEnd - 120);
+  const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+  const w = rnd(80, 140) * scaleFactor;
+  const h = rnd(15, 30) * scaleFactor;
+
+  fill(col + "77");
+  noStroke();
+  beginShape();
+  // Top edge morphs from angular to smooth
+  for (let i = 0; i <= 20; i++) {
+    const t = i / 20;
+    const px = x + t * w;
+    const angularity = 1 - t; // Angular at start, smooth at end
+    const py = y - h / 2 + (angularity > 0.5 ? (i % 2) * h * 0.3 : sin(t * PI * 2) * h * 0.2);
+    vertex(px, py);
+  }
+  // Bottom edge
+  for (let i = 20; i >= 0; i--) {
+    const t = i / 20;
+    const px = x + t * w;
+    vertex(px, y + h / 2);
+  }
+  endShape(CLOSE);
+}
+
+function drawArtikulationStaticBursts(voice, section) {
+  // Radio static / white noise burst patterns
+  const numBursts = Math.max(1, Math.floor(rnd(2, 5) * features.densityValue));
+  const colors = features.palette.colors || ["#333333", "#666666", "#999999"];
+
+  for (let b = 0; b < numBursts; b++) {
+    const cx = rnd(section.xStart + 20, section.xEnd - 20);
+    const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const burstW = rnd(20, 50) * scaleFactor;
+    const burstH = rnd(10, 25) * scaleFactor;
+    const numDots = rndInt(30, 80);
+
+    noStroke();
+    for (let i = 0; i < numDots; i++) {
+      const col = rndChoice(colors);
+      fill(col + "88");
+      const px = cx + rnd(-burstW / 2, burstW / 2);
+      const py = cy + rnd(-burstH / 2, burstH / 2);
+      const size = rnd(0.5, 2) * scaleFactor;
+      rect(px, py, size, size);
+    }
+  }
+}
+
+function drawArtikulationTimbreLegend(voice, section) {
+  // Legend-like labels for different timbres (Wehinger's notation key)
+  const colors = features.palette.colors ||
+    ["#cc3333", "#3366cc", "#33aa55", "#ffaa00"];
+  const timbres = ["I", "II", "III", "IV", "A", "B", "α", "β"];
+
+  if (rndBool(0.4)) {
+    const x = rnd(section.xStart + 10, section.xEnd - 40);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const col = rndChoice(colors);
+    const timbre = rndChoice(timbres);
+
+    // Small colored box with label
+    fill(col + "cc");
+    noStroke();
+    rect(x, y - 5 * scaleFactor, 12 * scaleFactor, 10 * scaleFactor, 2);
+
+    fill(features.palette.ink);
+    textSize(6 * scaleFactor);
+    textAlign(LEFT, CENTER);
+    text(timbre, x + 15 * scaleFactor, y);
+  }
+}
+
+function drawArtikulationVerticalSync(voice, section) {
+  // Vertical alignment markers for simultaneous events
+  const numMarkers = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.inkLight || features.palette.ink + "44");
+  strokeWeight(0.5 * scaleFactor);
+  drawingContext.setLineDash([2 * scaleFactor, 4 * scaleFactor]);
+
+  for (let i = 0; i < numMarkers; i++) {
+    const x = rnd(section.xStart + 30, section.xEnd - 30);
+    line(x, voice.yStart + 5, x, voice.yEnd - 5);
+  }
+  drawingContext.setLineDash([]);
+}
+
+function drawArtikulationElectronicMotifs(voice, section) {
+  // Recurring electronic motif patterns (sine, square, saw waves)
+  const numMotifs = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+
+  stroke(features.palette.ink);
+  strokeWeight(1 * scaleFactor);
+  noFill();
+
+  for (let m = 0; m < numMotifs; m++) {
+    const x = rnd(section.xStart + 10, section.xEnd - 80);
+    const y = rnd(voice.yStart + 15, voice.yEnd - 15);
+    const w = rnd(40, 80) * scaleFactor;
+    const h = rnd(8, 15) * scaleFactor;
+    const waveType = rndInt(0, 3);
+
+    beginShape();
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      const px = x + t * w;
+      let py;
+
+      if (waveType === 0) {
+        // Sine wave
+        py = y + sin(t * TWO_PI * 2) * h / 2;
+      } else if (waveType === 1) {
+        // Square wave
+        py = y + ((Math.floor(t * 4) % 2) === 0 ? -h / 2 : h / 2);
+      } else {
+        // Sawtooth
+        py = y + ((t * 4) % 1 - 0.5) * h;
+      }
+      vertex(px, py);
+    }
+    endShape();
+  }
+}
+
+function drawArtikulationSpatialPanning(voice, section) {
+  // Left/right spatial panning indicators
+  const numIndicators = Math.max(1, Math.floor(rnd(1, 3) * features.densityValue));
+  const colors = features.palette.colors || ["#cc3333", "#3366cc"];
+
+  for (let i = 0; i < numIndicators; i++) {
+    const x = rnd(section.xStart + 20, section.xEnd - 60);
+    const y = rnd(voice.yStart + 10, voice.yEnd - 10);
+    const w = rnd(30, 60) * scaleFactor;
+    const isLeftToRight = rndBool(0.5);
+
+    // Arrow showing pan direction
+    const col = rndChoice(colors);
+    stroke(col + "aa");
+    strokeWeight(2 * scaleFactor);
+
+    if (isLeftToRight) {
+      line(x, y, x + w, y);
+      line(x + w - 5 * scaleFactor, y - 4 * scaleFactor, x + w, y);
+      line(x + w - 5 * scaleFactor, y + 4 * scaleFactor, x + w, y);
+    } else {
+      line(x + w, y, x, y);
+      line(x + 5 * scaleFactor, y - 4 * scaleFactor, x, y);
+      line(x + 5 * scaleFactor, y + 4 * scaleFactor, x, y);
+    }
+
+    // L/R labels
+    fill(features.palette.ink + "66");
+    noStroke();
+    textSize(5 * scaleFactor);
+    textAlign(CENTER, CENTER);
+    text("L", x - 8 * scaleFactor, y);
+    text("R", x + w + 8 * scaleFactor, y);
   }
 }
 
@@ -4552,8 +5072,32 @@ function drawBraxtonLanguageTypes(voice, section) {
 function drawModeElements(mode, voice, section) {
   switch (mode) {
     case "artikulation":
-      drawArtikulationColorBlocks(voice, section);
-      if (rndBool(0.6)) drawArtikulationClusters(voice, section);
+      // Enhanced Artikulation mode v3.4.0 - Ligeti/Wehinger visual listening score
+      // Primary structural element (choose one)
+      const artikPrimary = rndInt(0, 5);
+      switch (artikPrimary) {
+        case 0: drawArtikulationColorBlocks(voice, section); break;
+        case 1: drawArtikulationClusters(voice, section); break;
+        case 2: drawArtikulationDensityClouds(voice, section); break;
+        case 3: drawArtikulationOverlaps(voice, section); break;
+        case 4: drawArtikulationMorphing(voice, section); break;
+      }
+      // Secondary elements (probabilistic layering)
+      if (rndBool(0.5)) drawArtikulationCallResponse(voice, section);
+      if (rndBool(0.45)) drawArtikulationTimbralStripes(voice, section);
+      if (rndBool(0.4)) drawArtikulationGlitchPatterns(voice, section);
+      if (rndBool(0.35)) drawArtikulationSpeechFragments(voice, section);
+      if (rndBool(0.4)) drawArtikulationAttackDecay(voice, section);
+      if (rndBool(0.35)) drawArtikulationConnectors(voice, section);
+      if (rndBool(0.3)) drawArtikulationWedges(voice, section);
+      if (rndBool(0.35)) drawArtikulationInterrupted(voice, section);
+      if (rndBool(0.3)) drawArtikulationTextureGradient(voice, section);
+      if (rndBool(0.35)) drawArtikulationPulsation(voice, section);
+      if (rndBool(0.3)) drawArtikulationStaticBursts(voice, section);
+      if (rndBool(0.2)) drawArtikulationTimbreLegend(voice, section);
+      if (rndBool(0.25)) drawArtikulationVerticalSync(voice, section);
+      if (rndBool(0.35)) drawArtikulationElectronicMotifs(voice, section);
+      if (rndBool(0.25)) drawArtikulationSpatialPanning(voice, section);
       break;
 
     case "upic":
