@@ -655,7 +655,10 @@
       const timeSignature = document.getElementById('param-timeSignature').value;
       const paletteName = document.getElementById('param-palette').value;
 
-      // Apply parameters
+      // Generate new hash first, then apply manual overrides
+      window.regenerate();
+
+      // Now apply manual parameter overrides on top of the new random features
       window.setParameter('primaryMode', primaryMode);
       window.setParameter('secondaryModes', secondaryModes);
       window.setParameter('activeModes', [primaryMode, ...secondaryModes]);
@@ -675,7 +678,7 @@
       const densityValues = { sparse: 0.3, balanced: 0.6, dense: 0.85, extreme: 1.0 };
       window.setParameter('densityValue', densityValues[density] || 0.6);
 
-      // Redraw with new parameters
+      // Redraw with the overridden parameters
       window.applyAndRedraw();
     }
 
