@@ -15653,6 +15653,8 @@ function setup() {
     window.getModes = () => MODES;
     window.getPalettes = () => PALETTES;
     window.applyAndRedraw = () => {
+      // Restore PRNG state to ensure consistent composition
+      R.setState(rngStateAfterFeatures);
       setupComposition();
       drawScore();
       window.dispatchEvent(new CustomEvent("featuresUpdated", { detail: features }));
