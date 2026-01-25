@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.22.0
+ * Graphical Score v3.22.1
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -1449,30 +1449,62 @@ function drawStaves() {
   stroke(features.palette.faded + "35");
   strokeWeight(0.5 * scaleFactor);
 
-  for (const voice of voices) {
-    const staffSpacing = voice.height / 6;
-    for (let i = 1; i <= 5; i++) {
-      const y = voice.yStart + i * staffSpacing;
-      line(MARGIN, y, WIDTH - MARGIN, y);
+  if (features.structure === "stacked") {
+    // For stacked structure, draw staves within each section's vertical bounds
+    for (const section of sections) {
+      if (!section.isStacked) continue;
+
+      const stackHeight = section.stackYEnd - section.stackYStart;
+      const voiceCount = voices.length;
+
+      for (let v = 0; v < voiceCount; v++) {
+        // Calculate voice bounds within this stack
+        const voiceHeight = stackHeight / voiceCount;
+        const voiceYStart = section.stackYStart + v * voiceHeight;
+        const staffSpacing = voiceHeight / 6;
+
+        stroke(features.palette.faded + "35");
+        strokeWeight(0.5 * scaleFactor);
+        for (let i = 1; i <= 5; i++) {
+          const y = voiceYStart + i * staffSpacing;
+          line(MARGIN, y, WIDTH - MARGIN, y);
+        }
+      }
+
+      // Draw horizontal dividers between stacked sections
+      if (section.stackIndex > 0) {
+        stroke(features.palette.ink + "30");
+        strokeWeight(1.5 * scaleFactor);
+        line(MARGIN, section.stackYStart, WIDTH - MARGIN, section.stackYStart);
+      }
     }
-  }
+  } else {
+    // Normal staff drawing for non-stacked structures
+    for (const voice of voices) {
+      const staffSpacing = voice.height / 6;
+      for (let i = 1; i <= 5; i++) {
+        const y = voice.yStart + i * staffSpacing;
+        line(MARGIN, y, WIDTH - MARGIN, y);
+      }
+    }
 
-  if (features.structure !== "flowing" && sections.length > 1) {
-    for (let i = 1; i < sections.length; i++) {
-      const x = sections[i].xStart;
-      const sec = sections[i];
+    if (features.structure !== "flowing" && sections.length > 1) {
+      for (let i = 1; i < sections.length; i++) {
+        const x = sections[i].xStart;
+        const sec = sections[i];
 
-      if (features.structure === "fragmentary" && sec.isNarrow) {
-        // Solid bold lines for narrow "interruption" sections
-        stroke(features.palette.ink + "40");
-        strokeWeight(2 * scaleFactor);
-        line(x, MARGIN, x, HEIGHT - MARGIN);
-      } else {
-        // Dashed lines for normal section divisions
-        stroke(features.palette.ink + "25");
-        strokeWeight(1 * scaleFactor);
-        for (let y = MARGIN; y < HEIGHT - MARGIN; y += 10 * scaleFactor) {
-          line(x, y, x, y + 5 * scaleFactor);
+        if (features.structure === "fragmentary" && sec.isNarrow) {
+          // Solid bold lines for narrow "interruption" sections
+          stroke(features.palette.ink + "40");
+          strokeWeight(2 * scaleFactor);
+          line(x, MARGIN, x, HEIGHT - MARGIN);
+        } else {
+          // Dashed lines for normal section divisions
+          stroke(features.palette.ink + "25");
+          strokeWeight(1 * scaleFactor);
+          for (let y = MARGIN; y < HEIGHT - MARGIN; y += 10 * scaleFactor) {
+            line(x, y, x, y + 5 * scaleFactor);
+          }
         }
       }
     }
@@ -10818,15 +10850,37 @@ function drawVoice(voice, section) {
     activeMode = features.primaryMode;
   }
 
+  // For stacked structure, create a modified voice with y-bounds mapped to section's vertical slice
+  let effectiveVoice = voice;
+  if (section.isStacked) {
+    // Map voice's proportional position into the section's vertical space
+    const totalVoiceHeight = HEIGHT - MARGIN * 2;
+    const voiceTopRatio = (voice.yStart - MARGIN) / totalVoiceHeight;
+    const voiceBottomRatio = (voice.yEnd - MARGIN) / totalVoiceHeight;
+
+    const stackHeight = section.stackYEnd - section.stackYStart;
+    const mappedYStart = section.stackYStart + voiceTopRatio * stackHeight;
+    const mappedYEnd = section.stackYStart + voiceBottomRatio * stackHeight;
+
+    // Create a modified voice object with adjusted y-bounds
+    effectiveVoice = {
+      ...voice,
+      yStart: mappedYStart,
+      yEnd: mappedYEnd,
+      yCenter: (mappedYStart + mappedYEnd) / 2,
+      height: mappedYEnd - mappedYStart
+    };
+  }
+
   // Draw primary mode
-  drawModeElements(activeMode, voice, section);
+  drawModeElements(activeMode, effectiveVoice, section);
 
   // Add secondary mode accents (for dominant blend)
   if (features.blendType === "dominant" && features.secondaryModes.length > 0) {
     const accentChance = 0.3;
     for (const secondaryMode of features.secondaryModes) {
       if (rndBool(accentChance * features.densityValue)) {
-        drawModeElements(secondaryMode, voice, section);
+        drawModeElements(secondaryMode, effectiveVoice, section);
       }
     }
   }
@@ -10847,50 +10901,48 @@ function drawNotationMarks() {
   noStroke();
 
   // Generate musical title
-  const opusNum = rndInt(1, 99);
-  const workTitles = [
-    `Op. ${opusNum}`,
-    `No. ${rndInt(1, 999)}`,
-    `Study ${rndChoice(["I", "II", "III", "IV", "V"])}`,
-    `Fragment ${rndInt(1, 999)}`,
-    `Étude`,
-    `Notation ${rndChoice(["α", "β", "γ", "δ"])}`,
-    `Score ${rndInt(1, 50)}`
-  ];
-  textSize(16 * scaleFactor);
-  text(rndChoice(workTitles), MARGIN, titleY);
+  // const opusNum = rndInt(1, 99);
+  // const workTitles = [
+  //   `Op. ${opusNum}`,
+  //   `No. ${rndInt(1, 999)}`,
+  //   `Study ${rndChoice(["I", "II", "III", "IV", "V"])}`,
+  //   `Fragment ${rndInt(1, 999)}`,
+  //   `Étude`,
+  //   `Notation ${rndChoice(["α", "β", "γ", "δ"])}`,
+  //   `Score ${rndInt(1, 50)}`
+  // ];
+  // textSize(16 * scaleFactor);
+  // text(rndChoice(workTitles), MARGIN, titleY);
 
   // Dedication or instrumentation (right side, top)
-  const dedications = [
-    "for ensemble",
-    "for any instruments",
-    "for variable forces",
-    `for ${rndInt(2, 8)} players`,
-    "für Orchester",
-    "pour orchestre",
-    "per ensemble",
-    ""  // sometimes none
-  ];
-  const dedication = rndChoice(dedications);
-  if (dedication) {
-    textStyle(ITALIC);
-    textSize(14 * scaleFactor);
-    fill(features.palette.inkLight);
-    textAlign(RIGHT, TOP);
-    text(dedication, WIDTH - MARGIN, titleY);
-    textAlign(LEFT, TOP);
-    textStyle(NORMAL);
-  }
+  // const dedications = [
+  //   "for ensemble",
+  //   "for any instruments",
+  //   "for variable forces",
+  //   `for ${rndInt(2, 8)} players`,
+  //   "für Orchester",
+  //   "pour orchestre",
+  //   "per ensemble",
+  //   ""  // sometimes none
+  // ];
+  // const dedication = rndChoice(dedications);
+  // if (dedication) {
+  //   textStyle(ITALIC);
+  //   textSize(14 * scaleFactor);
+  //   fill(features.palette.inkLight);
+  //   textAlign(RIGHT, TOP);
+  //   text(dedication, WIDTH - MARGIN, titleY);
+  //   textAlign(LEFT, TOP);
+  //   textStyle(NORMAL);
+  // }
 
-  // === HEADER: Tempo marking just above the staff ===
-  const headerY = MARGIN - 22 * scaleFactor;
-
-  // Tempo marking only (time signature removed)
-  fill(features.palette.ink);
-  textStyle(ITALIC);
-  textSize(14 * scaleFactor);
-  text(features.tempo, MARGIN, headerY);
-  textStyle(NORMAL);
+  // === HEADER: Tempo marking (commented out - tempo influences visuals but isn't displayed) ===
+  // const headerY = MARGIN - 22 * scaleFactor;
+  // fill(features.palette.ink);
+  // textStyle(ITALIC);
+  // textSize(14 * scaleFactor);
+  // text(features.tempo, MARGIN, headerY);
+  // textStyle(NORMAL);
 
   // === SECTION MARKERS: Always show, positioned in score margin area ===
   if (features.sectionCount > 1) {
@@ -10947,7 +10999,7 @@ function drawNotationMarks() {
   drawPerformanceInstructions();
 
   // Footer: copyright/date style notation
-  drawFooter();
+  // drawFooter();
 }
 
 function drawExpressionMarks() {
