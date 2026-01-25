@@ -877,118 +877,219 @@ function generateFeatures() {
     paletteName = rndChoice(archivalPalettes);
   }
 
-  // Time and tempo aesthetics
-  const timeSignatures = ["4/4", "3/4", "5/4", "6/8", "7/8", "5/8", "9/8", "free", "aleatoric"];
-  const selectedTimeSignature = rndChoice(timeSignatures);
+  // Grouping patterns (formerly time signatures) - how visual elements cluster and relate
+  // Terms describe structural patterns meaningful for graphic score interpretation
+  const groupingPatterns = [
+    "Symmetric",      // Regular, balanced groupings (like 4/4)
+    "Triadic",        // Three-part cyclic patterns (like 3/4, waltz)
+    "Asymmetric",     // Irregular, off-balance groupings (like 5/4, 7/8)
+    "Compound",       // Nested subdivisions (like 6/8, 9/8)
+    "Additive",       // Built from smaller irregular units (like 7/8 = 2+2+3)
+    "Open",           // No fixed grouping, performer-determined
+    "Spatial",        // Time as space - proportional notation (Feldman/Brown)
+    "Elastic",        // Flexible, stretchable groupings (Logothetis)
+    "Processional",   // Linear, through-composed movement
+    "Layered",        // Multiple simultaneous streams
+    "Mobile",         // Reorderable units (Brown's mobiles)
+    "Breath-based"    // Tied to breathing cycles (Oliveros)
+  ];
+  const selectedGrouping = rndChoice(groupingPatterns);
 
-  // Parse time signature for visual influence
+  // Parse grouping pattern for visual influence
   let beatGrouping = 4;       // Primary grouping unit
-  let beatSubdivision = 2;    // How beats subdivide (2 = simple, 3 = compound)
-  let accentPattern = [1];    // Relative accent weights per beat
-  let isAsymmetric = false;   // Odd meters create irregular patterns
+  let beatSubdivision = 2;    // How elements subdivide (2 = binary, 3 = ternary)
+  let accentPattern = [1];    // Relative visual weight per position
+  let isAsymmetric = false;   // Irregular patterns
   let groupingCycle = 1;      // How many groups before pattern repeats
 
-  if (selectedTimeSignature === "4/4") {
-    beatGrouping = 4;
-    beatSubdivision = 2;
-    accentPattern = [1.0, 0.4, 0.7, 0.4];  // Strong, weak, medium, weak
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "3/4") {
-    beatGrouping = 3;
-    beatSubdivision = 2;
-    accentPattern = [1.0, 0.4, 0.5];  // Waltz: strong, weak, weak
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "5/4") {
-    beatGrouping = 5;
-    beatSubdivision = 2;
-    isAsymmetric = true;
-    // 5/4 often groups as 3+2 or 2+3
-    accentPattern = rndBool(0.5) ? [1.0, 0.4, 0.5, 0.8, 0.4] : [1.0, 0.4, 0.8, 0.4, 0.5];
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "6/8") {
-    beatGrouping = 2;  // Two main beats
-    beatSubdivision = 3;  // Compound - each beat has 3 subdivisions
-    accentPattern = [1.0, 0.6];  // Two strong beats
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "7/8") {
-    beatGrouping = 7;
-    beatSubdivision = 2;
-    isAsymmetric = true;
-    // 7/8 groups as 2+2+3, 3+2+2, or 2+3+2
-    const pattern = rndInt(0, 2);
-    if (pattern === 0) accentPattern = [1.0, 0.4, 0.7, 0.4, 0.8, 0.4, 0.5];  // 2+2+3
-    else if (pattern === 1) accentPattern = [1.0, 0.4, 0.5, 0.7, 0.4, 0.8, 0.4];  // 3+2+2
-    else accentPattern = [1.0, 0.4, 0.8, 0.4, 0.5, 0.7, 0.4];  // 2+3+2
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "5/8") {
-    beatGrouping = 5;
-    beatSubdivision = 2;
-    isAsymmetric = true;
-    accentPattern = rndBool(0.5) ? [1.0, 0.4, 0.8, 0.4, 0.5] : [1.0, 0.4, 0.5, 0.8, 0.4];
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "9/8") {
-    beatGrouping = 3;  // Three main beats
-    beatSubdivision = 3;  // Compound
-    accentPattern = [1.0, 0.5, 0.6];
-    groupingCycle = 1;
-  } else {
-    // "free" or "aleatoric" - irregular groupings
-    beatGrouping = rndInt(2, 7);
-    beatSubdivision = rndChoice([2, 3]);
-    isAsymmetric = true;
-    accentPattern = Array.from({ length: beatGrouping }, () => rnd(0.3, 1.0));
-    accentPattern[0] = 1.0;  // First is always strongest
-    groupingCycle = rndInt(1, 3);  // Can have longer cycles
+  switch (selectedGrouping) {
+    case "Symmetric":
+      beatGrouping = 4;
+      beatSubdivision = 2;
+      accentPattern = [1.0, 0.4, 0.7, 0.4];  // Balanced, regular
+      groupingCycle = 1;
+      break;
+    case "Triadic":
+      beatGrouping = 3;
+      beatSubdivision = 2;
+      accentPattern = [1.0, 0.4, 0.5];  // Three-part cyclic
+      groupingCycle = 1;
+      break;
+    case "Asymmetric":
+      beatGrouping = 5;
+      beatSubdivision = 2;
+      isAsymmetric = true;
+      accentPattern = rndBool(0.5) ? [1.0, 0.4, 0.5, 0.8, 0.4] : [1.0, 0.4, 0.8, 0.4, 0.5];
+      groupingCycle = 1;
+      break;
+    case "Compound":
+      beatGrouping = 2;  // Two main groupings
+      beatSubdivision = 3;  // Each subdivides into three
+      accentPattern = [1.0, 0.6];
+      groupingCycle = 1;
+      break;
+    case "Additive":
+      beatGrouping = 7;
+      beatSubdivision = 2;
+      isAsymmetric = true;
+      // Built from smaller units: 2+2+3, 3+2+2, or 2+3+2
+      const additivePattern = rndInt(0, 2);
+      if (additivePattern === 0) accentPattern = [1.0, 0.4, 0.7, 0.4, 0.8, 0.4, 0.5];
+      else if (additivePattern === 1) accentPattern = [1.0, 0.4, 0.5, 0.7, 0.4, 0.8, 0.4];
+      else accentPattern = [1.0, 0.4, 0.8, 0.4, 0.5, 0.7, 0.4];
+      groupingCycle = 1;
+      break;
+    case "Open":
+      // Performer-determined, no fixed pattern
+      beatGrouping = rndInt(2, 7);
+      beatSubdivision = rndChoice([2, 3]);
+      isAsymmetric = true;
+      accentPattern = Array.from({ length: beatGrouping }, () => rnd(0.3, 1.0));
+      accentPattern[0] = 1.0;
+      groupingCycle = rndInt(1, 3);
+      break;
+    case "Spatial":
+      // Time as space - proportional, spread out
+      beatGrouping = rndInt(3, 6);
+      beatSubdivision = 2;
+      accentPattern = Array.from({ length: beatGrouping }, () => rnd(0.5, 0.9));
+      groupingCycle = 1;
+      break;
+    case "Elastic":
+      // Flexible, stretchable groupings
+      beatGrouping = rndInt(3, 5);
+      beatSubdivision = rndChoice([2, 3]);
+      isAsymmetric = true;
+      accentPattern = Array.from({ length: beatGrouping }, () => rnd(0.4, 1.0));
+      groupingCycle = rndInt(1, 2);
+      break;
+    case "Processional":
+      // Linear, through-composed movement
+      beatGrouping = 4;
+      beatSubdivision = 2;
+      accentPattern = [1.0, 0.5, 0.5, 0.5];  // One strong, then steady
+      groupingCycle = 1;
+      break;
+    case "Layered":
+      // Multiple simultaneous streams - complex
+      beatGrouping = rndChoice([3, 4, 5]);
+      beatSubdivision = rndChoice([2, 3]);
+      accentPattern = Array.from({ length: beatGrouping }, (_, i) => 0.6 + (i % 2) * 0.4);
+      groupingCycle = 2;
+      break;
+    case "Mobile":
+      // Reorderable, floating units
+      beatGrouping = rndInt(2, 5);
+      beatSubdivision = 2;
+      isAsymmetric = true;
+      accentPattern = Array.from({ length: beatGrouping }, () => rnd(0.6, 1.0));
+      groupingCycle = rndInt(1, 3);
+      break;
+    case "Breath-based":
+      // Tied to breathing - longer, organic cycles
+      beatGrouping = rndChoice([3, 4, 6]);
+      beatSubdivision = 3;
+      accentPattern = [1.0, 0.3, 0.5, 0.3].slice(0, beatGrouping);
+      while (accentPattern.length < beatGrouping) accentPattern.push(0.4);
+      groupingCycle = 1;
+      break;
+    default:
+      beatGrouping = 4;
+      beatSubdivision = 2;
+      accentPattern = [1.0, 0.4, 0.7, 0.4];
+      groupingCycle = 1;
   }
 
-  const tempoMarkings = [
-    "Lento", "Adagio", "Andante", "Moderato", "Allegro",
-    "Presto", "Senza tempo", "Liberamente", "Rubato"
+  // Energy values (formerly tempo) - the character/quality of visual movement
+  // Terms describe interpretive energy meaningful for graphic score performers
+  const energyValues = [
+    "Suspended",      // Still, frozen, hovering (like Lento)
+    "Contemplative",  // Slow, reflective, meditative (like Adagio)
+    "Flowing",        // Smooth, continuous movement (like Andante)
+    "Balanced",       // Neutral, centered energy (like Moderato)
+    "Urgent",         // Driving, pressing forward (like Allegro)
+    "Explosive",      // Intense, rapid bursts (like Presto)
+    "Gestural",       // Physical, embodied movement (Bussotti-style)
+    "Static",         // Unchanging, frozen texture
+    "Accumulating",   // Building tension, gathering force
+    "Dissolving",     // Fading, dissipating energy
+    "Pulsating",      // Regular rhythmic energy
+    "Volatile",       // Unpredictable, changeable
+    "Meditative",     // Deep listening, inner focus (Oliveros)
+    "Cascading"       // Falling, descending energy
   ];
-  const selectedTempo = rndChoice(tempoMarkings);
+  const selectedEnergy = rndChoice(energyValues);
 
-  // Tempo affects density and spacing
-  // Slow tempos = more space, less density
-  // Fast tempos = compressed, denser
-  // Free tempos = variable
-  let tempoModifier = 1.0;
-  let tempoSpacing = 1.0;  // Affects element spacing
-  switch (selectedTempo) {
-    case "Lento":
-      tempoModifier = 0.7;
-      tempoSpacing = 1.4;
+  // Energy affects density and spacing
+  // Low energy = more space, less density
+  // High energy = compressed, denser
+  // Variable energy = unpredictable
+  let energyModifier = 1.0;
+  let energySpacing = 1.0;  // Affects element spacing
+  switch (selectedEnergy) {
+    case "Suspended":
+      energyModifier = 0.6;
+      energySpacing = 1.5;
       break;
-    case "Adagio":
-      tempoModifier = 0.8;
-      tempoSpacing = 1.25;
+    case "Contemplative":
+      energyModifier = 0.75;
+      energySpacing = 1.3;
       break;
-    case "Andante":
-      tempoModifier = 0.9;
-      tempoSpacing = 1.1;
+    case "Flowing":
+      energyModifier = 0.9;
+      energySpacing = 1.1;
       break;
-    case "Moderato":
-      tempoModifier = 1.0;
-      tempoSpacing = 1.0;
+    case "Balanced":
+      energyModifier = 1.0;
+      energySpacing = 1.0;
       break;
-    case "Allegro":
-      tempoModifier = 1.15;
-      tempoSpacing = 0.85;
+    case "Urgent":
+      energyModifier = 1.2;
+      energySpacing = 0.8;
       break;
-    case "Presto":
-      tempoModifier = 1.3;
-      tempoSpacing = 0.7;
+    case "Explosive":
+      energyModifier = 1.4;
+      energySpacing = 0.65;
       break;
-    case "Senza tempo":
-    case "Liberamente":
-    case "Rubato":
-      // Variable - slight random variation
-      tempoModifier = rnd(0.85, 1.15);
-      tempoSpacing = rnd(0.9, 1.2);
+    case "Gestural":
+      energyModifier = rnd(0.9, 1.2);
+      energySpacing = rnd(0.85, 1.1);
       break;
+    case "Static":
+      energyModifier = 0.5;
+      energySpacing = 1.6;
+      break;
+    case "Accumulating":
+      energyModifier = 1.1;
+      energySpacing = 0.9;
+      break;
+    case "Dissolving":
+      energyModifier = 0.7;
+      energySpacing = 1.35;
+      break;
+    case "Pulsating":
+      energyModifier = 1.05;
+      energySpacing = 0.95;
+      break;
+    case "Volatile":
+      energyModifier = rnd(0.7, 1.3);
+      energySpacing = rnd(0.7, 1.3);
+      break;
+    case "Meditative":
+      energyModifier = 0.65;
+      energySpacing = 1.45;
+      break;
+    case "Cascading":
+      energyModifier = 1.15;
+      energySpacing = 0.85;
+      break;
+    default:
+      energyModifier = 1.0;
+      energySpacing = 1.0;
   }
 
-  // Apply tempo modifier to density
-  const effectiveDensityValue = Math.min(0.98, Math.max(0.12, densityValue * tempoModifier));
+  // Apply energy modifier to density
+  const effectiveDensityValue = Math.min(0.98, Math.max(0.12, densityValue * energyModifier));
 
   // Contrast
   const contrastValue = rnd(0.2, 0.9);
@@ -1021,17 +1122,17 @@ function generateFeatures() {
     palette: PALETTES[paletteName],
     paletteType: PALETTES[paletteName].type,
 
-    // Musical aesthetics
-    timeSignature: selectedTimeSignature,
-    tempo: selectedTempo,
-    tempoModifier,    // Affects density (0.7-1.3)
-    tempoSpacing,     // Affects element spacing (0.7-1.4)
+    // Interpretive aesthetics (renamed from musical for graphic score context)
+    grouping: selectedGrouping,   // How visual elements cluster (formerly timeSignature)
+    energy: selectedEnergy,       // Character/quality of movement (formerly tempo)
+    energyModifier,               // Affects density (0.5-1.4)
+    energySpacing,                // Affects element spacing (0.65-1.6)
 
-    // Time signature influence on visuals
+    // Grouping influence on visuals
     beatGrouping,     // Primary grouping unit (2-7)
-    beatSubdivision,  // Simple (2) or compound (3)
-    accentPattern,    // Relative visual weight per beat position
-    isAsymmetric,     // Odd/irregular meter
+    beatSubdivision,  // Binary (2) or ternary (3) subdivisions
+    accentPattern,    // Relative visual weight per position
+    isAsymmetric,     // Irregular patterns
     groupingCycle,    // How many groups before pattern repeats
 
     // Technical

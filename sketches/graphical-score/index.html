@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Graphical Score v3.35.1 - 21 Modes</title>
+  <title>Graphical Score v3.36.0 - 21 Modes</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
   <style>
@@ -406,7 +406,7 @@
 <body>
   <header>
     <div>
-      <h1>Graphical Score <span class="version">v3.35.1</span></h1>
+      <h1>Graphical Score <span class="version">v3.36.0</span></h1>
     </div>
     <div class="controls">
       <button id="btn-regenerate">Regenerate (R)</button>
@@ -498,31 +498,39 @@
             </select>
           </div>
           <div class="param-row">
-            <label>Tempo</label>
-            <select id="param-tempo">
-              <option value="Lento">Lento</option>
-              <option value="Adagio">Adagio</option>
-              <option value="Andante">Andante</option>
-              <option value="Moderato">Moderato</option>
-              <option value="Allegro">Allegro</option>
-              <option value="Presto">Presto</option>
-              <option value="Senza tempo">Senza tempo</option>
-              <option value="Liberamente">Liberamente</option>
-              <option value="Rubato">Rubato</option>
+            <label>Energy</label>
+            <select id="param-energy">
+              <option value="Suspended">Suspended</option>
+              <option value="Contemplative">Contemplative</option>
+              <option value="Flowing">Flowing</option>
+              <option value="Balanced">Balanced</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Explosive">Explosive</option>
+              <option value="Gestural">Gestural</option>
+              <option value="Static">Static</option>
+              <option value="Accumulating">Accumulating</option>
+              <option value="Dissolving">Dissolving</option>
+              <option value="Pulsating">Pulsating</option>
+              <option value="Volatile">Volatile</option>
+              <option value="Meditative">Meditative</option>
+              <option value="Cascading">Cascading</option>
             </select>
           </div>
           <div class="param-row">
-            <label>Time Signature</label>
-            <select id="param-timeSignature">
-              <option value="4/4">4/4</option>
-              <option value="3/4">3/4</option>
-              <option value="5/4">5/4</option>
-              <option value="6/8">6/8</option>
-              <option value="7/8">7/8</option>
-              <option value="5/8">5/8</option>
-              <option value="9/8">9/8</option>
-              <option value="free">Free</option>
-              <option value="aleatoric">Aleatoric</option>
+            <label>Grouping</label>
+            <select id="param-grouping">
+              <option value="Symmetric">Symmetric</option>
+              <option value="Triadic">Triadic</option>
+              <option value="Asymmetric">Asymmetric</option>
+              <option value="Compound">Compound</option>
+              <option value="Additive">Additive</option>
+              <option value="Open">Open</option>
+              <option value="Spatial">Spatial</option>
+              <option value="Elastic">Elastic</option>
+              <option value="Processional">Processional</option>
+              <option value="Layered">Layered</option>
+              <option value="Mobile">Mobile</option>
+              <option value="Breath-based">Breath-based</option>
             </select>
           </div>
           <div class="param-row">
@@ -664,8 +672,8 @@
       document.getElementById('param-voiceCount').value = features.voiceCount;
       document.getElementById('param-structure').value = features.structure;
       document.getElementById('param-density').value = features.density;
-      document.getElementById('param-tempo').value = features.tempo;
-      document.getElementById('param-timeSignature').value = features.timeSignature;
+      document.getElementById('param-energy').value = features.energy;
+      document.getElementById('param-grouping').value = features.grouping;
       document.getElementById('param-palette').value = features.paletteName;
 
       // Secondary modes checkboxes
@@ -689,8 +697,8 @@
       const voiceCount = parseInt(document.getElementById('param-voiceCount').value);
       const structure = document.getElementById('param-structure').value;
       const density = document.getElementById('param-density').value;
-      const tempo = document.getElementById('param-tempo').value;
-      const timeSignature = document.getElementById('param-timeSignature').value;
+      const energy = document.getElementById('param-energy').value;
+      const grouping = document.getElementById('param-grouping').value;
       const paletteName = document.getElementById('param-palette').value;
 
       // Generate new hash and features WITHOUT drawing yet
@@ -705,8 +713,8 @@
       window.setParameter('voiceCount', voiceCount);
       window.setParameter('structure', structure);
       window.setParameter('density', density);
-      window.setParameter('tempo', tempo);
-      window.setParameter('timeSignature', timeSignature);
+      window.setParameter('energy', energy);
+      window.setParameter('grouping', grouping);
       window.setParameter('paletteName', paletteName);
       const palettes = window.getPalettes();
       window.setParameter('palette', palettes[paletteName]);
@@ -815,8 +823,8 @@
         { name: 'Voices', value: features.voiceCount, rarity: features.voiceRarity },
         { name: 'Structure', value: features.structure, rarity: features.structureRarity },
         { name: 'Density', value: features.density, rarity: features.densityRarity },
-        { name: 'Tempo', value: features.tempo },
-        { name: 'Time Sig', value: features.timeSignature },
+        { name: 'Energy', value: features.energy },
+        { name: 'Grouping', value: features.grouping },
         { name: 'Symmetry', value: features.hasSymmetry ? 'Palindrome' : 'None' }
       ];
 

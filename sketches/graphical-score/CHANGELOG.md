@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.36.0] - 2026-01-26
+
+### Changed
+
+**Semantic Parameter Renaming for Graphic Score Interpretation**
+
+Renamed "Tempo" and "Time Signature" parameters to semantically meaningful terms for contemporary graphic score performers. The underlying visual effects are preserved, but the terminology now reflects interpretive qualities rather than traditional musical notation.
+
+**Tempo → Energy (14 values)**
+
+Traditional tempo markings like "Lento", "Allegro" have been replaced with interpretive character terms:
+
+| Old | New | Effect |
+|-----|-----|--------|
+| Lento | Suspended | Still, frozen, hovering |
+| Adagio | Contemplative | Slow, reflective |
+| Andante | Flowing | Smooth, continuous |
+| Moderato | Balanced | Centered, stable |
+| Allegro | Urgent | Driving, pressing |
+| Presto | Explosive | Intense, rapid |
+| Senza tempo | Gestural | Physical, embodied (variable) |
+| Liberamente | Volatile | Unpredictable |
+| Rubato | Cascading | Falling, descending |
+
+New values added: Static, Accumulating, Dissolving, Pulsating, Meditative
+
+**Time Signature → Grouping (12 values)**
+
+Time signatures like "4/4", "7/8" have been replaced with structural pattern terms:
+
+| Old | New | Description |
+|-----|-----|-------------|
+| 4/4 | Symmetric | Regular, balanced |
+| 3/4 | Triadic | Three-part cyclic |
+| 5/4 | Asymmetric | Irregular, off-balance |
+| 6/8 | Compound | Nested subdivisions |
+| 7/8 | Additive | Built from smaller units |
+| free | Open | Performer-determined |
+| aleatoric | Elastic | Flexible, stretchable |
+
+New values added: Spatial (Feldman/Brown), Processional, Layered, Mobile (Brown), Breath-based (Oliveros)
+
+### Updated
+
+- UI controls in index.html updated with new Energy and Grouping dropdowns
+- Features panel displays new parameter names
+- FEATURES.md documentation updated with comprehensive descriptions
+- Manual mode parameter application updated
+
+---
+
 ## [3.35.1] - 2026-01-25
 
 ### Added

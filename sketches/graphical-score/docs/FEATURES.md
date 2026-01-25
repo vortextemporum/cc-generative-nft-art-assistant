@@ -69,35 +69,43 @@ How densely packed the notation elements are.
 | Sparse | 18% | 0.12-0.28 | Minimal, spacious notation |
 | Extreme | 9% | 0.15-0.25 or 0.88-0.98 | Very sparse or very dense |
 
-### Tempo
-Musical tempo indication displayed on the score.
+### Energy
+The character/quality of visual movement and interpretive energy. These terms are designed to be semantically meaningful for graphic score performers, replacing traditional tempo markings.
 
-| Marking | Character |
-|---------|-----------|
-| Lento | Very slow |
-| Adagio | Slow |
-| Andante | Walking pace |
-| Moderato | Moderate |
-| Allegro | Fast |
-| Presto | Very fast |
-| Senza tempo | Without tempo |
-| Liberamente | Freely |
-| Rubato | Flexible tempo |
+| Value | Effect | Description |
+|-------|--------|-------------|
+| Suspended | Very low density, wide spacing | Still, frozen, hovering quality |
+| Contemplative | Low density, spacious | Slow, reflective, meditative movement |
+| Flowing | Moderate density | Smooth, continuous movement |
+| Balanced | Neutral density/spacing | Centered, stable energy |
+| Urgent | Higher density, tight spacing | Driving, pressing forward |
+| Explosive | High density, compressed | Intense, rapid bursts |
+| Gestural | Variable | Physical, embodied movement (Bussotti-style) |
+| Static | Very low density | Unchanging, frozen texture |
+| Accumulating | Slightly higher density | Building tension, gathering force |
+| Dissolving | Low density | Fading, dissipating energy |
+| Pulsating | Moderate-high density | Regular rhythmic energy |
+| Volatile | Random variation | Unpredictable, changeable |
+| Meditative | Very low density | Deep listening, inner focus (Oliveros-inspired) |
+| Cascading | Higher density | Falling, descending energy |
 
-### Time Signature
-Rhythmic organization of the score.
+### Grouping
+How visual elements cluster and relate. These describe structural patterns meaningful for graphic score interpretation, replacing traditional time signatures.
 
-| Signature | Type |
-|-----------|------|
-| 4/4 | Common time |
-| 3/4 | Waltz time |
-| 5/4 | Asymmetric |
-| 6/8 | Compound duple |
-| 7/8 | Asymmetric |
-| 5/8 | Asymmetric |
-| 9/8 | Compound triple |
-| free | No fixed meter |
-| aleatoric | Chance-determined |
+| Value | Grouping Unit | Description |
+|-------|---------------|-------------|
+| Symmetric | 4 (binary) | Regular, balanced groupings |
+| Triadic | 3 (binary) | Three-part cyclic patterns |
+| Asymmetric | 5 (binary) | Irregular, off-balance groupings |
+| Compound | 2 (ternary) | Nested subdivisions |
+| Additive | 7 (binary) | Built from smaller irregular units (2+2+3 patterns) |
+| Open | Variable | No fixed grouping, performer-determined |
+| Spatial | Variable | Time as space - proportional notation (Feldman/Brown style) |
+| Elastic | Variable | Flexible, stretchable groupings (Logothetis style) |
+| Processional | 4 (binary) | Linear, through-composed movement |
+| Layered | Variable | Multiple simultaneous streams |
+| Mobile | Variable | Reorderable units (Brown's mobiles) |
+| Breath-based | 3-6 (ternary) | Tied to breathing cycles (Oliveros style) |
 
 ---
 
@@ -663,6 +671,7 @@ All outputs use a standardized double-line frame border:
 
 ## Version History
 
+- **v3.36.0** - Renamed Tempo → Energy (14 values) and Time Signature → Grouping (12 values) for graphic score semantics
 - **v3.35.x** - PRNG consistency fixes, panzoom viewer, dark palette print-friendly
 - **v3.32.0** - Added SoundMap mode (Annea Lockwood)
 - **v3.28.0** - Added DeepListening mode (Pauline Oliveros)
