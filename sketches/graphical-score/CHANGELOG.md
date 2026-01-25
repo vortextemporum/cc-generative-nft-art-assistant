@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.16.0] - 2026-01-25
+
+### Added
+
+**Tempo Influence on Visuals** - Tempo marking now affects density and spacing:
+
+| Tempo | Density Modifier | Spacing |
+|-------|------------------|---------|
+| Lento | 0.7× (sparser) | 1.4× (wider) |
+| Adagio | 0.8× | 1.25× |
+| Andante | 0.9× | 1.1× |
+| Moderato | 1.0× (baseline) | 1.0× |
+| Allegro | 1.15× (denser) | 0.85× |
+| Presto | 1.3× (densest) | 0.7× (tightest) |
+| Senza tempo/Liberamente/Rubato | Random 0.85-1.15× | Random 0.9-1.2× |
+
+### Changed
+
+- `densityValue` is now tempo-adjusted; original stored in `baseDensityValue`
+- Added `tempoModifier` and `tempoSpacing` to features object
+
+---
+
 ## [3.15.0] - 2026-01-25
 
 ### Added

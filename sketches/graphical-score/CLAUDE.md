@@ -1,4 +1,4 @@
-# Graphical Score v3.15.0 - AI Assistant Guide
+# Graphical Score v3.16.0 - AI Assistant Guide
 
 ## Project Overview
 
