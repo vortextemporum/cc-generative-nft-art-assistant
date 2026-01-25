@@ -86,7 +86,7 @@
  * v2.2.0: Refined paper aesthetics, fixed header layout, musical metadata
  * v2.1.0: Enhanced Spectral mode with engraved hatching, stippling
  *
- * @version 3.34.1
+ * @version 3.35.0
  */
 
 // ============================================================
@@ -1374,53 +1374,88 @@ function setupComposition() {
 // DRAWING: COMMON ELEMENTS
 // ============================================================
 
+// Helper to check if a hex color is dark (luminance < 0.5)
+function isDarkColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  // Relative luminance formula
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance < 0.3;
+}
+
 function drawPaper() {
-  // Print-friendly mode: clean white background, no effects
+  // Set background color based on mode
   if (printFriendlyMode) {
-    background("#ffffff");
-    return;
+    // For dark palettes (like spectralHeat, crumbRitual), use dark background
+    // so light-colored content remains visible
+    const isDarkPalette = isDarkColor(features.palette.paper);
+    background(isDarkPalette ? "#1a1a1a" : "#ffffff");
+  } else {
+    background(features.palette.paper);
   }
 
-  background(features.palette.paper);
-
   // Fine fiber texture - horizontal fibers like real paper
-  stroke(features.palette.paperDark + "08");
-  strokeWeight(0.3 * scaleFactor);
-  const fiberCount = hiResMode ? 800 : 300;
-  for (let i = 0; i < fiberCount; i++) {
+  // Always consume 800 random iterations for PRNG consistency, draw based on mode
+  const maxFibers = 800;
+  const fibersToDraw = hiResMode ? 800 : 300;
+  if (!printFriendlyMode) {
+    stroke(features.palette.paperDark + "08");
+    strokeWeight(0.3 * scaleFactor);
+  }
+  for (let i = 0; i < maxFibers; i++) {
     const y = rnd(0, HEIGHT);
     const x1 = rnd(0, WIDTH * 0.7);
     const len = rnd(20, 120) * scaleFactor;
-    // Slight waviness
     const midY = y + rnd(-1, 1) * scaleFactor;
-    line(x1, y, x1 + len * 0.5, midY);
-    line(x1 + len * 0.5, midY, x1 + len, y + rnd(-0.5, 0.5) * scaleFactor);
+    const endY = y + rnd(-0.5, 0.5) * scaleFactor;
+    // Only draw if within draw count and not print-friendly
+    if (i < fibersToDraw && !printFriendlyMode) {
+      line(x1, y, x1 + len * 0.5, midY);
+      line(x1 + len * 0.5, midY, x1 + len, endY);
+    }
   }
 
   // Subtle grain noise - very fine dots
-  noStroke();
-  const grainCount = hiResMode ? 6000 : 2000;
-  for (let i = 0; i < grainCount; i++) {
+  // Always consume 6000 random iterations for PRNG consistency, draw based on mode
+  const maxGrain = 6000;
+  const grainToDraw = hiResMode ? 6000 : 2000;
+  if (!printFriendlyMode) {
+    noStroke();
+    fill(features.palette.paperDark + "0a");
+  }
+  for (let i = 0; i < maxGrain; i++) {
     const x = rnd(0, WIDTH);
     const y = rnd(0, HEIGHT);
-    fill(features.palette.paperDark + "0a");
-    rect(x, y, 0.5 * scaleFactor, 0.5 * scaleFactor);
+    // Only draw if within draw count and not print-friendly
+    if (i < grainToDraw && !printFriendlyMode) {
+      rect(x, y, 0.5 * scaleFactor, 0.5 * scaleFactor);
+    }
   }
 
-  // Decorative border frame
+  // Decorative border frame - skip drawing but consume random values for consistency
   drawDecorativeBorder();
 
   // Corner ornaments
   drawCornerOrnaments();
 
   // Subtle foxing (age spots) - more organic shapes
-  if (rndBool(0.6)) {
+  // Always evaluate rndBool for PRNG consistency
+  const hasFoxing = rndBool(0.6);
+  if (hasFoxing && !printFriendlyMode) {
     drawFoxingSpots();
+  } else if (hasFoxing) {
+    // Consume the same random values without drawing
+    drawFoxingSpots(true);  // skipDraw flag
   }
 }
 
 function drawDecorativeBorder() {
   const borderStyle = rndInt(0, 3);
+
+  // Skip drawing in print-friendly mode but consume the random value
+  if (printFriendlyMode) return;
+
   const inset = 15 * scaleFactor;
   const innerInset = 20 * scaleFactor;
 
@@ -1486,9 +1521,13 @@ function drawDecorativeBorder() {
 }
 
 function drawCornerOrnaments() {
-  if (!rndBool(0.4)) return;
-
+  // Always consume these random values for PRNG consistency
+  const hasOrnaments = rndBool(0.4);
   const ornamentStyle = rndInt(0, 2);
+
+  // Skip drawing in print-friendly mode or if no ornaments
+  if (!hasOrnaments || printFriendlyMode) return;
+
   const corners = [
     { x: 8 * scaleFactor, y: 8 * scaleFactor, rot: 0 },
     { x: WIDTH - 8 * scaleFactor, y: 8 * scaleFactor, rot: HALF_PI },
@@ -1535,8 +1574,9 @@ function drawCornerOrnaments() {
   }
 }
 
-function drawFoxingSpots() {
+function drawFoxingSpots(skipDraw = false) {
   // Organic-looking age spots, not cheap circles
+  // When skipDraw is true, we consume random values but don't draw (for PRNG consistency)
   const numSpots = rndInt(3, 12);
 
   for (let i = 0; i < numSpots; i++) {
@@ -1558,32 +1598,53 @@ function drawFoxingSpots() {
     // Irregular organic shape using multiple overlapping forms
     const baseSize = rnd(4, 15) * scaleFactor;
     const alpha = rnd(8, 18);
+    const rotation = rnd(0, TWO_PI);
 
-    noStroke();
-    fill(features.palette.faded + Math.floor(alpha).toString(16).padStart(2, '0'));
-
-    // Main spot with slight irregularity
-    push();
-    translate(cx, cy);
-    rotate(rnd(0, TWO_PI));
-
-    beginShape();
+    // Consume random values for spot shape
+    const spotRadii = [];
     for (let a = 0; a < TWO_PI; a += 0.3) {
-      const r = baseSize * (0.7 + rnd(0, 0.5) + sin(a * 3) * 0.2);
-      vertex(cos(a) * r, sin(a) * r);
+      spotRadii.push(baseSize * (0.7 + rnd(0, 0.5) + sin(a * 3) * 0.2));
     }
-    endShape(CLOSE);
-    pop();
 
-    // Satellite micro-spots
-    if (rndBool(0.5)) {
-      for (let j = 0; j < rndInt(1, 4); j++) {
-        const angle = rnd(0, TWO_PI);
-        const dist = rnd(baseSize, baseSize * 2);
-        const sx = cx + cos(angle) * dist;
-        const sy = cy + sin(angle) * dist;
-        const ss = rnd(1, 3) * scaleFactor;
-        ellipse(sx, sy, ss, ss * rnd(0.8, 1.2));
+    // Satellite micro-spots - always consume random values
+    const hasSatellites = rndBool(0.5);
+    const satelliteCount = rndInt(1, 4);
+    const satellites = [];
+    for (let j = 0; j < satelliteCount; j++) {
+      satellites.push({
+        angle: rnd(0, TWO_PI),
+        dist: rnd(baseSize, baseSize * 2),
+        size: rnd(1, 3) * scaleFactor,
+        ratio: rnd(0.8, 1.2)
+      });
+    }
+
+    // Only draw if not skipping
+    if (!skipDraw) {
+      noStroke();
+      fill(features.palette.faded + Math.floor(alpha).toString(16).padStart(2, '0'));
+
+      // Main spot with slight irregularity
+      push();
+      translate(cx, cy);
+      rotate(rotation);
+
+      beginShape();
+      let idx = 0;
+      for (let a = 0; a < TWO_PI; a += 0.3) {
+        const r = spotRadii[idx++];
+        vertex(cos(a) * r, sin(a) * r);
+      }
+      endShape(CLOSE);
+      pop();
+
+      // Draw satellite micro-spots
+      if (hasSatellites) {
+        for (const sat of satellites) {
+          const sx = cx + cos(sat.angle) * sat.dist;
+          const sy = cy + sin(sat.angle) * sat.dist;
+          ellipse(sx, sy, sat.size, sat.size * sat.ratio);
+        }
       }
     }
   }
@@ -15759,6 +15820,7 @@ function setup() {
     window.hasModifications = hasModifications;
     window.getRarityCurves = getRarityCurves;
     window.setHiRes = setHiRes;
+    window.setPrintFriendly = setPrintFriendly;
     window.savePrintFriendly = savePrintFriendly;
     window.getModes = () => MODES;
     window.getPalettes = () => PALETTES;
@@ -15895,13 +15957,45 @@ function setHiRes(enabled) {
   R.setState(rngStateAfterFeatures);
   setupComposition();
   drawScore();
+  // Notify UI of mode change
+  window.dispatchEvent(new CustomEvent("renderModeChanged", { detail: { hiRes: enabled, printFriendly: printFriendlyMode } }));
+}
+
+function setPrintFriendly(enabled) {
+  // Toggle print-friendly mode (white background, no textures)
+  // Always renders at hi-res when in print mode
+  printFriendlyMode = enabled;
+
+  if (enabled) {
+    hiResMode = true;
+    scaleFactor = 3.13;
+    WIDTH = 4961;
+    HEIGHT = 3508;
+  } else {
+    hiResMode = false;
+    scaleFactor = 1;
+    WIDTH = 1587;
+    HEIGHT = 1122;
+  }
+
+  resizeCanvas(WIDTH, HEIGHT);
+  // Restore PRNG state to ensure consistent composition
+  R.setState(rngStateAfterFeatures);
+  setupComposition();
+  drawScore();
+  // Notify UI of mode change
+  window.dispatchEvent(new CustomEvent("renderModeChanged", { detail: { hiRes: hiResMode, printFriendly: enabled } }));
 }
 
 function savePrintFriendly() {
-  // Save current state
+  // Temporarily switch to print-friendly mode, save, then restore
+  const wasPrintFriendly = printFriendlyMode;
   const wasHiRes = hiResMode;
+  const wasWidth = WIDTH;
+  const wasHeight = HEIGHT;
+  const wasScaleFactor = scaleFactor;
 
-  // Set to hi-res print-friendly mode (keeps same features, just clean render)
+  // Switch to print-friendly hi-res
   printFriendlyMode = true;
   hiResMode = true;
   scaleFactor = 3.13;
@@ -15909,23 +16003,21 @@ function savePrintFriendly() {
   HEIGHT = 3508;
 
   resizeCanvas(WIDTH, HEIGHT);
-  // Restore PRNG state to ensure consistent composition
   R.setState(rngStateAfterFeatures);
   setupComposition();
   drawScore();
 
-  // Save the clean version
+  // Save
   saveCanvas(`graphical-score-${features.seed}-print`, "png");
 
   // Restore previous state
-  printFriendlyMode = false;
+  printFriendlyMode = wasPrintFriendly;
   hiResMode = wasHiRes;
-  scaleFactor = wasHiRes ? 3.13 : 1;
-  WIDTH = wasHiRes ? 4961 : 1587;
-  HEIGHT = wasHiRes ? 3508 : 1122;
+  scaleFactor = wasScaleFactor;
+  WIDTH = wasWidth;
+  HEIGHT = wasHeight;
 
   resizeCanvas(WIDTH, HEIGHT);
-  // Restore PRNG state again for consistent restoration
   R.setState(rngStateAfterFeatures);
   setupComposition();
   drawScore();
@@ -15942,7 +16034,8 @@ function keyPressed() {
     setHiRes(!hiResMode);
   }
   if (key === "p" || key === "P") {
-    savePrintFriendly();
+    // Toggle print-friendly mode (view only, no download)
+    setPrintFriendly(!printFriendlyMode);
   }
   if (key === "d" || key === "D") {
     debugMode = !debugMode;
