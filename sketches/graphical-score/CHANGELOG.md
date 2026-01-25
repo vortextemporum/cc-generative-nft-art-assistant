@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.18.0] - 2026-01-25
+
+### Added
+
+**New Structure Type: Modular** - Independent blocks inspired by Earle Brown open form:
+
+- **modular** (10% probability, legendary rarity) - 4-8 independent modules
+  - Each module is a self-contained unit with visible borders
+  - Variable widths per module (8-25% of score width)
+  - 3% gaps between modules for visual separation
+  - `isModule`, `moduleNumber`, `hasBorder` flags for special rendering
+  - Inspired by mobile/open form scores where sections can be reordered
+
+### Changed
+
+- Structure probabilities rebalanced for 7 types:
+  - flowing: 28%
+  - sectioned: 20%
+  - mathematical: 15%
+  - fragmentary: 12%
+  - gestural: 10%
+  - modular: 10%
+  - palindrome: 5%
+
+---
+
 ## [3.17.0] - 2026-01-25
 
 ### Added

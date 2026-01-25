@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.18.0
+ * Graphical Score v3.17.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -521,8 +521,8 @@ const RARITY_CURVES = {
     labels: ["ensemble (3-5)", "chamber (6-8)", "solo (1-2)", "orchestra (9-12)"]
   },
   structure: {
-    probabilities: [0.28, 0.20, 0.15, 0.12, 0.10, 0.10, 0.05],
-    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "gestural", "modular", "palindrome"]
+    probabilities: [0.32, 0.23, 0.17, 0.13, 0.10, 0.05],
+    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "gestural", "palindrome"]
   },
   density: {
     probabilities: [0.45, 0.28, 0.18, 0.09],
@@ -583,27 +583,24 @@ function generateFeatures() {
   else if (voiceRarity === "rare") voiceCount = rndInt(1, 2);
   else voiceCount = rndInt(9, 12);
 
-  // Structure - 7 types with weighted selection
+  // Structure - 6 types with weighted selection
   const structureRoll = rnd();
   let structure, sectionCount = 1;
-  if (structureRoll < 0.28) {
+  if (structureRoll < 0.30) {
     structure = "flowing";
     sectionCount = 1;
-  } else if (structureRoll < 0.48) {
+  } else if (structureRoll < 0.52) {
     structure = "sectioned";
     sectionCount = rndInt(2, 5);
-  } else if (structureRoll < 0.63) {
+  } else if (structureRoll < 0.68) {
     structure = "mathematical";
     sectionCount = rndInt(3, 6);
-  } else if (structureRoll < 0.75) {
+  } else if (structureRoll < 0.80) {
     structure = "fragmentary";
     sectionCount = rndInt(5, 9);  // More sections, irregular widths
-  } else if (structureRoll < 0.85) {
+  } else if (structureRoll < 0.90) {
     structure = "gestural";
     sectionCount = rndInt(1, 2);  // Minimal sections, organic curves
-  } else if (structureRoll < 0.95) {
-    structure = "modular";
-    sectionCount = rndInt(4, 8);  // Independent modules/blocks
   } else {
     structure = "palindrome";
     sectionCount = rndInt(3, 7);
@@ -614,7 +611,7 @@ function generateFeatures() {
 
   const structureRarity = structure === "flowing" ? "common" :
     structure === "sectioned" ? "uncommon" :
-    (structure === "palindrome" || structure === "gestural" || structure === "modular") ? "legendary" : "rare";
+    (structure === "palindrome" || structure === "gestural") ? "legendary" : "rare";
 
   // Density
   const densityRarity = rollRarity(0.45, 0.28, 0.18, 0.09);
@@ -916,39 +913,6 @@ function setupComposition() {
 
     // Enable gestural curves for all voices (set after voices are created below)
     // Curve initialization happens after voice creation
-  } else if (features.structure === "modular") {
-    // Modular: independent blocks with gaps and borders (Earle Brown/open form style)
-    // Each module is a self-contained unit that can theoretically be reordered
-    const moduleCount = features.sectionCount;
-    const gapRatio = 0.03;  // 3% gaps between modules
-    const totalGaps = (moduleCount - 1) * gapRatio;
-    const usableWidth = 1 - totalGaps;
-    const moduleWidths = [];
-
-    // Generate varied widths (modules aren't equal size)
-    let totalWidth = 0;
-    for (let i = 0; i < moduleCount; i++) {
-      const w = rnd(0.08, 0.25);
-      moduleWidths.push(w);
-      totalWidth += w;
-    }
-    // Normalize to fill usable space
-    for (let i = 0; i < moduleCount; i++) {
-      moduleWidths[i] = (moduleWidths[i] / totalWidth) * usableWidth;
-    }
-
-    // Create modules with gaps
-    let pos = 0;
-    for (let i = 0; i < moduleCount; i++) {
-      const xStart = MARGIN + pos * scoreWidth;
-      const xEnd = MARGIN + (pos + moduleWidths[i]) * scoreWidth;
-      const sec = new Section(i, moduleCount, xStart, xEnd);
-      sec.isModule = true;  // Flag for special module rendering
-      sec.moduleNumber = i + 1;  // Display number (1-indexed)
-      sec.hasBorder = true;  // Modules have visible borders
-      sections.push(sec);
-      pos += moduleWidths[i] + gapRatio;
-    }
   } else if (features.structure === "palindrome") {
     // Palindrome: sections mirror around a variable point (not always center)
     // mirrorPoint is 0.3-0.7 (where 0.5 = center)
