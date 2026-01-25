@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.37.0] - 2026-01-26
+
+### Added
+
+**Expanded Energy and Grouping Parameters**
+
+Added 10 new diverse values to each parameter for greater interpretive variety.
+
+**New Energy Values (10):**
+
+| Value | Character | Effect |
+|-------|-----------|--------|
+| Trembling | Nervous, shaky, anxious | Moderate density, tight spacing |
+| Surging | Wave-like building/receding | Variable, dynamic |
+| Crystalline | Sharp, precise, brittle | Moderate, even spacing |
+| Smoldering | Slow burn, latent intensity | Low density, compact |
+| Fractured | Broken, interrupted | Variable |
+| Gravitational | Heavy, weighted, pulled down | High density, tight |
+| Ascending | Rising, lifting upward | Moderate-high |
+| Scattered | Dispersed, unfocused | Low density, wide spacing |
+| Coiled | Tense, ready to spring | High density, very tight |
+| Ethereal | Light, otherworldly | Very low density, airy |
+
+**New Grouping Values (10):**
+
+| Value | Pattern | Description |
+|-------|---------|-------------|
+| Spiral | 5-8 units | Rotating cyclical patterns |
+| Radial | 4-6 units | Emanating from center outward |
+| Fragmentary | 4-8 units | Broken, discontinuous pieces |
+| Interlocking | 4-8 units | Puzzle-like fitting together |
+| Orbital | 5-9 units | Revolving around center |
+| Branching | 4-8 units | Tree-like splitting |
+| Convergent | 4-6 units | Coming together to a point |
+| Divergent | 4-6 units | Spreading outward from source |
+| Recursive | 4-8 units | Self-similar nested (fractal) |
+| Cellular | 3-6 units | Grid-like independent cells |
+
+### Summary
+
+- **Energy**: 14 → 24 values
+- **Grouping**: 12 → 22 values
+
+---
+
 ## [3.36.0] - 2026-01-26
 
 ### Changed

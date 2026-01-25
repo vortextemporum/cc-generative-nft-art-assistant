@@ -69,7 +69,7 @@ How densely packed the notation elements are.
 | Sparse | 18% | 0.12-0.28 | Minimal, spacious notation |
 | Extreme | 9% | 0.15-0.25 or 0.88-0.98 | Very sparse or very dense |
 
-### Energy
+### Energy (24 values)
 The character/quality of visual movement and interpretive energy. These terms are designed to be semantically meaningful for graphic score performers, replacing traditional tempo markings.
 
 | Value | Effect | Description |
@@ -88,8 +88,18 @@ The character/quality of visual movement and interpretive energy. These terms ar
 | Volatile | Random variation | Unpredictable, changeable |
 | Meditative | Very low density | Deep listening, inner focus (Oliveros-inspired) |
 | Cascading | Higher density | Falling, descending energy |
+| **Trembling** | Moderate, tight spacing | Nervous, shaky, anxious vibration |
+| **Surging** | Variable, wave-like | Building and receding like waves |
+| **Crystalline** | Moderate, even spacing | Sharp, precise, brittle, angular quality |
+| **Smoldering** | Low density, compact | Slow burn, latent intensity beneath surface |
+| **Fractured** | Variable | Broken, interrupted, discontinuous |
+| **Gravitational** | High density, tight | Heavy, weighted, pulled downward |
+| **Ascending** | Moderate-high | Rising, lifting, upward momentum |
+| **Scattered** | Low density, wide spacing | Dispersed, unfocused, diffuse |
+| **Coiled** | High density, very tight | Tense, compressed, ready to spring |
+| **Ethereal** | Very low density, airy | Light, otherworldly, barely present |
 
-### Grouping
+### Grouping (22 values)
 How visual elements cluster and relate. These describe structural patterns meaningful for graphic score interpretation, replacing traditional time signatures.
 
 | Value | Grouping Unit | Description |
@@ -106,6 +116,16 @@ How visual elements cluster and relate. These describe structural patterns meani
 | Layered | Variable | Multiple simultaneous streams |
 | Mobile | Variable | Reorderable units (Brown's mobiles) |
 | Breath-based | 3-6 (ternary) | Tied to breathing cycles (Oliveros style) |
+| **Spiral** | 5-8 (binary) | Rotating, cyclical patterns curving inward/outward |
+| **Radial** | 4-6 (binary) | Emanating from center point outward |
+| **Fragmentary** | 4-8 (variable) | Broken, discontinuous, scattered pieces |
+| **Interlocking** | 4-8 (binary) | Puzzle-like fitting together of units |
+| **Orbital** | 5-9 (binary) | Revolving around a gravitational center |
+| **Branching** | 4-8 (binary) | Tree-like splitting and subdivision |
+| **Convergent** | 4-6 (binary) | Multiple streams coming together to a point |
+| **Divergent** | 4-6 (binary) | Spreading outward from a single source |
+| **Recursive** | 4-8 (binary) | Self-similar nested patterns (fractal-like) |
+| **Cellular** | 3-6 (binary) | Grid-like independent cell units |
 
 ---
 
@@ -671,6 +691,7 @@ All outputs use a standardized double-line frame border:
 
 ## Version History
 
+- **v3.37.0** - Expanded Energy to 24 values and Grouping to 22 values with diverse new options
 - **v3.36.0** - Renamed Tempo → Energy (14 values) and Time Signature → Grouping (12 values) for graphic score semantics
 - **v3.35.x** - PRNG consistency fixes, panzoom viewer, dark palette print-friendly
 - **v3.32.0** - Added SoundMap mode (Annea Lockwood)

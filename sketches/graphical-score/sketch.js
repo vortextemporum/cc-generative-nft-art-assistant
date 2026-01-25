@@ -891,7 +891,18 @@ function generateFeatures() {
     "Processional",   // Linear, through-composed movement
     "Layered",        // Multiple simultaneous streams
     "Mobile",         // Reorderable units (Brown's mobiles)
-    "Breath-based"    // Tied to breathing cycles (Oliveros)
+    "Breath-based",   // Tied to breathing cycles (Oliveros)
+    // New grouping patterns (v3.37.0)
+    "Spiral",         // Rotating, cyclical patterns that curve inward/outward
+    "Radial",         // Emanating from center point outward
+    "Fragmentary",    // Broken, discontinuous, scattered pieces
+    "Interlocking",   // Puzzle-like fitting together of units
+    "Orbital",        // Revolving around a gravitational center
+    "Branching",      // Tree-like splitting and subdivision
+    "Convergent",     // Multiple streams coming together to a point
+    "Divergent",      // Spreading outward from a single source
+    "Recursive",      // Self-similar nested patterns (fractals)
+    "Cellular"        // Grid-like independent cell units
   ];
   const selectedGrouping = rndChoice(groupingPatterns);
 
@@ -993,6 +1004,91 @@ function generateFeatures() {
       while (accentPattern.length < beatGrouping) accentPattern.push(0.4);
       groupingCycle = 1;
       break;
+    // New grouping patterns (v3.37.0)
+    case "Spiral":
+      // Rotating, cyclical - accents spiral through positions
+      beatGrouping = rndChoice([5, 6, 7, 8]);
+      beatSubdivision = 2;
+      accentPattern = Array.from({ length: beatGrouping }, (_, i) =>
+        0.4 + 0.6 * Math.abs(Math.sin(i * Math.PI / beatGrouping)));
+      groupingCycle = 2;
+      break;
+    case "Radial":
+      // Emanating from center - strong center, fading outward
+      beatGrouping = rndChoice([4, 5, 6]);
+      beatSubdivision = 2;
+      const radialMid = Math.floor(beatGrouping / 2);
+      accentPattern = Array.from({ length: beatGrouping }, (_, i) =>
+        1.0 - 0.5 * Math.abs(i - radialMid) / radialMid);
+      groupingCycle = 1;
+      break;
+    case "Fragmentary":
+      // Broken, discontinuous - irregular gaps
+      beatGrouping = rndInt(4, 8);
+      beatSubdivision = rndChoice([2, 3]);
+      isAsymmetric = true;
+      accentPattern = Array.from({ length: beatGrouping }, () =>
+        rndBool(0.6) ? rnd(0.7, 1.0) : rnd(0.1, 0.3));
+      groupingCycle = rndInt(1, 3);
+      break;
+    case "Interlocking":
+      // Puzzle-like - alternating strong/weak creating mesh
+      beatGrouping = rndChoice([4, 6, 8]);
+      beatSubdivision = 2;
+      accentPattern = Array.from({ length: beatGrouping }, (_, i) =>
+        (i % 2 === 0) ? 0.9 : 0.5);
+      groupingCycle = 2;
+      break;
+    case "Orbital":
+      // Revolving - periodic emphasis like planetary motion
+      beatGrouping = rndChoice([5, 7, 9]);
+      beatSubdivision = 2;
+      isAsymmetric = true;
+      accentPattern = Array.from({ length: beatGrouping }, (_, i) =>
+        0.5 + 0.5 * Math.cos(i * 2 * Math.PI / beatGrouping));
+      groupingCycle = 1;
+      break;
+    case "Branching":
+      // Tree-like - binary splitting pattern
+      beatGrouping = rndChoice([4, 8]);
+      beatSubdivision = 2;
+      accentPattern = beatGrouping === 4
+        ? [1.0, 0.5, 0.7, 0.5]
+        : [1.0, 0.3, 0.6, 0.3, 0.8, 0.3, 0.5, 0.3];
+      groupingCycle = 1;
+      break;
+    case "Convergent":
+      // Coming together - building toward climax
+      beatGrouping = rndChoice([4, 5, 6]);
+      beatSubdivision = 2;
+      accentPattern = Array.from({ length: beatGrouping }, (_, i) =>
+        0.4 + 0.6 * (i / (beatGrouping - 1)));
+      groupingCycle = 1;
+      break;
+    case "Divergent":
+      // Spreading outward - strong start, dispersing
+      beatGrouping = rndChoice([4, 5, 6]);
+      beatSubdivision = 2;
+      accentPattern = Array.from({ length: beatGrouping }, (_, i) =>
+        1.0 - 0.5 * (i / (beatGrouping - 1)));
+      groupingCycle = 1;
+      break;
+    case "Recursive":
+      // Self-similar nested - fractal-like emphasis
+      beatGrouping = rndChoice([4, 8]);
+      beatSubdivision = 2;
+      accentPattern = beatGrouping === 4
+        ? [1.0, 0.4, 0.7, 0.4]  // 2-level nesting
+        : [1.0, 0.3, 0.5, 0.3, 0.7, 0.3, 0.5, 0.3];  // 3-level nesting
+      groupingCycle = 1;
+      break;
+    case "Cellular":
+      // Grid-like independent units - equal emphasis
+      beatGrouping = rndChoice([3, 4, 5, 6]);
+      beatSubdivision = 2;
+      accentPattern = Array.from({ length: beatGrouping }, () => rnd(0.6, 0.8));
+      groupingCycle = 1;
+      break;
     default:
       beatGrouping = 4;
       beatSubdivision = 2;
@@ -1016,7 +1112,18 @@ function generateFeatures() {
     "Pulsating",      // Regular rhythmic energy
     "Volatile",       // Unpredictable, changeable
     "Meditative",     // Deep listening, inner focus (Oliveros)
-    "Cascading"       // Falling, descending energy
+    "Cascading",      // Falling, descending energy
+    // New energy values (v3.37.0)
+    "Trembling",      // Nervous, shaky, anxious vibration
+    "Surging",        // Wave-like building and receding
+    "Crystalline",    // Sharp, precise, brittle, angular
+    "Smoldering",     // Slow burn, latent intensity beneath surface
+    "Fractured",      // Broken, interrupted, discontinuous
+    "Gravitational",  // Heavy, weighted, pulled downward
+    "Ascending",      // Rising, lifting, upward momentum
+    "Scattered",      // Dispersed, unfocused, diffuse
+    "Coiled",         // Tense, compressed, ready to spring
+    "Ethereal"        // Light, otherworldly, barely present
   ];
   const selectedEnergy = rndChoice(energyValues);
 
@@ -1082,6 +1189,57 @@ function generateFeatures() {
     case "Cascading":
       energyModifier = 1.15;
       energySpacing = 0.85;
+      break;
+    // New energy values (v3.37.0)
+    case "Trembling":
+      // Nervous, shaky - moderate density with tight spacing
+      energyModifier = 1.0;
+      energySpacing = 0.75;
+      break;
+    case "Surging":
+      // Wave-like - variable, building and receding
+      energyModifier = rnd(0.8, 1.25);
+      energySpacing = rnd(0.8, 1.2);
+      break;
+    case "Crystalline":
+      // Sharp, precise - moderate density, even spacing
+      energyModifier = 0.95;
+      energySpacing = 1.05;
+      break;
+    case "Smoldering":
+      // Slow burn - low density but compact
+      energyModifier = 0.7;
+      energySpacing = 0.9;
+      break;
+    case "Fractured":
+      // Broken, interrupted - moderate with irregular feel
+      energyModifier = rnd(0.85, 1.1);
+      energySpacing = rnd(0.9, 1.15);
+      break;
+    case "Gravitational":
+      // Heavy, weighted - higher density, tight
+      energyModifier = 1.25;
+      energySpacing = 0.75;
+      break;
+    case "Ascending":
+      // Rising, lifting - moderate building upward
+      energyModifier = 1.1;
+      energySpacing = 0.95;
+      break;
+    case "Scattered":
+      // Dispersed, diffuse - low density, wide spacing
+      energyModifier = 0.6;
+      energySpacing = 1.4;
+      break;
+    case "Coiled":
+      // Tense, compressed - high density, very tight
+      energyModifier = 1.35;
+      energySpacing = 0.7;
+      break;
+    case "Ethereal":
+      // Light, barely present - very low density, airy
+      energyModifier = 0.45;
+      energySpacing = 1.7;
       break;
     default:
       energyModifier = 1.0;
