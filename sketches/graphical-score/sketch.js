@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.15.0
+ * Graphical Score v3.16.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -644,6 +644,50 @@ function generateFeatures() {
     "Lento", "Adagio", "Andante", "Moderato", "Allegro",
     "Presto", "Senza tempo", "Liberamente", "Rubato"
   ];
+  const selectedTempo = rndChoice(tempoMarkings);
+
+  // Tempo affects density and spacing
+  // Slow tempos = more space, less density
+  // Fast tempos = compressed, denser
+  // Free tempos = variable
+  let tempoModifier = 1.0;
+  let tempoSpacing = 1.0;  // Affects element spacing
+  switch (selectedTempo) {
+    case "Lento":
+      tempoModifier = 0.7;
+      tempoSpacing = 1.4;
+      break;
+    case "Adagio":
+      tempoModifier = 0.8;
+      tempoSpacing = 1.25;
+      break;
+    case "Andante":
+      tempoModifier = 0.9;
+      tempoSpacing = 1.1;
+      break;
+    case "Moderato":
+      tempoModifier = 1.0;
+      tempoSpacing = 1.0;
+      break;
+    case "Allegro":
+      tempoModifier = 1.15;
+      tempoSpacing = 0.85;
+      break;
+    case "Presto":
+      tempoModifier = 1.3;
+      tempoSpacing = 0.7;
+      break;
+    case "Senza tempo":
+    case "Liberamente":
+    case "Rubato":
+      // Variable - slight random variation
+      tempoModifier = rnd(0.85, 1.15);
+      tempoSpacing = rnd(0.9, 1.2);
+      break;
+  }
+
+  // Apply tempo modifier to density
+  const effectiveDensityValue = Math.min(0.98, Math.max(0.12, densityValue * tempoModifier));
 
   // Contrast
   const contrastValue = rnd(0.2, 0.9);
@@ -666,7 +710,8 @@ function generateFeatures() {
     sectionCount,
     density,
     densityRarity,
-    densityValue,
+    densityValue: effectiveDensityValue,  // Tempo-modified density
+    baseDensityValue: densityValue,        // Original density before tempo
     contrastValue,
 
     // Visuals
@@ -676,7 +721,9 @@ function generateFeatures() {
 
     // Musical aesthetics
     timeSignature: rndChoice(timeSignatures),
-    tempo: rndChoice(tempoMarkings),
+    tempo: selectedTempo,
+    tempoModifier,    // Affects density (0.7-1.3)
+    tempoSpacing,     // Affects element spacing (0.7-1.4)
 
     // Technical
     seed: hash.slice(2, 10),
