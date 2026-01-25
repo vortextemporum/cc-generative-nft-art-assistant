@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.15.0] - 2026-01-25
+
+### Added
+
+**New Structure Type: Fragmentary** - Irregular section widths creating tension and interruption:
+
+- **fragmentary** (12% probability) - 5-9 sections with varying widths
+  - Some sections are narrow "interruptions" (3-8% width)
+  - Others are wider (10-25% width)
+  - Narrow sections have reduced density (0.5x multiplier)
+  - Solid bold divider lines for narrow sections, dashed for wider ones
+  - Creates urgent, fragmented aesthetic
+
+### Changed
+
+- Structure probabilities rebalanced:
+  - flowing: 40% → 35%
+  - sectioned: 30% → 25%
+  - mathematical: 20% → 18%
+  - fragmentary: NEW 12%
+  - palindrome: 10% (unchanged)
+
+---
+
 ## [3.14.0] - 2026-01-25
 
 ### Added
