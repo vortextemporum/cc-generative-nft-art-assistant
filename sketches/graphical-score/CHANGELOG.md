@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.29.0] - 2026-01-25
+
+### Added
+
+**Three New Modes completing the 7-mode expansion (21 total modes)**:
+
+#### Indigenous Mode (Raven Chacon) - v3.27.0
+Flag-scores, land-based symbols, Indigenous perspectives on sound and space.
+
+Raven Chacon (b. 1977) is a Diné (Navajo) composer who creates flag-scores and land-based notations, drawing on Indigenous perspectives of sound, space, and environment. Winner of the 2022 Pulitzer Prize in Music.
+
+**New palette**: `indigenousTurquoise` - Turquoise, earth, and sky aesthetic
+
+16 drawing functions including flag symbols, land markers, wind directions, horizon lines, celestial marks, water/fire/earth symbols, gathering circles, cardinal points, seasonal marks, voice contours, drum patterns.
+
+#### DeepListening Mode (Pauline Oliveros) - v3.28.0
+Meditation-based scores, mandala patterns, breath and awareness notation.
+
+Pauline Oliveros (1932-2016) developed Deep Listening practice integrating meditation and awareness into musical practice. Her scores often feature mandala-like circular patterns and breath/attention-based instructions.
+
+16 drawing functions including mandala circles, breath cycles, awareness foci, concentric rings, meditation text, expansion/contraction arrows, center points, radiating lines, pulse marks, attention zones, silence fields, listening depths.
+
+#### SoundMap Mode (Annea Lockwood) - v3.29.0
+Geographic notation, river maps, environmental sound mapping.
+
+Annea Lockwood (b. 1939) creates scores based on river maps, geography, and environmental sound mapping. Her work explores the sonic characteristics of places and waterways.
+
+16 drawing functions including river lines, topographic contours, location markers, sound sources, flow arrows, confluence points, watershed boundaries, elevation marks, field recording symbols, environmental zones, migration paths, echo locations.
+
+---
+
 ## [3.26.0] - 2026-01-25
 
 ### Added

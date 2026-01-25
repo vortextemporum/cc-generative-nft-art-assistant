@@ -1,14 +1,14 @@
-# Graphical Score v3.26.0 - AI Assistant Guide
+# Graphical Score v3.29.0 - AI Assistant Guide
 
 ## Project Overview
 
-A generative graphical score featuring **18 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
+A generative graphical score featuring **21 distinct modes** inspired by 20th/21st century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.26.0
+**Current Version:** 3.29.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
-## The 18 Modes
+## The 21 Modes
 
 ### Original Modes (v2.0)
 
@@ -42,6 +42,9 @@ A generative graphical score featuring **18 distinct modes** inspired by 20th ce
 | **Polymorphic** | Logothetis | Invented symbol system, elastic time, gravity shapes, sound masses |
 | **Theater** | Kagel | Instrumental theater, stage directions, object notation, absurdist marks |
 | **Cues** | Christian Wolff | Participatory cueing, conditional brackets, listening indicators |
+| **Indigenous** | Raven Chacon | Flag-scores, land markers, cardinal points, gathering circles |
+| **DeepListening** | Pauline Oliveros | Mandala circles, breath cycles, meditation text, awareness foci |
+| **SoundMap** | Annea Lockwood | River lines, topographic contours, environmental zones, listening posts |
 
 ## Blending System
 
@@ -68,7 +71,7 @@ graphical-score/
     └── TECHNICAL.md    # Implementation details
 ```
 
-## Palettes (21 total)
+## Palettes (22 total)
 
 ### Archival (5)
 - `sepia`, `manuscript`, `parchment`, `aged`, `blueprint`
@@ -94,6 +97,7 @@ graphical-score/
 - `polymorphicOrange` - Orange/sepia Vienna 1960s aesthetic for Polymorphic mode
 - `theaterRed` - Dramatic red/black aesthetic for Theater mode
 - `cuesGreen` - Clean green "go/cue" aesthetic for Cues mode
+- `indigenousTurquoise` - Turquoise, earth, sky aesthetic for Indigenous mode
 
 ## Key Functions
 
@@ -447,6 +451,60 @@ graphical-score/
 - `drawCuesPlaySymbols()` - Triangle play symbols
 - `drawCuesPauseIndicators()` - Double vertical bar pause
 - `drawCuesGroupBrackets()` - Curly brackets grouping players
+
+### Indigenous Mode (v3.27.0 - Raven Chacon)
+- `drawIndigenousFlagSymbols()` - Flags as notation (inspired by flag-scores)
+- `drawIndigenousLandMarkers()` - Location/place markers
+- `drawIndigenousWindDirections()` - Wind direction with wavy lines
+- `drawIndigenousHorizonLines()` - Horizon with landscape features
+- `drawIndigenousCelestialMarks()` - Sun, moon, star symbols
+- `drawIndigenousWaterSymbols()` - Wavy water lines
+- `drawIndigenousFireSymbols()` - Flame shapes
+- `drawIndigenousEarthSymbols()` - Layered earth with growth marks
+- `drawIndigenousPathwayLines()` - Trail paths with footprints
+- `drawIndigenousGatheringCircles()` - Circles with people marks
+- `drawIndigenousCardinalPoints()` - Four directions (N/S/E/W)
+- `drawIndigenousSeasonalMarks()` - Circle divided into seasons
+- `drawIndigenousSilenceSpaces()` - Empty/silent spaces
+- `drawIndigenousVoiceContours()` - Voice/singing contour lines
+- `drawIndigenousDrumPatterns()` - Drum beat patterns
+- `drawIndigenousBreathMarks()` - Breath indicators
+
+### DeepListening Mode (v3.28.0 - Pauline Oliveros)
+- `drawDeepListeningMandalaCircles()` - Concentric mandala circles
+- `drawDeepListeningBreathCycles()` - Inhale/exhale curve visualization
+- `drawDeepListeningAwarenessFoci()` - Target-like focus points
+- `drawDeepListeningConcentricRings()` - Expanding rings
+- `drawDeepListeningMeditationText()` - Meditation instruction words
+- `drawDeepListeningExpansionArrows()` - Outward-pointing arrows
+- `drawDeepListeningContractionArrows()` - Inward-pointing arrows
+- `drawDeepListeningCenterPoints()` - Emphasized center points
+- `drawDeepListeningRadiatingLines()` - Lines radiating from center
+- `drawDeepListeningPulseMarks()` - Heartbeat-like pulse lines
+- `drawDeepListeningAttentionZones()` - Rounded attention areas
+- `drawDeepListeningSilenceFields()` - Areas of silence
+- `drawDeepListeningListeningDepths()` - Depth indicators
+- `drawDeepListeningSonicEnvironment()` - Environmental sound representation
+- `drawDeepListeningBodyAwareness()` - Body outline with awareness marks
+- `drawDeepListeningGroupConnections()` - Connections between group members
+
+### SoundMap Mode (v3.29.0 - Annea Lockwood)
+- `drawSoundMapRiverLines()` - Meandering river lines
+- `drawSoundMapTopographicContours()` - Topographic contour lines
+- `drawSoundMapLocationMarkers()` - Recording location pins
+- `drawSoundMapSoundSources()` - Sound wave emanation points
+- `drawSoundMapFlowArrows()` - Water/sound flow arrows
+- `drawSoundMapConfluencePoints()` - River/sound meeting points
+- `drawSoundMapWatershedBoundaries()` - Watershed ridge lines
+- `drawSoundMapElevationMarks()` - Elevation triangle markers
+- `drawSoundMapFieldRecordingSymbols()` - Microphone symbols
+- `drawSoundMapEnvironmentalZones()` - Labeled environment areas
+- `drawSoundMapMigrationPaths()` - Animal migration paths
+- `drawSoundMapEchoLocations()` - Echo/reverb rings
+- `drawSoundMapDensityGradients()` - Sound density gradient areas
+- `drawSoundMapTemporalLayers()` - Time-based layering
+- `drawSoundMapSpatialCoordinates()` - Coordinate grid overlay
+- `drawSoundMapListeningPosts()` - Headphone listening station markers
 
 ### Engraving Helpers (v2.1.0)
 - `drawHatching(x, y, w, h, angle, spacing, intensity)` - Line hatching
