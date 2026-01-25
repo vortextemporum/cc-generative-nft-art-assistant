@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.33.0] - 2026-01-25
+
+### Fixed
+
+**Improved Vertical Distribution for All Modes**
+
+Extended the even distribution pattern to include vertical positioning. Elements now alternate between top, middle, and bottom regions within voice boundaries (using `((i % 3) / 2) * height` pattern) with jitter for natural variation. This prevents all elements from clustering at similar Y positions.
+
+**Stripsody mode vertical fixes:**
+- `drawStripsodyImpact`: Vertical distribution with 3-row alternation
+- `drawStripsodyPuffs`: Vertical distribution with 3-row alternation
+- `drawStripsodyWobble`: Vertical distribution with 3-row alternation
+- `drawStripsodyDroplets`: Vertical distribution with 3-row alternation
+- `drawStripsodySpirals`: Vertical distribution with 3-row alternation
+
+**Mobile mode horizontal + vertical fixes:**
+- `drawMobileFloatingCells`: Both horizontal and vertical distribution
+- `drawMobileBranches`: Both horizontal and vertical distribution
+- `drawMobilePivotPoints`: Both horizontal and vertical distribution
+- `drawMobileCellClusters`: Both horizontal and vertical distribution
+- `drawMobileBalancedArms`: Both horizontal and vertical distribution
+- `drawMobileRotatingGroups`: Both horizontal and vertical distribution
+
+**Polymorphic mode horizontal + vertical fixes:**
+- `drawPolymorphicLogothetisGlyphs`: Added vertical distribution
+- `drawPolymorphicTextureFields`: Both horizontal and vertical distribution
+- `drawPolymorphicSoundMasses`: Both horizontal and vertical distribution
+- `drawPolymorphicTransformChains`: Both horizontal and vertical distribution
+- `drawPolymorphicExpandingForms`: Both horizontal and vertical distribution
+- `drawPolymorphicRotationalGlyphs`: Both horizontal and vertical distribution
+
+**Theater mode fixes:**
+- `drawTheaterStageDirections`: Added vertical distribution
+- `drawTheaterActionSymbols`: Both horizontal and vertical distribution
+- `drawTheaterObjectNotation`: Both horizontal and vertical distribution
+- `drawTheaterSpatialPositions`: Both horizontal and vertical distribution
+- `drawTheaterLightingCues`: Both horizontal and vertical distribution
+- `drawTheaterAbsurdistMarks`: Both horizontal and vertical distribution
+
+**Cues mode fixes:**
+- `drawCuesCueSymbols`: Added vertical distribution
+- `drawCuesConditionalBrackets`: Both horizontal and vertical distribution
+
+Also increased minimum element counts from 1 to 2 in many functions to ensure better canvas coverage.
+
+---
+
 ## [3.32.0] - 2026-01-25
 
 ### Fixed
