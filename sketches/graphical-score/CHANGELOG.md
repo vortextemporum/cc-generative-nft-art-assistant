@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.31.0] - 2026-01-25
+
+### Fixed
+
+**Improved Element Distribution for Newer Modes**
+
+Elements in the newer modes (Mobile, Polymorphic, Theater, Cues, Indigenous, DeepListening, SoundMap) now distribute evenly across the full section width instead of clustering randomly. This ensures the canvas is properly filled.
+
+- `drawMobileFloatingCells`: Distribute cells evenly across section (5-9 cells)
+- `drawPolymorphicLogothetisGlyphs`: Distribute glyphs evenly (6-12 glyphs)
+- `drawTheaterStageDirections`: Distribute directions evenly (4-7 directions)
+- `drawCuesCueSymbols`: Distribute cue symbols evenly (5-10 cues)
+- `drawIndigenousGatheringCircles`: Distribute circles evenly (3-6 circles)
+- `drawDeepListeningMandalaCircles`: Draw multiple mandalas across section (3-6 mandalas)
+- `drawSoundMapRiverLines`: Rivers now span full section width (2-5 rivers)
+
+---
+
 ## [3.30.0] - 2026-01-25
 
 ### Added
