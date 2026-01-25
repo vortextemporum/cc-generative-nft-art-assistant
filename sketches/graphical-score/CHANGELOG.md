@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.35.1] - 2026-01-25
+
+### Added
+
+**Pan and Zoom Viewer for Hi-Res Modes**
+
+Added [Panzoom](https://github.com/timmywil/panzoom) library for navigating hi-res and print-friendly renders within a fixed A3-ratio container.
+
+- Fixed A3-ratio container (1587:1122 aspect ratio) that doesn't overflow UI
+- Mouse wheel zoom and drag-to-pan in hi-res/print-friendly modes
+- Zoom controls (+, −, reset) appear in bottom-right when pan/zoom is active
+- Supports pinch-to-zoom on touch devices
+- `renderModeChanged` event dispatch from `setHiRes()` and `setPrintFriendly()` for UI synchronization
+- Button text updates whether triggered by button click or keyboard shortcut
+- Print-Friendly button now toggles view mode instead of auto-downloading
+
+---
+
+## [3.35.0] - 2026-01-25
+
+### Fixed
+
+**Hi-Res and Print-Friendly Rendering Consistency**
+
+Fixed issue where hi-res mode and print-friendly mode produced different renders. The paper texture loops were consuming different numbers of random values (800 vs 300 fibers, 6000 vs 2000 grain), shifting the PRNG sequence for all subsequent musical content.
+
+- Paper texture loops now always consume max iterations (800 fibers, 6000 grain) for PRNG consistency
+- Drawing is conditionally skipped based on mode, but random values always consumed
+- `drawDecorativeBorder`, `drawCornerOrnaments`, `drawFoxingSpots` updated for consistency
+- Musical content now renders identically across all modes (normal, hi-res, print-friendly)
+
+### Changed
+
+**Print-Friendly Mode Toggle**
+
+- Added `setPrintFriendly(enabled)` function to toggle print mode without auto-download
+- Press **P** now toggles print-friendly view (no longer auto-saves)
+- `savePrintFriendly()` still available for saving print version with download
+- `window.setPrintFriendly` exposed for UI integration
+
+---
+
 ## [3.34.1] - 2026-01-25
 
 ### Fixed
