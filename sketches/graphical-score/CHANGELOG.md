@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.26.0] - 2026-01-25
+
+### Added
+
+**New Mode: Cues (Christian Wolff)** - Participatory cueing system with performer interdependence and conditional instructions.
+
+Christian Wolff (b. 1934) is an American composer known for developing participatory notation where performers cue each other, creating music through social interaction. His scores emphasize listening, response, and coordination between players.
+
+**New palette**: `cuesGreen` - Clean green aesthetic suggesting "go"/cue signals
+
+**16 drawing functions**:
+
+| Function | Description |
+|----------|-------------|
+| `drawCuesCueSymbols()` | Cue circles with numbers/letters/arrows |
+| `drawCuesConditionalBrackets()` | Brackets for if/then/else conditions |
+| `drawCuesResponseMarkers()` | Markers indicating response to others |
+| `drawCuesListeningIndicators()` | Ear symbols for active listening |
+| `drawCuesWaitSigns()` | Hand/clock symbols to wait |
+| `drawCuesCoordinationLines()` | Dashed lines connecting coordinated events |
+| `drawCuesPlayerNumbers()` | Boxed player numbers |
+| `drawCuesReactionArrows()` | Arrows showing reaction direction |
+| `drawCuesHoldSymbols()` | Fermata-like hold indicators |
+| `drawCuesReleaseMarks()` | Asterisk/bracket release marks |
+| `drawCuesAttentionPoints()` | Diamond with exclamation mark |
+| `drawCuesFlexibleDurations()` | Wavy lines for flexible timing |
+| `drawCuesMuteSymbols()` | Circle with X for muting |
+| `drawCuesPlaySymbols()` | Triangle play symbols |
+| `drawCuesPauseIndicators()` | Double vertical bar pause |
+| `drawCuesGroupBrackets()` | Curly brackets grouping players |
+
+This is the fourth of 7 new modes (18 total now).
+
+---
+
 ## [3.25.0] - 2026-01-25
 
 ### Added

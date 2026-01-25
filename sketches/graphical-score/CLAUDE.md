@@ -1,14 +1,14 @@
-# Graphical Score v3.25.0 - AI Assistant Guide
+# Graphical Score v3.26.0 - AI Assistant Guide
 
 ## Project Overview
 
-A generative graphical score featuring **17 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
+A generative graphical score featuring **18 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.25.0
+**Current Version:** 3.26.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
-## The 17 Modes
+## The 18 Modes
 
 ### Original Modes (v2.0)
 
@@ -41,6 +41,7 @@ A generative graphical score featuring **17 distinct modes** inspired by 20th ce
 | **Mobile** | Haubenstock-Ramati | Calder-inspired floating cells, dotted paths, multi-directional reading |
 | **Polymorphic** | Logothetis | Invented symbol system, elastic time, gravity shapes, sound masses |
 | **Theater** | Kagel | Instrumental theater, stage directions, object notation, absurdist marks |
+| **Cues** | Christian Wolff | Participatory cueing, conditional brackets, listening indicators |
 
 ## Blending System
 
@@ -67,7 +68,7 @@ graphical-score/
     └── TECHNICAL.md    # Implementation details
 ```
 
-## Palettes (20 total)
+## Palettes (21 total)
 
 ### Archival (5)
 - `sepia`, `manuscript`, `parchment`, `aged`, `blueprint`
@@ -92,6 +93,7 @@ graphical-score/
 - `mobileSilver` - Clean, modern silver aesthetic for Mobile mode
 - `polymorphicOrange` - Orange/sepia Vienna 1960s aesthetic for Polymorphic mode
 - `theaterRed` - Dramatic red/black aesthetic for Theater mode
+- `cuesGreen` - Clean green "go/cue" aesthetic for Cues mode
 
 ## Key Functions
 
@@ -427,6 +429,24 @@ graphical-score/
 - `drawTheaterPerformerPaths()` - Dotted paths with footprint markers
 - `drawTheaterAudienceMarks()` - Audience awareness/interaction marks
 - `drawTheaterDurationBars()` - Horizontal action duration bars
+
+### Cues Mode (v3.26.0 - Christian Wolff)
+- `drawCuesCueSymbols()` - Cue circles with numbers/letters/arrows
+- `drawCuesConditionalBrackets()` - Brackets for if/then/else conditions
+- `drawCuesResponseMarkers()` - Markers indicating response to others
+- `drawCuesListeningIndicators()` - Ear symbols for active listening
+- `drawCuesWaitSigns()` - Hand/clock symbols to wait
+- `drawCuesCoordinationLines()` - Dashed lines connecting coordinated events
+- `drawCuesPlayerNumbers()` - Boxed player numbers
+- `drawCuesReactionArrows()` - Arrows showing reaction direction
+- `drawCuesHoldSymbols()` - Fermata-like hold indicators
+- `drawCuesReleaseMarks()` - Asterisk/bracket release marks
+- `drawCuesAttentionPoints()` - Diamond with exclamation mark
+- `drawCuesFlexibleDurations()` - Wavy lines for flexible timing
+- `drawCuesMuteSymbols()` - Circle with X for muting
+- `drawCuesPlaySymbols()` - Triangle play symbols
+- `drawCuesPauseIndicators()` - Double vertical bar pause
+- `drawCuesGroupBrackets()` - Curly brackets grouping players
 
 ### Engraving Helpers (v2.1.0)
 - `drawHatching(x, y, w, h, angle, spacing, intensity)` - Line hatching
