@@ -1451,7 +1451,10 @@ function drawPaper() {
 }
 
 function drawDecorativeBorder() {
-  const borderStyle = rndInt(0, 3);
+  // Always consume random value for PRNG consistency
+  const randomBorderStyle = rndInt(0, 3);
+  // Use manual override if set, otherwise use random
+  const borderStyle = features.borderStyle !== undefined ? features.borderStyle : randomBorderStyle;
 
   const inset = 15 * scaleFactor;
   const innerInset = 20 * scaleFactor;
