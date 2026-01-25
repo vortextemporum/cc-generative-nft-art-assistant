@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.22.0] - 2026-01-25
+
+### Changed
+
+**Integrated Time Signature Influence into Drawing Functions** - Six functions now use beat grouping and accent patterns:
+
+| Function | Mode | Effect |
+|----------|------|--------|
+| `drawChanceDots()` | Chance | Dots placed on beat grid, size/opacity by accent |
+| `drawSparsePoints()` | Graph | Feldman-style points on grouped positions, duration lines favor downbeats |
+| `drawArtikulationClusters()` | Artikulation | Cluster tightness varies by accent, stronger beats = denser clusters |
+| `drawAnkhrasmationDots()` | Ankhrasmation | Dot count follows beatGrouping, size/opacity by accent |
+| `drawClusterPercussive()` | Cluster | Marks placed on beat grid, accent wedges favor downbeats |
+| `drawUpicStochasticPoints()` | UPIC | Gaussian mode clusters around beat positions, size by accent |
+
+These demonstrate how time signature creates visual rhythm - downbeats produce larger, heavier, more opaque elements while weak beats produce smaller, lighter ones.
+
+---
+
 ## [3.21.0] - 2026-01-25
 
 ### Added

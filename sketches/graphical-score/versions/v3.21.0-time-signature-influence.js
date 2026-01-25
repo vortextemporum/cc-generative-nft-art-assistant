@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.22.0
+ * Graphical Score v3.21.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -1561,23 +1561,13 @@ function drawArtikulationClusters(voice, section) {
     const cy = rnd(voice.yStart + 15, voice.yEnd - 15);
     const numMarks = Math.floor(rnd(15, 50) * features.densityValue);
 
-    // Spread marks with time signature grouping
-    const spreadX = 50 * scaleFactor;
-
     for (let i = 0; i < numMarks; i++) {
       const col = rndChoice(colors);
-      // Apply accent-based positioning - stronger beats cluster tighter
-      const accent = getAccentWeight(i);
-      const spreadMod = 1.5 - accent * 0.8;  // Strong beats = tighter clusters
-      const mx = cx + rndGaussian(0, spreadX * spreadMod);
+      const mx = cx + rndGaussian(0, 25 * scaleFactor);
       const my = cy + rndGaussian(0, 12 * scaleFactor);
-      // Size influenced by accent pattern
-      const baseSize = rnd(2, 8) * scaleFactor;
-      const size = getAccentedSize(baseSize, i);
+      const size = rnd(2, 8) * scaleFactor;
 
-      // Opacity stronger on accented positions
-      const opacityHex = Math.floor(0x80 + accent * 0x40).toString(16).padStart(2, '0');
-      fill(col + opacityHex);
+      fill(col + "aa");
       noStroke();
 
       if (rndBool(0.5)) {
@@ -2291,15 +2281,11 @@ function drawUpicPressureStrokes(voice, section) {
 
 function drawUpicStochasticPoints(voice, section) {
   // Probabilistically distributed points (Xenakis stochastic music)
-  // Now with time signature influence on density distribution
   const numPoints = Math.floor(rnd(30, 100) * features.densityValue);
   const distribution = rndInt(0, 3); // 0=uniform, 1=gaussian, 2=exponential
 
   noStroke();
-
-  // Divide section by beat grouping for density modulation
-  const beatGrouping = features.beatGrouping || 4;
-  const beatWidth = (section.xEnd - section.xStart) / beatGrouping;
+  fill(features.palette.ink);
 
   for (let i = 0; i < numPoints; i++) {
     let x, y;
@@ -2309,14 +2295,10 @@ function drawUpicStochasticPoints(voice, section) {
       x = rnd(section.xStart, section.xEnd);
       y = rnd(voice.yStart, voice.yEnd);
     } else if (distribution === 1) {
-      // Gaussian (clustered) - cluster around beat positions
-      const beatPos = i % beatGrouping;
-      const beatCenter = section.xStart + (beatPos + 0.5) * beatWidth;
-      const accent = getAccentWeight(beatPos);
-      // Stronger beats have tighter clusters
-      const spread = beatWidth * (0.8 - accent * 0.5);
-      x = beatCenter + rndGaussian(0, spread);
+      // Gaussian (clustered)
+      const cx = (section.xStart + section.xEnd) / 2;
       const cy = (voice.yStart + voice.yEnd) / 2;
+      x = cx + rndGaussian(0, section.width / 4);
       y = cy + rndGaussian(0, voice.height / 4);
     } else {
       // Exponential (sparse to dense)
@@ -2324,15 +2306,7 @@ function drawUpicStochasticPoints(voice, section) {
       y = rnd(voice.yStart, voice.yEnd);
     }
 
-    // Size influenced by position in beat pattern
-    const beatPos = Math.floor((x - section.xStart) / beatWidth) % beatGrouping;
-    const accent = getAccentWeight(beatPos);
-    const baseSize = rnd(1, 4) * scaleFactor;
-    const size = baseSize * (0.6 + accent * 0.6);
-
-    // Opacity follows accent
-    const opacityHex = Math.floor(0x60 + accent * 0x60).toString(16).padStart(2, '0');
-    fill(features.palette.ink + opacityHex);
+    const size = rnd(1, 4) * scaleFactor;
     ellipse(x, y, size, size);
   }
 }
@@ -3071,56 +3045,38 @@ function drawClusterSustainedTones(voice, section) {
 }
 
 function drawClusterPercussive(voice, section) {
-  // Percussive effect marks - placed on rhythmic grid
+  // Percussive effect marks
   const numMarks = Math.max(1, Math.floor(rnd(3, 7) * features.densityValue));
 
   stroke(features.palette.ink);
   noFill();
 
-  // Position marks on beat grid
-  const positions = getGroupedPositions(section.xStart + 15, section.xEnd - 15, numMarks);
-
   for (let m = 0; m < numMarks; m++) {
-    const pos = positions[m];
-    const x = pos.x;
+    const x = rnd(section.xStart + 15, section.xEnd - 15);
     const y = rnd(voice.yStart + 10, voice.yEnd - 10);
-
-    // Downbeats get accent wedges more often, weak beats get softer marks
-    let type;
-    if (pos.isDownbeat) {
-      type = rndBool(0.6) ? 1 : rndInt(0, 3);  // Accent wedges on downbeats
-    } else {
-      type = rndInt(0, 4);
-    }
-
-    // Size influenced by accent
-    const sizeMult = 0.7 + pos.accent * 0.6;
-    strokeWeight(features.lineWeight * scaleFactor * sizeMult);
+    const type = rndInt(0, 4);
+    strokeWeight(features.lineWeight * scaleFactor);
 
     if (type === 0) {
       // X mark (col legno battuto)
-      const s = 4 * scaleFactor * sizeMult;
-      line(x - s, y - s, x + s, y + s);
-      line(x - s, y + s, x + s, y - s);
+      line(x - 4 * scaleFactor, y - 4 * scaleFactor, x + 4 * scaleFactor, y + 4 * scaleFactor);
+      line(x - 4 * scaleFactor, y + 4 * scaleFactor, x + 4 * scaleFactor, y - 4 * scaleFactor);
     } else if (type === 1) {
-      // Accent wedge - larger on strong beats
-      const s = 6 * scaleFactor * sizeMult;
+      // Accent wedge
       beginShape();
-      vertex(x - s, y + s * 0.67);
-      vertex(x, y - s * 0.67);
-      vertex(x + s, y + s * 0.67);
+      vertex(x - 6 * scaleFactor, y + 4 * scaleFactor);
+      vertex(x, y - 4 * scaleFactor);
+      vertex(x + 6 * scaleFactor, y + 4 * scaleFactor);
       endShape();
     } else if (type === 2) {
       // Staccato dots
       fill(features.palette.ink);
-      const dotSize = 3 * scaleFactor * sizeMult;
-      ellipse(x, y, dotSize, dotSize);
+      ellipse(x, y, 3 * scaleFactor, 3 * scaleFactor);
       noFill();
     } else {
       // Tenuto line
-      strokeWeight(features.lineWeight * 2 * scaleFactor * sizeMult);
-      const lineLen = 5 * scaleFactor * sizeMult;
-      line(x - lineLen, y, x + lineLen, y);
+      strokeWeight(features.lineWeight * 2 * scaleFactor);
+      line(x - 5 * scaleFactor, y, x + 5 * scaleFactor, y);
     }
   }
 }
@@ -3410,29 +3366,20 @@ function drawGraphBoxes(voice, section) {
 function drawSparsePoints(voice, section) {
   const numPoints = Math.floor(rnd(3, 10) * features.densityValue * 0.5);
 
-  // Use grouped positions for Feldman-style rhythmic placement
-  const positions = getGroupedPositions(section.xStart + 20, section.xEnd - 20, numPoints);
-
   for (let i = 0; i < numPoints; i++) {
-    const pos = positions[i];
-    const x = pos.x;
+    const x = rnd(section.xStart + 20, section.xEnd - 20);
     const y = rnd(voice.yStart + 10, voice.yEnd - 10);
-    // Downbeats get larger noteheads
-    const baseSize = rnd(3, 8) * scaleFactor;
-    const size = getAccentedSize(baseSize, i);
+    const size = rnd(3, 8) * scaleFactor;
 
     fill(features.palette.ink);
     noStroke();
     ellipse(x, y, size, size);
 
-    // Duration lines more likely on strong beats, length influenced by subdivision
-    const durationProb = pos.isDownbeat ? 0.6 : 0.3;
-    if (rndBool(durationProb)) {
+    // Duration line (Feldman style)
+    if (rndBool(0.4)) {
       stroke(features.palette.ink + "60");
       strokeWeight(0.5 * scaleFactor);
-      // Compound meters (subdivision=3) get longer durations
-      const durationMult = getSubdivision() === 3 ? 1.5 : 1.0;
-      const duration = rnd(15, 50) * scaleFactor * durationMult * pos.accent;
+      const duration = rnd(15, 50) * scaleFactor;
       line(x + size/2, y, x + size/2 + duration, y);
     }
   }
@@ -4159,20 +4106,12 @@ function drawChanceCurves(voice, section) {
 function drawChanceDots(voice, section) {
   const numDots = Math.floor(rnd(15, 50) * features.densityValue);
 
-  // Use time signature grouping for rhythmic dot placement
-  const positions = getGroupedPositions(section.xStart, section.xEnd, numDots);
-
   for (let i = 0; i < numDots; i++) {
-    const pos = positions[i];
-    const x = pos.x + rnd(-15, 15) * scaleFactor;  // Slight randomization
+    const x = rnd(section.xStart, section.xEnd);
     const y = rnd(voice.yStart, voice.yEnd);
-    // Size influenced by accent - downbeats are larger
-    const baseSize = rnd(1, 4) * scaleFactor;
-    const size = getAccentedSize(baseSize, i);
+    const size = rnd(1, 4) * scaleFactor;
 
-    // Opacity also affected by accent
-    const opacity = Math.floor(0x40 + pos.accent * 0x40).toString(16).padStart(2, '0');
-    fill(features.palette.ink + opacity);
+    fill(features.palette.ink + "70");
     noStroke();
     ellipse(x, y, size, size);
   }
@@ -9627,7 +9566,7 @@ function drawAnkhrasmationWaves(voice, section) {
 }
 
 function drawAnkhrasmationDots(voice, section) {
-  // Dot patterns (rhythmic accents) - now influenced by time signature
+  // Dot patterns (rhythmic accents)
   const colors = features.palette.colors ||
     ["#cc3300", "#0066cc", "#ffcc00", "#9933cc"];
 
@@ -9635,25 +9574,16 @@ function drawAnkhrasmationDots(voice, section) {
 
   noStroke();
 
-  // Use beat grouping to determine dots per group
-  const beatsPerGroup = features.beatGrouping || 4;
-
   for (let g = 0; g < numGroups; g++) {
     const x = rnd(section.xStart + 20, section.xEnd - 50);
     const y = rnd(voice.yStart + 12, voice.yEnd - 12);
-    // Number of dots follows beat grouping (or subdivision)
-    const numDots = features.isAsymmetric ? rndInt(2, beatsPerGroup) : beatsPerGroup;
+    const numDots = rndInt(2, 5);
     const spacing = rnd(8, 15) * scaleFactor;
-    const baseDotSize = rnd(4, 9) * scaleFactor;
+    const dotSize = rnd(4, 9) * scaleFactor;
     const c = rndChoice(colors);
 
+    fill(c);
     for (let d = 0; d < numDots; d++) {
-      // Size follows accent pattern - downbeats larger
-      const accent = getAccentWeight(d);
-      const dotSize = baseDotSize * (0.6 + accent * 0.6);
-      // Opacity also follows accent
-      const opacityHex = Math.floor(0x99 + accent * 0x66).toString(16).padStart(2, '0');
-      fill(c.slice(0, 7) + opacityHex);
       ellipse(x + d * spacing, y, dotSize, dotSize);
     }
   }
