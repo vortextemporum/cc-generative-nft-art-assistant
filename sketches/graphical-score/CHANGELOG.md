@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.30.0] - 2026-01-25
+
+### Added
+
+**Manual Parameter Selection UI**
+
+- New Generation panel in sidebar with Random/Manual toggle
+- Manual mode allows selection of all parameters:
+  - Primary mode (21 modes available)
+  - Secondary modes (multi-select for hybrid compositions)
+  - Blend type (dominant, sectional, voice-based)
+  - Voice count (1-12)
+  - Structure (9 types)
+  - Density (sparse, balanced, dense, extreme)
+  - Tempo (Largo through Presto)
+  - Time signature (common plus 5/4, 7/8, free)
+  - Palette (22 palettes with type indicator)
+- Controls sync with current features when switching to manual mode
+- Switching back to random mode resets to original hash-based features
+
+### Fixed
+
+- Updated `<title>` from v3.0.1 to v3.30.0 (21 Modes)
+- Updated header version display to v3.30.0
+- Added CSS for 7 new mode tags (Mobile, Polymorphic, Theater, Cues, Indigenous, DeepListening, SoundMap)
+
+### Changed
+
+- Exposed `window.getPalettes()` for dynamic palette access
+- Regenerate button behavior now respects generation mode:
+  - Random mode: generates new hash and all new features
+  - Manual mode: reapplies current manual settings
+
+---
+
 ## [3.29.0] - 2026-01-25
 
 ### Added
