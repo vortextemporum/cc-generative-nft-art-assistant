@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Graphical Score v3.34.1 - 21 Modes</title>
+  <title>Graphical Score v3.35.1 - 21 Modes</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -65,12 +66,40 @@
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      display: inline-block;
+      /* Fixed A3 landscape ratio container (1587:1122 ≈ 1.414:1) */
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 1587 / 1122;
+      position: relative;
     }
     #sketch-holder canvas {
       display: block;
-      max-width: 100%;
+      /* Override p5.js inline styles to fit container */
+      width: 100% !important;
+      height: 100% !important;
+    }
+    /* When panzoom is active, canvas needs native sizing for zoom */
+    #sketch-holder.panzoom-active canvas {
+      width: auto !important;
       height: auto !important;
+    }
+    .zoom-controls {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: none;
+      gap: 5px;
+      z-index: 10;
+    }
+    #sketch-holder.panzoom-active .zoom-controls {
+      display: flex;
+    }
+    .zoom-controls button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 1.2rem;
+      line-height: 1;
     }
 
     .sidebar {
@@ -377,7 +406,7 @@
 <body>
   <header>
     <div>
-      <h1>Graphical Score <span class="version">v3.32.0</span></h1>
+      <h1>Graphical Score <span class="version">v3.35.1</span></h1>
     </div>
     <div class="controls">
       <button id="btn-regenerate">Regenerate (R)</button>
@@ -389,7 +418,13 @@
 
   <div class="main-container">
     <div class="canvas-section">
-      <div id="sketch-holder"></div>
+      <div id="sketch-holder">
+        <div class="zoom-controls">
+          <button id="zoom-in" title="Zoom In">+</button>
+          <button id="zoom-out" title="Zoom Out">−</button>
+          <button id="zoom-reset" title="Reset View">⟲</button>
+        </div>
+      </div>
     </div>
 
     <div class="sidebar">
@@ -841,10 +876,15 @@
       const btn = document.getElementById('btn-hires');
       const isHiRes = btn.textContent.includes('Standard');
       window.setHiRes(!isHiRes);
-      btn.textContent = isHiRes ? 'Hi-Res (H)' : 'Standard (H)';
+      // UI updates handled by renderModeChanged event
     });
 
-    document.getElementById('btn-print').addEventListener('click', () => window.savePrintFriendly());
+    document.getElementById('btn-print').addEventListener('click', () => {
+      const btn = document.getElementById('btn-print');
+      const isPrintMode = btn.textContent.includes('Normal');
+      window.setPrintFriendly(!isPrintMode);
+      // UI updates handled by renderModeChanged event
+    });
 
     document.getElementById('btn-like').addEventListener('click', () => recordFeedback(true));
     document.getElementById('btn-dislike').addEventListener('click', () => recordFeedback(false));
@@ -866,6 +906,65 @@
       }
     });
 
+    // Panzoom instance
+    let panzoomInstance = null;
+
+    function initPanzoom() {
+      const holder = document.getElementById('sketch-holder');
+      const canvas = holder.querySelector('canvas');
+      if (!canvas) return;
+
+      // Destroy existing instance
+      if (panzoomInstance) {
+        panzoomInstance.destroy();
+        panzoomInstance = null;
+      }
+
+      holder.classList.add('panzoom-active');
+
+      // Initialize panzoom on the canvas
+      panzoomInstance = Panzoom(canvas, {
+        maxScale: 5,
+        minScale: 0.5,
+        contain: 'outside',
+        cursor: 'grab'
+      });
+
+      // Enable mouse wheel zoom
+      holder.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+
+      // Reset to fit view initially
+      panzoomInstance.reset();
+    }
+
+    function destroyPanzoom() {
+      const holder = document.getElementById('sketch-holder');
+      if (panzoomInstance) {
+        holder.removeEventListener('wheel', panzoomInstance.zoomWithWheel);
+        panzoomInstance.destroy();
+        panzoomInstance = null;
+      }
+      holder.classList.remove('panzoom-active');
+    }
+
+    window.addEventListener('renderModeChanged', (e) => {
+      const { hiRes, printFriendly } = e.detail;
+      const hiResBtn = document.getElementById('btn-hires');
+      const printBtn = document.getElementById('btn-print');
+
+      // Update button text
+      hiResBtn.textContent = hiRes ? 'Standard (H)' : 'Hi-Res (H)';
+      printBtn.textContent = printFriendly ? 'Normal View (P)' : 'Print-Friendly (P)';
+
+      // Toggle panzoom: normal mode fits, hi-res/print-friendly has pan/zoom
+      if (hiRes || printFriendly) {
+        // Small delay to let canvas resize first
+        setTimeout(initPanzoom, 100);
+      } else {
+        destroyPanzoom();
+      }
+    });
+
     window.addEventListener('load', () => {
       setTimeout(() => {
         initGenerationControls();
@@ -873,6 +972,17 @@
         updateFeaturesPanel();
         updatePalettePanel();
         updateFeedbackStats();
+
+        // Setup zoom control buttons
+        document.getElementById('zoom-in').addEventListener('click', () => {
+          if (panzoomInstance) panzoomInstance.zoomIn();
+        });
+        document.getElementById('zoom-out').addEventListener('click', () => {
+          if (panzoomInstance) panzoomInstance.zoomOut();
+        });
+        document.getElementById('zoom-reset').addEventListener('click', () => {
+          if (panzoomInstance) panzoomInstance.reset();
+        });
       }, 100);
     });
   </script>
