@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.34.0] - 2026-01-25
+
+### Fixed
+
+**Polyphonic Structure Section Coverage**
+
+Fixed the polyphonic structure to ensure the last section always extends to the right edge of the canvas. Previously, polyphonic sections could leave the rightmost portion of the canvas completely empty.
+
+- Last stream in polyphonic structure now always fills to the right edge
+- Increased default stream width from 25-50% to 35-60% for better coverage
+
+**Graph Mode Duration Stacks**
+
+- `drawDurationStacks`: Changed from random positioning to even distribution across section
+
+### Added
+
+**Debug Mode**
+
+Added visual debugging tools to diagnose section coverage issues:
+
+- `window.setDebugMode(true)` - Shows colored section boundaries overlaid on the score
+- `window.getSections()` - Returns array of section objects for inspection
+- Console logging of section info (xStart, xEnd, width, mode) when debug is enabled
+
+Press D or use the console to toggle debug mode for visualizing how sections are covering the canvas.
+
+---
+
 ## [3.33.0] - 2026-01-25
 
 ### Fixed

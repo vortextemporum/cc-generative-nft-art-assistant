@@ -86,7 +86,7 @@
  * v2.2.0: Refined paper aesthetics, fixed header layout, musical metadata
  * v2.1.0: Enhanced Spectral mode with engraved hatching, stippling
  *
- * @version 3.33.0
+ * @version 3.34.0
  */
 
 // ============================================================
@@ -1256,7 +1256,9 @@ function setupComposition() {
     for (let i = 0; i < streamCount; i++) {
       // Each stream has a different starting position
       const baseStart = (i / streamCount) * (1 - overlapRatio);
-      const streamWidth = rnd(0.25, 0.50);  // Each stream covers 25-50% of score
+      // Ensure streams collectively cover full width - last stream always reaches end
+      const isLastStream = (i === streamCount - 1);
+      const streamWidth = isLastStream ? (1 - baseStart) : rnd(0.35, 0.60);  // Increased width, last stream always fills to end
       const streamEnd = Math.min(1, baseStart + streamWidth);
 
       const xStart = MARGIN + baseStart * scoreWidth;
@@ -4140,10 +4142,11 @@ function drawDecayTrails(voice, section) {
 
 // --- 15. Vertical Duration Stacks ---
 function drawDurationStacks(voice, section) {
-  const numStacks = Math.max(1, Math.floor(rnd(3, 8) * features.densityValue));
+  const numStacks = Math.max(3, Math.floor(rnd(3, 8) * features.densityValue));
 
   for (let i = 0; i < numStacks; i++) {
-    const x = rnd(section.xStart + 20, section.xEnd - 20);
+    // Distribute evenly across section with jitter
+    const x = section.xStart + 20 + ((i + 0.5) / numStacks) * (section.width - 40) + rnd(-10, 10) * scaleFactor;
     const stackHeight = voice.height * rnd(0.4, 0.8);
     const centerY = voice.yCenter;
     const numNotes = rndInt(2, 6);
@@ -15757,7 +15760,58 @@ function setup() {
       window.dispatchEvent(new CustomEvent("featuresUpdated", { detail: features }));
     };
     window.regenerateFeaturesOnly = regenerateFeaturesOnly;
+    window.setDebugMode = (enabled) => {
+      debugMode = enabled;
+      drawScore();
+      if (enabled) {
+        console.log("Debug mode enabled. Section boundaries shown in colors.");
+        console.log("Sections:", sections.map(s => ({
+          idx: s.index,
+          xStart: s.xStart.toFixed(0),
+          xEnd: s.xEnd.toFixed(0),
+          width: s.width.toFixed(0),
+          mode: s.assignedMode || 'N/A'
+        })));
+      }
+    };
+    window.getSections = () => sections;
   }
+}
+
+// Debug mode to visualize section boundaries - toggle with window.setDebugMode(true)
+let debugMode = false;
+
+function drawDebugInfo() {
+  if (!debugMode) return;
+
+  // Log section info to console
+  console.log("=== Section Debug Info ===");
+  console.log("Structure:", features.structure);
+  console.log("Section count:", sections.length);
+  sections.forEach((sec, i) => {
+    console.log(`Section ${i}: xStart=${sec.xStart.toFixed(0)}, xEnd=${sec.xEnd.toFixed(0)}, width=${sec.width.toFixed(0)}`);
+  });
+
+  // Draw visual boundaries
+  strokeWeight(3 * scaleFactor);
+  noFill();
+
+  const colors = ["#ff000080", "#00ff0080", "#0000ff80", "#ff00ff80", "#00ffff80", "#ffff0080"];
+
+  sections.forEach((sec, i) => {
+    stroke(colors[i % colors.length]);
+
+    // Draw section boundary rectangle
+    rect(sec.xStart, MARGIN, sec.width, HEIGHT - MARGIN * 2);
+
+    // Label the section
+    noStroke();
+    fill(colors[i % colors.length].replace("80", "ff"));
+    textSize(14 * scaleFactor);
+    textAlign(CENTER, TOP);
+    text(`S${i}: ${sec.xStart.toFixed(0)}-${sec.xEnd.toFixed(0)}`, sec.xStart + sec.width / 2, MARGIN + 5);
+    textAlign(LEFT, TOP);
+  });
 }
 
 function drawScore() {
@@ -15779,6 +15833,9 @@ function drawScore() {
 
   drawNotationMarks();
   drawVignette();
+
+  // Draw debug overlay if enabled
+  drawDebugInfo();
 }
 
 function regenerate() {
@@ -15863,6 +15920,15 @@ function keyPressed() {
   }
   if (key === "p" || key === "P") {
     savePrintFriendly();
+  }
+  if (key === "d" || key === "D") {
+    debugMode = !debugMode;
+    drawScore();
+    if (debugMode) {
+      console.log("Debug mode enabled. Section boundaries shown.");
+    } else {
+      console.log("Debug mode disabled.");
+    }
   }
 }
 
