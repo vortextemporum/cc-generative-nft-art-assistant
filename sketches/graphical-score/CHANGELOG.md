@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.24.0] - 2026-01-25
+
+### Added
+
+**New Mode: Polymorphic (Logothetis)** - Unique symbol system with 80+ invented signs, elastic time, and gravity-influenced shapes.
+
+Anestis Logothetis (1921-1994) was an Austrian-Greek composer who developed one of the most comprehensive graphic notation systems. His "polymorphic" scores use invented symbols that represent sound parameters, allowing multiple valid interpretations while maintaining structural relationships.
+
+**New palette**: `polymorphicOrange` - Distinctive orange/sepia printing aesthetic from Vienna 1960s publications
+
+**16 drawing functions**:
+
+| Function | Description |
+|----------|-------------|
+| `drawPolymorphicLogothetisGlyphs()` | 12 types of invented symbols from Logothetis' vocabulary |
+| `drawPolymorphicElasticTime()` | Variable-width bands representing time stretching |
+| `drawPolymorphicGravityShapes()` | Shapes heavier/wider at bottom |
+| `drawPolymorphicIntegrationSigns()` | Mathematical integral-like signs for cumulative sound |
+| `drawPolymorphicDynamicCurves()` | Curves with varying thickness showing dynamics |
+| `drawPolymorphicTextureFields()` | Fields of texture representing timbral areas |
+| `drawPolymorphicTransformChains()` | Chains showing transformation between states |
+| `drawPolymorphicDensityGradients()` | Gradients showing density changes |
+| `drawPolymorphicSoundMasses()` | Dense klangmassen (sound masses) |
+| `drawPolymorphicArticulationSymbols()` | Various articulation marks |
+| `drawPolymorphicConnectionWebs()` | Web-like connections between elements |
+| `drawPolymorphicLayeredPlanes()` | Overlapping transparent planes |
+| `drawPolymorphicRhythmicCells()` | Boxed rhythmic cells with patterns |
+| `drawPolymorphicExpandingForms()` | Forms that expand outward |
+| `drawPolymorphicCompressingForms()` | Forms that compress inward |
+| `drawPolymorphicRotationalGlyphs()` | Glyphs with rotational symmetry |
+
+This is the second of 7 new modes (16 total now).
+
+---
+
 ## [3.23.0] - 2026-01-25
 
 ### Added

@@ -1,14 +1,14 @@
-# Graphical Score v3.23.0 - AI Assistant Guide
+# Graphical Score v3.24.0 - AI Assistant Guide
 
 ## Project Overview
 
-A generative graphical score featuring **15 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
+A generative graphical score featuring **16 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.23.0
+**Current Version:** 3.24.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
-## The 15 Modes
+## The 16 Modes
 
 ### Original Modes (v2.0)
 
@@ -39,6 +39,7 @@ A generative graphical score featuring **15 distinct modes** inspired by 20th ce
 | Mode | Composer | Key Elements |
 |------|----------|--------------|
 | **Mobile** | Haubenstock-Ramati | Calder-inspired floating cells, dotted paths, multi-directional reading |
+| **Polymorphic** | Logothetis | Invented symbol system, elastic time, gravity shapes, sound masses |
 
 ## Blending System
 
@@ -65,7 +66,7 @@ graphical-score/
     └── TECHNICAL.md    # Implementation details
 ```
 
-## Palettes (18 total)
+## Palettes (19 total)
 
 ### Archival (5)
 - `sepia`, `manuscript`, `parchment`, `aged`, `blueprint`
@@ -88,6 +89,7 @@ graphical-score/
 
 ### Expanded Mode-Authentic (v3.23+)
 - `mobileSilver` - Clean, modern silver aesthetic for Mobile mode
+- `polymorphicOrange` - Orange/sepia Vienna 1960s aesthetic for Polymorphic mode
 
 ## Key Functions
 
@@ -387,6 +389,24 @@ graphical-score/
 - `drawMobileConvergencePoints()` - Points where paths meet
 - `drawMobileDivergencePoints()` - Points where paths split
 - `drawMobileRotatingGroups()` - Groups that could rotate around axis
+
+### Polymorphic Mode (v3.24.0 - Logothetis)
+- `drawPolymorphicLogothetisGlyphs()` - 12 types of invented symbols from Logothetis' vocabulary
+- `drawPolymorphicElasticTime()` - Variable-width bands representing time stretching
+- `drawPolymorphicGravityShapes()` - Shapes heavier/wider at bottom
+- `drawPolymorphicIntegrationSigns()` - Mathematical integral-like signs for cumulative sound
+- `drawPolymorphicDynamicCurves()` - Curves with varying thickness showing dynamics
+- `drawPolymorphicTextureFields()` - Fields of texture representing timbral areas
+- `drawPolymorphicTransformChains()` - Chains showing transformation between states
+- `drawPolymorphicDensityGradients()` - Gradients showing density changes
+- `drawPolymorphicSoundMasses()` - Dense klangmassen (sound masses)
+- `drawPolymorphicArticulationSymbols()` - Various articulation marks
+- `drawPolymorphicConnectionWebs()` - Web-like connections between elements
+- `drawPolymorphicLayeredPlanes()` - Overlapping transparent planes
+- `drawPolymorphicRhythmicCells()` - Boxed rhythmic cells with patterns
+- `drawPolymorphicExpandingForms()` - Forms that expand outward
+- `drawPolymorphicCompressingForms()` - Forms that compress inward
+- `drawPolymorphicRotationalGlyphs()` - Glyphs with rotational symmetry
 
 ### Engraving Helpers (v2.1.0)
 - `drawHatching(x, y, w, h, angle, spacing, intensity)` - Line hatching
