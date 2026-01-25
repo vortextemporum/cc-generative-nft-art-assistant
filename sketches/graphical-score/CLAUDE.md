@@ -1,14 +1,14 @@
-# Graphical Score v3.22.2 - AI Assistant Guide
+# Graphical Score v3.23.0 - AI Assistant Guide
 
 ## Project Overview
 
-A generative graphical score featuring **14 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
+A generative graphical score featuring **15 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.9.0
+**Current Version:** 3.23.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
-## The 14 Modes
+## The 15 Modes
 
 ### Original Modes (v2.0)
 
@@ -33,6 +33,12 @@ A generative graphical score featuring **14 distinct modes** inspired by 20th ce
 | **Stripsody** | Cathy Berberian | Comic onomatopoeia, speech bubbles, action lines |
 | **Ankhrasmation** | Wadada Leo Smith | Colored duration bars, symbolic marks, rhythmic cells |
 | **Braxton** | Anthony Braxton | Diagrammatic notation, schematic symbols, language types |
+
+### Expanded Modes (v3.23+)
+
+| Mode | Composer | Key Elements |
+|------|----------|--------------|
+| **Mobile** | Haubenstock-Ramati | Calder-inspired floating cells, dotted paths, multi-directional reading |
 
 ## Blending System
 
@@ -59,7 +65,7 @@ graphical-score/
     └── TECHNICAL.md    # Implementation details
 ```
 
-## Palettes (17 total)
+## Palettes (18 total)
 
 ### Archival (5)
 - `sepia`, `manuscript`, `parchment`, `aged`, `blueprint`
@@ -79,6 +85,9 @@ graphical-score/
 - `stripsodyPop` - Comic-inspired primary colors (6-color array)
 - `ankhrasmationColor` - Full spectrum (7-color array)
 - `braxtonDiagram` - Technical blueprint aesthetic
+
+### Expanded Mode-Authentic (v3.23+)
+- `mobileSilver` - Clean, modern silver aesthetic for Mobile mode
 
 ## Key Functions
 
@@ -360,6 +369,24 @@ graphical-score/
 - `drawBraxtonIntersections()` - Intersection/crossing marks
 - `drawBraxtonLabels()` - Text labels and identifiers
 - `drawBraxtonRotational()` - Rotational symmetry elements
+
+### Mobile Mode (v3.23.0 - Haubenstock-Ramati)
+- `drawMobileFloatingCells()` - Floating musical fragment cells with staff lines
+- `drawMobileDottedPaths()` - Dotted connecting lines between cells
+- `drawMobileFragmentNotation()` - Small musical notation fragments
+- `drawMobileBranches()` - Branching mobile arm structures
+- `drawMobileSuspendedShapes()` - Shapes hanging from horizontal lines
+- `drawMobileConnectionNodes()` - Nodes where paths converge/diverge
+- `drawMobileDirectionalArrows()` - Reading direction arrows
+- `drawMobileCellClusters()` - Groups of cells clustered together
+- `drawMobileNavigablePaths()` - Curved navigation routes
+- `drawMobilePivotPoints()` - Central pivot points with radiating elements
+- `drawMobileBalancedArms()` - Horizontal balanced arm structures
+- `drawMobileHangingElements()` - Various shapes hanging from lines
+- `drawMobileOptionalRoutes()` - Dashed optional path lines
+- `drawMobileConvergencePoints()` - Points where paths meet
+- `drawMobileDivergencePoints()` - Points where paths split
+- `drawMobileRotatingGroups()` - Groups that could rotate around axis
 
 ### Engraving Helpers (v2.1.0)
 - `drawHatching(x, y, w, h, angle, spacing, intensity)` - Line hatching

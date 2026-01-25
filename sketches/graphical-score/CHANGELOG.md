@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.23.0] - 2026-01-25
+
+### Added
+
+**New Mode: Mobile (Haubenstock-Ramati)** - Calder-inspired mobile scores with floating fragments and multi-directional reading paths.
+
+Roman Haubenstock-Ramati (1919-1994) created scores that visually resemble Alexander Calder's mobiles - suspended musical fragments connected by dotted paths, allowing performers to navigate through the score in multiple directions.
+
+**New palette**: `mobileSilver` - Clean, modern silver aesthetic
+
+**16 drawing functions**:
+
+| Function | Description |
+|----------|-------------|
+| `drawMobileFloatingCells()` | Floating musical fragment cells with staff lines |
+| `drawMobileDottedPaths()` | Dotted connecting lines between cells |
+| `drawMobileFragmentNotation()` | Small musical notation fragments |
+| `drawMobileBranches()` | Branching mobile arm structures |
+| `drawMobileSuspendedShapes()` | Shapes hanging from horizontal lines |
+| `drawMobileConnectionNodes()` | Nodes where paths converge/diverge |
+| `drawMobileDirectionalArrows()` | Reading direction arrows |
+| `drawMobileCellClusters()` | Groups of cells clustered together |
+| `drawMobileNavigablePaths()` | Curved navigation routes |
+| `drawMobilePivotPoints()` | Central pivot points with radiating elements |
+| `drawMobileBalancedArms()` | Horizontal balanced arm structures |
+| `drawMobileHangingElements()` | Various shapes hanging from lines |
+| `drawMobileOptionalRoutes()` | Dashed optional path lines |
+| `drawMobileConvergencePoints()` | Points where paths meet |
+| `drawMobileDivergencePoints()` | Points where paths split |
+| `drawMobileRotatingGroups()` | Groups that could rotate around axis |
+
+This is the first of 7 new modes being added to expand the project from 14 to 21 modes.
+
+---
+
 ## [3.22.2] - 2026-01-25
 
 ### Fixed
