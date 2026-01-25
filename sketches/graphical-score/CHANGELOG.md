@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.20.0] - 2026-01-25
+
+### Added
+
+**New Structure Type: Stacked** - Vertical layers instead of horizontal sections:
+
+- **stacked** (6% probability, legendary rarity) - 2-4 vertical bands
+  - Full width sections divided vertically (like orchestral score systems)
+  - Variable heights per stack (15-40% of score height)
+  - 2% gaps between stacks
+  - `isStacked`, `stackIndex`, `stackYStart`, `stackYEnd`, `stackHeight` flags
+  - Creates stratified layers for different instrumental groups or densities
+
+### Changed
+
+- Structure probabilities rebalanced for 9 types:
+  - flowing: 24%
+  - sectioned: 17%
+  - mathematical: 13%
+  - fragmentary: 10%
+  - gestural: 10%
+  - modular: 8%
+  - polyphonic: 7%
+  - stacked: 6%
+  - palindrome: 5%
+
+---
+
 ## [3.19.0] - 2026-01-25
 
 ### Added

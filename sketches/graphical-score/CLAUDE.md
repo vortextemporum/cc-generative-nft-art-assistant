@@ -1,4 +1,4 @@
-# Graphical Score v3.19.0 - AI Assistant Guide
+# Graphical Score v3.20.0 - AI Assistant Guide
 
 ## Project Overview
 
@@ -397,7 +397,7 @@ window.setHiRes(false) // Switch to 1280x720
 | modeCount | single(35) / dual(40) / triple(20) / quad(5) |
 | blendType | dominant(40) / sectional(35) / voiceBased(25) |
 | voiceCount | ensemble(50) / chamber(28) / solo(14) / orchestra(8) |
-| structure | flowing(25) / sectioned(18) / mathematical(14) / fragmentary(11) / gestural(10) / modular(8) / polyphonic(8) / palindrome(6) |
+| structure | flowing(24) / sectioned(17) / mathematical(13) / fragmentary(10) / gestural(10) / modular(8) / polyphonic(7) / stacked(6) / palindrome(5) |
 | density | balanced(45) / dense(28) / sparse(18) / extreme(9) |
 
 ## Quick Commands

@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.20.0
+ * Graphical Score v3.19.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -521,8 +521,8 @@ const RARITY_CURVES = {
     labels: ["ensemble (3-5)", "chamber (6-8)", "solo (1-2)", "orchestra (9-12)"]
   },
   structure: {
-    probabilities: [0.24, 0.17, 0.13, 0.10, 0.10, 0.08, 0.07, 0.06, 0.05],
-    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "gestural", "modular", "polyphonic", "stacked", "palindrome"]
+    probabilities: [0.25, 0.18, 0.14, 0.11, 0.10, 0.08, 0.08, 0.06],
+    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "gestural", "modular", "polyphonic", "palindrome"]
   },
   density: {
     probabilities: [0.45, 0.28, 0.18, 0.09],
@@ -583,33 +583,30 @@ function generateFeatures() {
   else if (voiceRarity === "rare") voiceCount = rndInt(1, 2);
   else voiceCount = rndInt(9, 12);
 
-  // Structure - 9 types with weighted selection
+  // Structure - 8 types with weighted selection
   const structureRoll = rnd();
   let structure, sectionCount = 1;
-  if (structureRoll < 0.24) {
+  if (structureRoll < 0.25) {
     structure = "flowing";
     sectionCount = 1;
-  } else if (structureRoll < 0.41) {
+  } else if (structureRoll < 0.43) {
     structure = "sectioned";
     sectionCount = rndInt(2, 5);
-  } else if (structureRoll < 0.54) {
+  } else if (structureRoll < 0.57) {
     structure = "mathematical";
     sectionCount = rndInt(3, 6);
-  } else if (structureRoll < 0.64) {
+  } else if (structureRoll < 0.68) {
     structure = "fragmentary";
     sectionCount = rndInt(5, 9);  // More sections, irregular widths
-  } else if (structureRoll < 0.74) {
+  } else if (structureRoll < 0.78) {
     structure = "gestural";
     sectionCount = rndInt(1, 2);  // Minimal sections, organic curves
-  } else if (structureRoll < 0.82) {
+  } else if (structureRoll < 0.86) {
     structure = "modular";
     sectionCount = rndInt(4, 8);  // Independent modules/blocks
-  } else if (structureRoll < 0.89) {
+  } else if (structureRoll < 0.94) {
     structure = "polyphonic";
     sectionCount = rndInt(2, 4);  // Independent voice streams with overlap
-  } else if (structureRoll < 0.95) {
-    structure = "stacked";
-    sectionCount = rndInt(2, 4);  // Vertical layers stacked on top of each other
   } else {
     structure = "palindrome";
     sectionCount = rndInt(3, 7);
@@ -620,7 +617,7 @@ function generateFeatures() {
 
   const structureRarity = structure === "flowing" ? "common" :
     structure === "sectioned" ? "uncommon" :
-    (structure === "palindrome" || structure === "gestural" || structure === "modular" || structure === "polyphonic" || structure === "stacked") ? "legendary" : "rare";
+    (structure === "palindrome" || structure === "gestural" || structure === "modular" || structure === "polyphonic") ? "legendary" : "rare";
 
   // Density
   const densityRarity = rollRarity(0.45, 0.28, 0.18, 0.09);
@@ -986,40 +983,6 @@ function setupComposition() {
       }
 
       sections.push(sec);
-    }
-  } else if (features.structure === "stacked") {
-    // Stacked: vertical layers instead of horizontal sections
-    // Creates bands that span the full width but divide vertically
-    const stackCount = features.sectionCount;
-    const scoreHeight = HEIGHT - MARGIN * 2;
-    const gapRatio = 0.02;  // 2% gaps between stacks
-    const totalGaps = (stackCount - 1) * gapRatio;
-    const usableHeight = 1 - totalGaps;
-
-    // Generate varied heights for each stack
-    const stackHeights = [];
-    let totalHeight = 0;
-    for (let i = 0; i < stackCount; i++) {
-      const h = rnd(0.15, 0.40);
-      stackHeights.push(h);
-      totalHeight += h;
-    }
-    // Normalize
-    for (let i = 0; i < stackCount; i++) {
-      stackHeights[i] = (stackHeights[i] / totalHeight) * usableHeight;
-    }
-
-    // Create stacked sections (full width, divided vertically)
-    let yPos = 0;
-    for (let i = 0; i < stackCount; i++) {
-      const sec = new Section(i, stackCount, MARGIN, WIDTH - MARGIN);
-      sec.isStacked = true;
-      sec.stackIndex = i;
-      sec.stackYStart = MARGIN + yPos * scoreHeight;
-      sec.stackYEnd = MARGIN + (yPos + stackHeights[i]) * scoreHeight;
-      sec.stackHeight = stackHeights[i] * scoreHeight;
-      sections.push(sec);
-      yPos += stackHeights[i] + gapRatio;
     }
   } else if (features.structure === "palindrome") {
     // Palindrome: sections mirror around a variable point (not always center)
