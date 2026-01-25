@@ -1453,9 +1453,6 @@ function drawPaper() {
 function drawDecorativeBorder() {
   const borderStyle = rndInt(0, 3);
 
-  // Skip drawing in print-friendly mode but consume the random value
-  if (printFriendlyMode) return;
-
   const inset = 15 * scaleFactor;
   const innerInset = 20 * scaleFactor;
 
