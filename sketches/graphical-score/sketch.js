@@ -1451,11 +1451,10 @@ function drawPaper() {
 }
 
 function drawDecorativeBorder() {
-  // Always consume random value for PRNG consistency
-  const randomBorderStyle = rndInt(0, 3);
-  // Use manual override if set, otherwise use random
-  const borderStyle = features.borderStyle !== undefined ? features.borderStyle : randomBorderStyle;
+  // Consume random value for PRNG consistency (legacy - was used for border style selection)
+  rndInt(0, 3);
 
+  // Standardized double-line frame border (classic engraved score)
   const inset = 15 * scaleFactor;
   const innerInset = 20 * scaleFactor;
 
@@ -1463,61 +1462,8 @@ function drawDecorativeBorder() {
   strokeWeight(0.5 * scaleFactor);
   noFill();
 
-  switch (borderStyle) {
-    case 0: // Double-line frame (classic engraved score)
-      rect(inset, inset, WIDTH - inset * 2, HEIGHT - inset * 2);
-      rect(innerInset, innerInset, WIDTH - innerInset * 2, HEIGHT - innerInset * 2);
-      break;
-
-    case 1: // Ruled margin lines
-      // Top rule
-      line(inset, inset, WIDTH - inset, inset);
-      line(inset, inset + 3 * scaleFactor, WIDTH - inset, inset + 3 * scaleFactor);
-      // Bottom rule
-      line(inset, HEIGHT - inset, WIDTH - inset, HEIGHT - inset);
-      line(inset, HEIGHT - inset - 3 * scaleFactor, WIDTH - inset, HEIGHT - inset - 3 * scaleFactor);
-      // Side margins (dashed)
-      for (let y = inset; y < HEIGHT - inset; y += 8 * scaleFactor) {
-        line(inset, y, inset, min(y + 4 * scaleFactor, HEIGHT - inset));
-        line(WIDTH - inset, y, WIDTH - inset, min(y + 4 * scaleFactor, HEIGHT - inset));
-      }
-      break;
-
-    case 2: // Art nouveau subtle curves
-      // Top ornamental line
-      beginShape();
-      for (let x = inset; x <= WIDTH - inset; x += 5 * scaleFactor) {
-        const progress = (x - inset) / (WIDTH - inset * 2);
-        const wave = sin(progress * PI * 4) * 2 * scaleFactor;
-        vertex(x, inset + wave);
-      }
-      endShape();
-      // Bottom mirror
-      beginShape();
-      for (let x = inset; x <= WIDTH - inset; x += 5 * scaleFactor) {
-        const progress = (x - inset) / (WIDTH - inset * 2);
-        const wave = sin(progress * PI * 4) * 2 * scaleFactor;
-        vertex(x, HEIGHT - inset - wave);
-      }
-      endShape();
-      break;
-
-    case 3: // Minimal corner brackets
-      const bracketLen = 40 * scaleFactor;
-      // Top-left
-      line(inset, inset, inset + bracketLen, inset);
-      line(inset, inset, inset, inset + bracketLen);
-      // Top-right
-      line(WIDTH - inset, inset, WIDTH - inset - bracketLen, inset);
-      line(WIDTH - inset, inset, WIDTH - inset, inset + bracketLen);
-      // Bottom-left
-      line(inset, HEIGHT - inset, inset + bracketLen, HEIGHT - inset);
-      line(inset, HEIGHT - inset, inset, HEIGHT - inset - bracketLen);
-      // Bottom-right
-      line(WIDTH - inset, HEIGHT - inset, WIDTH - inset - bracketLen, HEIGHT - inset);
-      line(WIDTH - inset, HEIGHT - inset, WIDTH - inset, HEIGHT - inset - bracketLen);
-      break;
-  }
+  rect(inset, inset, WIDTH - inset * 2, HEIGHT - inset * 2);
+  rect(innerInset, innerInset, WIDTH - innerInset * 2, HEIGHT - innerInset * 2);
 }
 
 function drawCornerOrnaments() {

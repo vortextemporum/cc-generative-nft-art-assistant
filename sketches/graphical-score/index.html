@@ -529,16 +529,6 @@
             <label>Palette</label>
             <select id="param-palette"></select>
           </div>
-          <div class="param-row">
-            <label>Border Style</label>
-            <select id="param-borderStyle">
-              <option value="random">Random</option>
-              <option value="0">Double-line Frame</option>
-              <option value="1">Ruled Margins</option>
-              <option value="2">Art Nouveau Waves</option>
-              <option value="3">Corner Brackets</option>
-            </select>
-          </div>
           <button class="apply-btn" id="btn-apply">Apply & Generate</button>
         </div>
       </div>
@@ -677,7 +667,6 @@
       document.getElementById('param-tempo').value = features.tempo;
       document.getElementById('param-timeSignature').value = features.timeSignature;
       document.getElementById('param-palette').value = features.paletteName;
-      document.getElementById('param-borderStyle').value = features.borderStyle !== undefined ? features.borderStyle.toString() : 'random';
 
       // Secondary modes checkboxes
       const checkboxes = document.querySelectorAll('#param-secondaryModes input[type="checkbox"]');
@@ -703,7 +692,6 @@
       const tempo = document.getElementById('param-tempo').value;
       const timeSignature = document.getElementById('param-timeSignature').value;
       const paletteName = document.getElementById('param-palette').value;
-      const borderStyle = document.getElementById('param-borderStyle').value;
 
       // Generate new hash and features WITHOUT drawing yet
       window.regenerateFeaturesOnly();
@@ -723,10 +711,6 @@
       const palettes = window.getPalettes();
       window.setParameter('palette', palettes[paletteName]);
       window.setParameter('paletteType', palettes[paletteName].type);
-      // Border style: 'random' means use hash-derived value, otherwise use specific style
-      if (borderStyle !== 'random') {
-        window.setParameter('borderStyle', parseInt(borderStyle));
-      }
 
       // Map density to densityValue
       const densityValues = { sparse: 0.3, balanced: 0.6, dense: 0.85, extreme: 1.0 };
