@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.22.2] - 2026-01-25
+
+### Fixed
+
+- **Stacked section markers**: [A] [B] [C] [D] boxes were all overlapping at the same position
+  - For stacked structure, markers now placed in left margin at each band's vertical position
+  - Horizontal structures unchanged (markers at top of each section)
+
+---
+
 ## [3.22.1] - 2026-01-25
 
 ### Fixed

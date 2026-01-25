@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.22.1
+ * Graphical Score v3.22.2
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -10947,24 +10947,34 @@ function drawNotationMarks() {
   // === SECTION MARKERS: Always show, positioned in score margin area ===
   if (features.sectionCount > 1) {
     const boxSize = 14 * scaleFactor;
-    const markerY = MARGIN + 8 * scaleFactor;  // Just inside top of score area
 
     for (let i = 0; i < sections.length; i++) {
+      const sec = sections[i];
       const letter = String.fromCharCode(65 + i);
-      const x = sections[i].xStart + 5 * scaleFactor;
+
+      let x, y;
+      if (sec.isStacked) {
+        // For stacked structure: place markers at left edge of each vertical band
+        x = MARGIN - boxSize - 5 * scaleFactor;  // In left margin
+        y = sec.stackYStart + 8 * scaleFactor;   // Top of each stack
+      } else {
+        // For horizontal structures: place at top of each section
+        x = sec.xStart + 5 * scaleFactor;
+        y = MARGIN + 8 * scaleFactor;
+      }
 
       // Draw box
       stroke(features.palette.ink);
       strokeWeight(1 * scaleFactor);
       noFill();
-      rect(x, markerY, boxSize, boxSize);
+      rect(x, y, boxSize, boxSize);
 
       // Draw centered letter
       fill(features.palette.ink);
       noStroke();
       textSize(10 * scaleFactor);
       textAlign(CENTER, CENTER);
-      text(letter, x + boxSize / 2, markerY + boxSize / 2);
+      text(letter, x + boxSize / 2, y + boxSize / 2);
       textAlign(LEFT, TOP);  // Reset
     }
   }
