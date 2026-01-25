@@ -15659,6 +15659,7 @@ function setup() {
       drawScore();
       window.dispatchEvent(new CustomEvent("featuresUpdated", { detail: features }));
     };
+    window.regenerateFeaturesOnly = regenerateFeaturesOnly;
   }
 }
 
@@ -15693,6 +15694,16 @@ function regenerate() {
   drawScore();
 
   window.dispatchEvent(new CustomEvent("featuresUpdated", { detail: features }));
+}
+
+// Generate new hash and features WITHOUT drawing (for manual mode)
+function regenerateFeaturesOnly() {
+  hash = "0x" + Array(64).fill(0).map(() =>
+    "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
+
+  hasOverrides = false;
+  generateFeatures();
+  // Don't setup or draw - caller will apply overrides then call applyAndRedraw
 }
 
 function setHiRes(enabled) {

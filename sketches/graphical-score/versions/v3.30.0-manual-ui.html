@@ -465,13 +465,15 @@
           <div class="param-row">
             <label>Tempo</label>
             <select id="param-tempo">
-              <option value="Largo">Largo (40-60)</option>
-              <option value="Adagio">Adagio (66-76)</option>
-              <option value="Andante">Andante (76-108)</option>
-              <option value="Moderato">Moderato (108-120)</option>
-              <option value="Allegro">Allegro (120-168)</option>
-              <option value="Vivace">Vivace (168-176)</option>
-              <option value="Presto">Presto (168-200)</option>
+              <option value="Lento">Lento</option>
+              <option value="Adagio">Adagio</option>
+              <option value="Andante">Andante</option>
+              <option value="Moderato">Moderato</option>
+              <option value="Allegro">Allegro</option>
+              <option value="Presto">Presto</option>
+              <option value="Senza tempo">Senza tempo</option>
+              <option value="Liberamente">Liberamente</option>
+              <option value="Rubato">Rubato</option>
             </select>
           </div>
           <div class="param-row">
@@ -479,12 +481,13 @@
             <select id="param-timeSignature">
               <option value="4/4">4/4</option>
               <option value="3/4">3/4</option>
-              <option value="6/8">6/8</option>
-              <option value="2/4">2/4</option>
               <option value="5/4">5/4</option>
+              <option value="6/8">6/8</option>
               <option value="7/8">7/8</option>
-              <option value="12/8">12/8</option>
+              <option value="5/8">5/8</option>
+              <option value="9/8">9/8</option>
               <option value="free">Free</option>
+              <option value="aleatoric">Aleatoric</option>
             </select>
           </div>
           <div class="param-row">
@@ -655,10 +658,10 @@
       const timeSignature = document.getElementById('param-timeSignature').value;
       const paletteName = document.getElementById('param-palette').value;
 
-      // Generate new hash first, then apply manual overrides
-      window.regenerate();
+      // Generate new hash and features WITHOUT drawing yet
+      window.regenerateFeaturesOnly();
 
-      // Now apply manual parameter overrides on top of the new random features
+      // Apply manual parameter overrides on top of the new random features
       window.setParameter('primaryMode', primaryMode);
       window.setParameter('secondaryModes', secondaryModes);
       window.setParameter('activeModes', [primaryMode, ...secondaryModes]);
