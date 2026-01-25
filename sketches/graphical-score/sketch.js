@@ -15311,15 +15311,23 @@ function drawVoice(voice, section) {
     };
   }
 
-  // Draw primary mode
-  drawModeElements(activeMode, effectiveVoice, section);
+  // Draw primary mode with error handling
+  try {
+    drawModeElements(activeMode, effectiveVoice, section);
+  } catch (e) {
+    console.error(`Error drawing mode ${activeMode} in section ${section.index}, voice ${voice.index}:`, e);
+  }
 
   // Add secondary mode accents (for dominant blend)
   if (features.blendType === "dominant" && features.secondaryModes.length > 0) {
     const accentChance = 0.3;
     for (const secondaryMode of features.secondaryModes) {
       if (rndBool(accentChance * features.densityValue)) {
-        drawModeElements(secondaryMode, effectiveVoice, section);
+        try {
+          drawModeElements(secondaryMode, effectiveVoice, section);
+        } catch (e) {
+          console.error(`Error drawing secondary mode ${secondaryMode}:`, e);
+        }
       }
     }
   }
