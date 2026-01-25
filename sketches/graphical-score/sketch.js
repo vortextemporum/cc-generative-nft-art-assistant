@@ -15652,6 +15652,11 @@ function setup() {
     window.savePrintFriendly = savePrintFriendly;
     window.getModes = () => MODES;
     window.getPalettes = () => PALETTES;
+    window.applyAndRedraw = () => {
+      setupComposition();
+      drawScore();
+      window.dispatchEvent(new CustomEvent("featuresUpdated", { detail: features }));
+    };
   }
 }
 

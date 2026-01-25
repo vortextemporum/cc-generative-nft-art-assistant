@@ -676,8 +676,7 @@
       window.setParameter('densityValue', densityValues[density] || 0.6);
 
       // Redraw with new parameters
-      window.dispatchEvent(new Event('featuresUpdated'));
-      redraw();
+      window.applyAndRedraw();
     }
 
     function loadFeedback() {
