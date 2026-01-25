@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.19.0] - 2026-01-25
+
+### Added
+
+**New Structure Type: Polyphonic** - Independent voice streams with overlapping sections:
+
+- **polyphonic** (8% probability, legendary rarity) - 2-4 independent streams
+  - Each stream covers 25-50% of score width
+  - Streams have staggered starts with 15-35% overlap ratio
+  - `isPolyphonic`, `streamNumber`, `overlapsWith` flags for tracking
+  - Creates layered contrapuntal structure
+  - Inspired by Renaissance polyphony and modern multi-layered notation
+
+### Changed
+
+- Structure probabilities rebalanced for 8 types:
+  - flowing: 25%
+  - sectioned: 18%
+  - mathematical: 14%
+  - fragmentary: 11%
+  - gestural: 10%
+  - modular: 8%
+  - polyphonic: 8%
+  - palindrome: 6%
+
+---
+
 ## [3.18.0] - 2026-01-25
 
 ### Added

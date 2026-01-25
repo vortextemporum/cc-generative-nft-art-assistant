@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.19.0
+ * Graphical Score v3.18.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -521,8 +521,8 @@ const RARITY_CURVES = {
     labels: ["ensemble (3-5)", "chamber (6-8)", "solo (1-2)", "orchestra (9-12)"]
   },
   structure: {
-    probabilities: [0.25, 0.18, 0.14, 0.11, 0.10, 0.08, 0.08, 0.06],
-    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "gestural", "modular", "polyphonic", "palindrome"]
+    probabilities: [0.28, 0.20, 0.15, 0.12, 0.10, 0.10, 0.05],
+    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "gestural", "modular", "palindrome"]
   },
   density: {
     probabilities: [0.45, 0.28, 0.18, 0.09],
@@ -583,30 +583,27 @@ function generateFeatures() {
   else if (voiceRarity === "rare") voiceCount = rndInt(1, 2);
   else voiceCount = rndInt(9, 12);
 
-  // Structure - 8 types with weighted selection
+  // Structure - 7 types with weighted selection
   const structureRoll = rnd();
   let structure, sectionCount = 1;
-  if (structureRoll < 0.25) {
+  if (structureRoll < 0.28) {
     structure = "flowing";
     sectionCount = 1;
-  } else if (structureRoll < 0.43) {
+  } else if (structureRoll < 0.48) {
     structure = "sectioned";
     sectionCount = rndInt(2, 5);
-  } else if (structureRoll < 0.57) {
+  } else if (structureRoll < 0.63) {
     structure = "mathematical";
     sectionCount = rndInt(3, 6);
-  } else if (structureRoll < 0.68) {
+  } else if (structureRoll < 0.75) {
     structure = "fragmentary";
     sectionCount = rndInt(5, 9);  // More sections, irregular widths
-  } else if (structureRoll < 0.78) {
+  } else if (structureRoll < 0.85) {
     structure = "gestural";
     sectionCount = rndInt(1, 2);  // Minimal sections, organic curves
-  } else if (structureRoll < 0.86) {
+  } else if (structureRoll < 0.95) {
     structure = "modular";
     sectionCount = rndInt(4, 8);  // Independent modules/blocks
-  } else if (structureRoll < 0.94) {
-    structure = "polyphonic";
-    sectionCount = rndInt(2, 4);  // Independent voice streams with overlap
   } else {
     structure = "palindrome";
     sectionCount = rndInt(3, 7);
@@ -617,7 +614,7 @@ function generateFeatures() {
 
   const structureRarity = structure === "flowing" ? "common" :
     structure === "sectioned" ? "uncommon" :
-    (structure === "palindrome" || structure === "gestural" || structure === "modular" || structure === "polyphonic") ? "legendary" : "rare";
+    (structure === "palindrome" || structure === "gestural" || structure === "modular") ? "legendary" : "rare";
 
   // Density
   const densityRarity = rollRarity(0.45, 0.28, 0.18, 0.09);
@@ -951,38 +948,6 @@ function setupComposition() {
       sec.hasBorder = true;  // Modules have visible borders
       sections.push(sec);
       pos += moduleWidths[i] + gapRatio;
-    }
-  } else if (features.structure === "polyphonic") {
-    // Polyphonic: independent voice streams with overlapping sections
-    // Creates a layered contrapuntal structure where sections can overlap
-    const streamCount = features.sectionCount;
-    const overlapRatio = rnd(0.15, 0.35);  // How much sections can overlap
-
-    for (let i = 0; i < streamCount; i++) {
-      // Each stream has a different starting position
-      const baseStart = (i / streamCount) * (1 - overlapRatio);
-      const streamWidth = rnd(0.25, 0.50);  // Each stream covers 25-50% of score
-      const streamEnd = Math.min(1, baseStart + streamWidth);
-
-      const xStart = MARGIN + baseStart * scoreWidth;
-      const xEnd = MARGIN + streamEnd * scoreWidth;
-
-      const sec = new Section(i, streamCount, xStart, xEnd);
-      sec.isPolyphonic = true;  // Flag for polyphonic rendering
-      sec.streamNumber = i + 1;  // Stream identifier
-      sec.overlapsWith = [];  // Track overlapping sections
-
-      // Check for overlaps with previous sections
-      for (let j = 0; j < sections.length; j++) {
-        const other = sections[j];
-        if (other.xStart < xEnd && other.xEnd > xStart) {
-          sec.overlapsWith.push(j);
-          if (!other.overlapsWith) other.overlapsWith = [];
-          other.overlapsWith.push(i);
-        }
-      }
-
-      sections.push(sec);
     }
   } else if (features.structure === "palindrome") {
     // Palindrome: sections mirror around a variable point (not always center)
