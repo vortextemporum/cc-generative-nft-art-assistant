@@ -1,14 +1,14 @@
-# Graphical Score v3.24.0 - AI Assistant Guide
+# Graphical Score v3.25.0 - AI Assistant Guide
 
 ## Project Overview
 
-A generative graphical score featuring **16 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
+A generative graphical score featuring **17 distinct modes** inspired by 20th century avant-garde composers. The system uses a layered hybrid blending approach where modes can combine in various ways.
 
 **Framework:** p5.js
-**Current Version:** 3.24.0
+**Current Version:** 3.25.0
 **Canvas:** 1587×1122 (A3 landscape) / 4961×3508 (A3 at 300 DPI)
 
-## The 16 Modes
+## The 17 Modes
 
 ### Original Modes (v2.0)
 
@@ -40,6 +40,7 @@ A generative graphical score featuring **16 distinct modes** inspired by 20th ce
 |------|----------|--------------|
 | **Mobile** | Haubenstock-Ramati | Calder-inspired floating cells, dotted paths, multi-directional reading |
 | **Polymorphic** | Logothetis | Invented symbol system, elastic time, gravity shapes, sound masses |
+| **Theater** | Kagel | Instrumental theater, stage directions, object notation, absurdist marks |
 
 ## Blending System
 
@@ -66,7 +67,7 @@ graphical-score/
     └── TECHNICAL.md    # Implementation details
 ```
 
-## Palettes (19 total)
+## Palettes (20 total)
 
 ### Archival (5)
 - `sepia`, `manuscript`, `parchment`, `aged`, `blueprint`
@@ -90,6 +91,7 @@ graphical-score/
 ### Expanded Mode-Authentic (v3.23+)
 - `mobileSilver` - Clean, modern silver aesthetic for Mobile mode
 - `polymorphicOrange` - Orange/sepia Vienna 1960s aesthetic for Polymorphic mode
+- `theaterRed` - Dramatic red/black aesthetic for Theater mode
 
 ## Key Functions
 
@@ -407,6 +409,24 @@ graphical-score/
 - `drawPolymorphicExpandingForms()` - Forms that expand outward
 - `drawPolymorphicCompressingForms()` - Forms that compress inward
 - `drawPolymorphicRotationalGlyphs()` - Glyphs with rotational symmetry
+
+### Theater Mode (v3.25.0 - Kagel)
+- `drawTheaterStageDirections()` - Italicized stage direction text boxes
+- `drawTheaterActionSymbols()` - Hand, eye, mouth, footstep, clap symbols
+- `drawTheaterObjectNotation()` - Chair, table, book, glass, bell, paper props
+- `drawTheaterMovementArrows()` - Curved arrows showing performer movement
+- `drawTheaterSpeechBubbles()` - Comic-style speech/thought bubbles
+- `drawTheaterTimedActions()` - Actions with duration indicators
+- `drawTheaterSpatialPositions()` - Stage positions (CS, SL, SR, US, DS)
+- `drawTheaterGestureLines()` - Flowing gestural movement lines
+- `drawTheaterPropsSymbols()` - Abstract symbols for props
+- `drawTheaterEntranceExits()` - ENT/EXIT door markers with arrows
+- `drawTheaterLightingCues()` - LX cue markers with light bulb symbols
+- `drawTheaterAbsurdistMarks()` - Dada-inspired scribbles and marks
+- `drawTheaterSynchronizationLines()` - Vertical sync point indicators
+- `drawTheaterPerformerPaths()` - Dotted paths with footprint markers
+- `drawTheaterAudienceMarks()` - Audience awareness/interaction marks
+- `drawTheaterDurationBars()` - Horizontal action duration bars
 
 ### Engraving Helpers (v2.1.0)
 - `drawHatching(x, y, w, h, angle, spacing, intensity)` - Line hatching

@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.25.0] - 2026-01-25
+
+### Added
+
+**New Mode: Theater (Kagel)** - Instrumental theater with absurdist actions, stage directions, and object notation.
+
+Mauricio Kagel (1931-2008) was an Argentine-German composer who pioneered "instrumental theater," integrating theatrical elements into musical performance. His scores include stage directions, prop notation, and absurdist performance instructions that blur the line between music and theater.
+
+**New palette**: `theaterRed` - Dramatic red/black aesthetic for stage directions
+
+**16 drawing functions**:
+
+| Function | Description |
+|----------|-------------|
+| `drawTheaterStageDirections()` | Italicized stage direction text boxes |
+| `drawTheaterActionSymbols()` | Hand, eye, mouth, footstep, clap symbols |
+| `drawTheaterObjectNotation()` | Chair, table, book, glass, bell, paper props |
+| `drawTheaterMovementArrows()` | Curved arrows showing performer movement |
+| `drawTheaterSpeechBubbles()` | Comic-style speech/thought bubbles |
+| `drawTheaterTimedActions()` | Actions with duration indicators |
+| `drawTheaterSpatialPositions()` | Stage positions (CS, SL, SR, US, DS) |
+| `drawTheaterGestureLines()` | Flowing gestural movement lines |
+| `drawTheaterPropsSymbols()` | Abstract symbols for props |
+| `drawTheaterEntranceExits()` | ENT/EXIT door markers with arrows |
+| `drawTheaterLightingCues()` | LX cue markers with light bulb symbols |
+| `drawTheaterAbsurdistMarks()` | Dada-inspired scribbles and marks |
+| `drawTheaterSynchronizationLines()` | Vertical sync point indicators |
+| `drawTheaterPerformerPaths()` | Dotted paths with footprint markers |
+| `drawTheaterAudienceMarks()` | Audience awareness/interaction marks |
+| `drawTheaterDurationBars()` | Horizontal action duration bars |
+
+This is the third of 7 new modes (17 total now).
+
+---
+
 ## [3.24.0] - 2026-01-25
 
 ### Added
