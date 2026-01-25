@@ -857,6 +857,10 @@
       updateModesPanel();
       updateFeaturesPanel();
       updatePalettePanel();
+      // Sync manual controls when in manual mode
+      if (generationMode === 'manual') {
+        syncControlsFromFeatures();
+      }
     });
 
     window.addEventListener('load', () => {
