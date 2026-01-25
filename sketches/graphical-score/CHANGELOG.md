@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.34.1] - 2026-01-25
+
+### Fixed
+
+**PRNG Sequence Consistency**
+
+Fixed critical bug where the polyphonic structure fix was skipping a random number call for the last stream, causing the PRNG sequence to shift and produce unpredictable rendering across all sections.
+
+- Always consume random value for stream width to maintain sequence consistency
+- Use `Math.max(baseWidth, 1 - baseStart)` for last stream coverage
+
+### Added
+
+**Enhanced Error Handling & Debug Logging**
+
+- Added try-catch blocks around mode drawing to catch errors without stopping render
+- Enhanced debug mode with detailed draw loop logging (mode, structure, section/voice info)
+
+---
+
 ## [3.34.0] - 2026-01-25
 
 ### Fixed
