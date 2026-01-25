@@ -16095,17 +16095,25 @@ function drawFooter() {
 function applyPalindromeSymmetry() {
   if (!features.hasSymmetry) return;
 
-  const img = get(Math.floor(WIDTH/2), 0, Math.floor(WIDTH/2), HEIGHT);
+  // Use variable mirror point (0.3-0.7) instead of always 0.5
+  const mirrorX = Math.floor(MARGIN + (WIDTH - MARGIN * 2) * features.mirrorPoint);
+  const rightWidth = WIDTH - mirrorX;
+
+  // Capture the content from mirror point to right edge
+  const img = get(mirrorX, 0, rightWidth, HEIGHT);
+
+  // Draw it flipped on the left side of the mirror point
   push();
-  translate(WIDTH/2, 0);
+  translate(mirrorX, 0);
   scale(-1, 1);
   image(img, 0, 0);
   pop();
 
+  // Draw subtle mirror axis line
   stroke(features.palette.accent + "50");
   strokeWeight(2 * scaleFactor);
   for (let y = MARGIN; y < HEIGHT - MARGIN; y += 18 * scaleFactor) {
-    line(WIDTH/2, y, WIDTH/2, y + 9 * scaleFactor);
+    line(mirrorX, y, mirrorX, y + 9 * scaleFactor);
   }
 }
 
