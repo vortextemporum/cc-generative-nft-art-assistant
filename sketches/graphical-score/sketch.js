@@ -15828,11 +15828,24 @@ function drawScore() {
   // Reset PRNG to initial state (don't create new R, preserve state methods)
   R.setState(rngInitialState);
 
+  // Debug: log drawing info when debug mode enabled
+  if (debugMode) {
+    console.log("=== drawScore starting ===");
+    console.log("Primary mode:", features.primaryMode);
+    console.log("Blend type:", features.blendType);
+    console.log("Structure:", features.structure);
+    console.log("Sections:", sections.length);
+    console.log("Voices:", voices.length);
+  }
+
   drawPaper();
   drawStaves();
 
   for (const section of sections) {
     for (const voice of voices) {
+      if (debugMode) {
+        console.log(`Drawing section ${section.index} (x:${section.xStart.toFixed(0)}-${section.xEnd.toFixed(0)}, w:${section.width.toFixed(0)}), voice ${voice.index}`);
+      }
       drawVoice(voice, section);
     }
   }
