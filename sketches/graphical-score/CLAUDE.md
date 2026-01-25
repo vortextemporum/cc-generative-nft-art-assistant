@@ -1,4 +1,4 @@
-# Graphical Score v3.31.0 - AI Assistant Guide
+# Graphical Score v3.32.0 - AI Assistant Guide
 
 ## Project Overview
 
@@ -488,7 +488,7 @@ graphical-score/
 - `drawDeepListeningBodyAwareness()` - Body outline with awareness marks
 - `drawDeepListeningGroupConnections()` - Connections between group members
 
-### SoundMap Mode (v3.31.0 - Annea Lockwood)
+### SoundMap Mode (v3.32.0 - Annea Lockwood)
 - `drawSoundMapRiverLines()` - Meandering river lines
 - `drawSoundMapTopographicContours()` - Topographic contour lines
 - `drawSoundMapLocationMarkers()` - Recording location pins

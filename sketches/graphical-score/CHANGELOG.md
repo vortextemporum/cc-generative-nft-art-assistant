@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.32.0] - 2026-01-25
+
+### Fixed
+
+**Improved Element Distribution for Stripsody, TextScore, Ankhrasmation, Braxton**
+
+Extended element distribution fixes to additional modes. All primary drawing functions now distribute elements evenly across the section width with some jitter for natural variation.
+
+**Stripsody mode fixes:**
+- `drawStripsodyOnomatopoeia`: 5-9 sounds distributed evenly
+- `drawStripsodyBubbles`: 3-6 bubbles distributed evenly
+- `drawStripsodyExplosions`: 3-6 explosions distributed evenly
+- `drawStripsodyStars`: 5-10 stars distributed evenly
+- `drawStripsodyFaces`: 4-7 faces distributed evenly
+- `drawStripsodyLightning`: 4-7 bolts distributed evenly
+- `drawStripsodyImpact`: 3-6 impacts distributed evenly
+
+**Other mode fixes:**
+- `drawTextInstructions`: 4-8 texts distributed evenly
+- `drawAnkhrasmationDurations`: 6-12 duration bars distributed evenly
+- `drawBraxtonDiagrams`: 4-7 diagrams distributed evenly
+
+---
+
 ## [3.31.0] - 2026-01-25
 
 ### Fixed
