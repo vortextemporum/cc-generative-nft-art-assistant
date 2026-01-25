@@ -86,7 +86,7 @@
  * v2.2.0: Refined paper aesthetics, fixed header layout, musical metadata
  * v2.1.0: Enhanced Spectral mode with engraved hatching, stippling
  *
- * @version 3.34.0
+ * @version 3.34.1
  */
 
 // ============================================================
@@ -1256,9 +1256,11 @@ function setupComposition() {
     for (let i = 0; i < streamCount; i++) {
       // Each stream has a different starting position
       const baseStart = (i / streamCount) * (1 - overlapRatio);
-      // Ensure streams collectively cover full width - last stream always reaches end
+      // Always consume a random value to maintain PRNG sequence consistency
+      const baseWidth = rnd(0.35, 0.60);
+      // Ensure last stream extends to right edge while preserving PRNG sequence
       const isLastStream = (i === streamCount - 1);
-      const streamWidth = isLastStream ? (1 - baseStart) : rnd(0.35, 0.60);  // Increased width, last stream always fills to end
+      const streamWidth = isLastStream ? Math.max(baseWidth, 1 - baseStart) : baseWidth;
       const streamEnd = Math.min(1, baseStart + streamWidth);
 
       const xStart = MARGIN + baseStart * scoreWidth;
