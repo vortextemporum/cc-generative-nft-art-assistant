@@ -6344,79 +6344,89 @@ function drawSpectralAdditive(voice, section) {
 // ============================================================
 
 function drawSpiralPaths(voice, section) {
-  const centerX = section.xCenter;
-  const centerY = voice.yCenter;
-  const maxRadius = Math.min(section.width, voice.height) * 0.4;
+  const placements = getSpiralPlacements(voice, section);
+  const baseMaxRadius = Math.min(section.width, voice.height) * 0.4;
 
-  stroke(features.palette.ink);
-  strokeWeight(features.lineWeight * scaleFactor);
-  noFill();
+  for (const placement of placements) {
+    const centerX = placement.x;
+    const centerY = placement.y;
+    const maxRadius = baseMaxRadius * placement.scale;
 
-  // Spiral
-  beginShape();
-  const turns = rnd(1.5, 4);
-  const points = 100;
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+    noFill();
 
-  for (let i = 0; i < points; i++) {
-    const angle = (i / points) * turns * TWO_PI;
-    const radius = (i / points) * maxRadius;
-    const x = centerX + cos(angle) * radius;
-    const y = centerY + sin(angle) * radius;
-    vertex(x, y);
-  }
-  endShape();
+    // Spiral
+    beginShape();
+    const turns = rnd(1.5, 4);
+    const points = 100;
 
-  // Add note marks along spiral
-  const numNotes = Math.floor(rnd(5, 15) * features.densityValue);
-  fill(features.palette.ink);
-  noStroke();
+    for (let i = 0; i < points; i++) {
+      const angle = (i / points) * turns * TWO_PI;
+      const radius = (i / points) * maxRadius;
+      const x = centerX + cos(angle) * radius;
+      const y = centerY + sin(angle) * radius;
+      vertex(x, y);
+    }
+    endShape();
 
-  for (let i = 0; i < numNotes; i++) {
-    const t = rnd(0, 1);
-    const angle = t * turns * TWO_PI;
-    const radius = t * maxRadius;
-    const x = centerX + cos(angle) * radius;
-    const y = centerY + sin(angle) * radius;
-    const size = rnd(2, 5) * scaleFactor;
+    // Add note marks along spiral
+    const numNotes = Math.floor(rnd(5, 15) * features.densityValue * placement.scale);
+    fill(features.palette.ink);
+    noStroke();
 
-    ellipse(x, y, size, size);
+    for (let i = 0; i < numNotes; i++) {
+      const t = rnd(0, 1);
+      const angle = t * turns * TWO_PI;
+      const radius = t * maxRadius;
+      const x = centerX + cos(angle) * radius;
+      const y = centerY + sin(angle) * radius;
+      const size = rnd(2, 5) * scaleFactor * placement.scale;
+
+      ellipse(x, y, size, size);
+    }
   }
 }
 
 function drawCircularNotation(voice, section) {
-  const centerX = section.xCenter;
-  const centerY = voice.yCenter;
-  const radius = Math.min(section.width, voice.height) * 0.35;
+  const placements = getSpiralPlacements(voice, section);
+  const baseRadius = Math.min(section.width, voice.height) * 0.35;
 
-  // Concentric circles
-  stroke(features.palette.ink + "40");
-  strokeWeight(0.5 * scaleFactor);
-  noFill();
+  for (const placement of placements) {
+    const centerX = placement.x;
+    const centerY = placement.y;
+    const radius = baseRadius * placement.scale;
 
-  for (let i = 1; i <= 5; i++) {
-    ellipse(centerX, centerY, radius * 2 * (i / 5), radius * 2 * (i / 5));
-  }
+    // Concentric circles
+    stroke(features.palette.ink + "40");
+    strokeWeight(0.5 * scaleFactor);
+    noFill();
 
-  // Radial divisions (numerological)
-  const divisions = rndChoice([7, 13, 12, 8]); // Crumb's numbers
-  for (let i = 0; i < divisions; i++) {
-    const angle = (i / divisions) * TWO_PI - HALF_PI;
-    const x2 = centerX + cos(angle) * radius;
-    const y2 = centerY + sin(angle) * radius;
-    line(centerX, centerY, x2, y2);
-  }
+    for (let i = 1; i <= 5; i++) {
+      ellipse(centerX, centerY, radius * 2 * (i / 5), radius * 2 * (i / 5));
+    }
 
-  // Notes on circle
-  fill(features.palette.ink);
-  noStroke();
-  const numNotes = Math.floor(rnd(5, 12) * features.densityValue);
+    // Radial divisions (numerological)
+    const divisions = rndChoice([7, 13, 12, 8]); // Crumb's numbers
+    for (let i = 0; i < divisions; i++) {
+      const angle = (i / divisions) * TWO_PI - HALF_PI;
+      const x2 = centerX + cos(angle) * radius;
+      const y2 = centerY + sin(angle) * radius;
+      line(centerX, centerY, x2, y2);
+    }
 
-  for (let i = 0; i < numNotes; i++) {
-    const angle = rnd(0, TWO_PI);
-    const r = radius * rnd(0.3, 1);
-    const x = centerX + cos(angle) * r;
-    const y = centerY + sin(angle) * r;
-    ellipse(x, y, rnd(3, 7) * scaleFactor, rnd(3, 7) * scaleFactor);
+    // Notes on circle
+    fill(features.palette.ink);
+    noStroke();
+    const numNotes = Math.floor(rnd(5, 12) * features.densityValue * placement.scale);
+
+    for (let i = 0; i < numNotes; i++) {
+      const angle = rnd(0, TWO_PI);
+      const r = radius * rnd(0.3, 1);
+      const x = centerX + cos(angle) * r;
+      const y = centerY + sin(angle) * r;
+      ellipse(x, y, rnd(3, 7) * scaleFactor * placement.scale, rnd(3, 7) * scaleFactor * placement.scale);
+    }
   }
 }
 
@@ -6438,90 +6448,180 @@ function drawRitualSymbols(voice, section) {
 }
 
 // ============================================================
+// SPIRAL PLACEMENT SYSTEM (v3.38.0)
+// Probabilistic positioning for variety in Crumb/Spiral mode
+// ============================================================
+
+// Returns array of {x, y, scale} objects for spiral placement
+function getSpiralPlacements(voice, section, count = 1) {
+  const placements = [];
+  const placementPattern = rndInt(0, 9);
+
+  const baseX = section.xCenter;
+  const baseY = voice.yCenter;
+  const width = section.width;
+  const height = voice.height;
+
+  switch (placementPattern) {
+    case 0: // Centered (original behavior) - 30% chance
+    case 1:
+    case 2:
+      placements.push({ x: baseX, y: baseY, scale: 1.0 });
+      break;
+
+    case 3: // Offset to one side
+      const offsetDir = rndInt(0, 3);
+      const offsetAmt = 0.25;
+      if (offsetDir === 0) placements.push({ x: baseX - width * offsetAmt, y: baseY, scale: 0.9 });
+      else if (offsetDir === 1) placements.push({ x: baseX + width * offsetAmt, y: baseY, scale: 0.9 });
+      else if (offsetDir === 2) placements.push({ x: baseX, y: baseY - height * offsetAmt, scale: 0.9 });
+      else placements.push({ x: baseX, y: baseY + height * offsetAmt, scale: 0.9 });
+      break;
+
+    case 4: // Diagonal corner
+      const corner = rndInt(0, 3);
+      const cornerOffset = 0.2;
+      if (corner === 0) placements.push({ x: baseX - width * cornerOffset, y: baseY - height * cornerOffset, scale: 0.85 });
+      else if (corner === 1) placements.push({ x: baseX + width * cornerOffset, y: baseY - height * cornerOffset, scale: 0.85 });
+      else if (corner === 2) placements.push({ x: baseX - width * cornerOffset, y: baseY + height * cornerOffset, scale: 0.85 });
+      else placements.push({ x: baseX + width * cornerOffset, y: baseY + height * cornerOffset, scale: 0.85 });
+      break;
+
+    case 5: // Paired horizontal
+      placements.push({ x: baseX - width * 0.2, y: baseY, scale: 0.65 });
+      placements.push({ x: baseX + width * 0.2, y: baseY, scale: 0.65 });
+      break;
+
+    case 6: // Paired vertical
+      placements.push({ x: baseX, y: baseY - height * 0.18, scale: 0.65 });
+      placements.push({ x: baseX, y: baseY + height * 0.18, scale: 0.65 });
+      break;
+
+    case 7: // Triple diagonal
+      placements.push({ x: baseX - width * 0.22, y: baseY - height * 0.15, scale: 0.5 });
+      placements.push({ x: baseX, y: baseY, scale: 0.55 });
+      placements.push({ x: baseX + width * 0.22, y: baseY + height * 0.15, scale: 0.5 });
+      break;
+
+    case 8: // Scattered (3-4 small spirals)
+      const numScattered = rndInt(3, 4);
+      for (let i = 0; i < numScattered; i++) {
+        placements.push({
+          x: baseX + rnd(-width * 0.3, width * 0.3),
+          y: baseY + rnd(-height * 0.25, height * 0.25),
+          scale: rnd(0.35, 0.55)
+        });
+      }
+      break;
+
+    case 9: // Peripheral (near edge)
+      const edge = rndInt(0, 3);
+      if (edge === 0) placements.push({ x: section.xStart + width * 0.2, y: baseY, scale: 0.75 });
+      else if (edge === 1) placements.push({ x: section.xEnd - width * 0.2, y: baseY, scale: 0.75 });
+      else if (edge === 2) placements.push({ x: baseX, y: voice.yStart + height * 0.25, scale: 0.75 });
+      else placements.push({ x: baseX, y: voice.yEnd - height * 0.25, scale: 0.75 });
+      break;
+
+    default:
+      placements.push({ x: baseX, y: baseY, scale: 1.0 });
+  }
+
+  return placements;
+}
+
+// ============================================================
 // ENHANCED SPIRAL MODE FUNCTIONS (v3.1.0)
 // Inspired by George Crumb's circular/spiral notation
 // ============================================================
 
 // --- 1. Multiple Spiral Types ---
 function drawSpiralVariants(voice, section) {
-  const centerX = section.xCenter;
-  const centerY = voice.yCenter;
-  const maxRadius = Math.min(section.width, voice.height) * 0.4;
-
-  stroke(features.palette.ink);
-  strokeWeight(features.lineWeight * scaleFactor);
-  noFill();
-
+  const placements = getSpiralPlacements(voice, section);
+  const baseMaxRadius = Math.min(section.width, voice.height) * 0.4;
   const spiralType = rndInt(0, 3);
 
-  switch (spiralType) {
-    case 0: // Logarithmic spiral (more organic, shell-like)
-      beginShape();
-      const a = 0.1;
-      const b = 0.15;
-      const logTurns = rnd(2, 4);
-      for (let angle = 0; angle < logTurns * TWO_PI; angle += 0.05) {
-        const r = a * Math.exp(b * angle) * maxRadius * 0.3;
-        if (r <= maxRadius) {
-          vertex(centerX + cos(angle) * r, centerY + sin(angle) * r);
-        }
-      }
-      endShape();
-      break;
+  for (const placement of placements) {
+    const centerX = placement.x;
+    const centerY = placement.y;
+    const maxRadius = baseMaxRadius * placement.scale;
 
-    case 1: // Double spiral (yin-yang like)
-      for (let s = 0; s < 2; s++) {
+    stroke(features.palette.ink);
+    strokeWeight(features.lineWeight * scaleFactor);
+    noFill();
+
+    switch (spiralType) {
+      case 0: // Logarithmic spiral (more organic, shell-like)
         beginShape();
-        const turns = rnd(1.5, 3);
-        const offset = s * PI;
-        for (let i = 0; i < 80; i++) {
-          const t = i / 80;
-          const angle = t * turns * TWO_PI + offset;
-          const radius = t * maxRadius;
-          vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+        const a = 0.1;
+        const b = 0.15;
+        const logTurns = rnd(2, 4);
+        for (let angle = 0; angle < logTurns * TWO_PI; angle += 0.05) {
+          const r = a * Math.exp(b * angle) * maxRadius * 0.3;
+          if (r <= maxRadius) {
+            vertex(centerX + cos(angle) * r, centerY + sin(angle) * r);
+          }
         }
         endShape();
-      }
-      break;
+        break;
 
-    case 2: // Spiral arms (galaxy-like)
-      const numArms = rndInt(3, 6);
-      for (let arm = 0; arm < numArms; arm++) {
-        beginShape();
-        const armOffset = (arm / numArms) * TWO_PI;
-        const turns = rnd(0.8, 1.5);
-        for (let i = 0; i < 60; i++) {
-          const t = i / 60;
-          const angle = t * turns * TWO_PI + armOffset;
-          const radius = t * maxRadius;
-          vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+      case 1: // Double spiral (yin-yang like)
+        for (let s = 0; s < 2; s++) {
+          beginShape();
+          const turns = rnd(1.5, 3);
+          const offset = s * PI;
+          for (let i = 0; i < 80; i++) {
+            const t = i / 80;
+            const angle = t * turns * TWO_PI + offset;
+            const radius = t * maxRadius;
+            vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+          }
+          endShape();
         }
-        endShape();
-      }
-      break;
+        break;
 
-    case 3: // Fermat spiral (sunflower pattern)
-      const goldenAngle = PI * (3 - Math.sqrt(5));
-      const numPoints = Math.floor(rnd(50, 150) * features.densityValue);
-      fill(features.palette.ink);
-      noStroke();
-      for (let i = 1; i < numPoints; i++) {
-        const angle = i * goldenAngle;
-        const r = Math.sqrt(i) * maxRadius * 0.08;
-        if (r <= maxRadius) {
-          const size = map(i, 1, numPoints, 2, 5) * scaleFactor;
-          ellipse(centerX + cos(angle) * r, centerY + sin(angle) * r, size, size);
+      case 2: // Spiral arms (galaxy-like)
+        const numArms = rndInt(3, 6);
+        for (let arm = 0; arm < numArms; arm++) {
+          beginShape();
+          const armOffset = (arm / numArms) * TWO_PI;
+          const turns = rnd(0.8, 1.5);
+          for (let i = 0; i < 60; i++) {
+            const t = i / 60;
+            const angle = t * turns * TWO_PI + armOffset;
+            const radius = t * maxRadius;
+            vertex(centerX + cos(angle) * radius, centerY + sin(angle) * radius);
+          }
+          endShape();
         }
-      }
-      break;
+        break;
+
+      case 3: // Fermat spiral (sunflower pattern)
+        const goldenAngle = PI * (3 - Math.sqrt(5));
+        const numPoints = Math.floor(rnd(50, 150) * features.densityValue * placement.scale);
+        fill(features.palette.ink);
+        noStroke();
+        for (let i = 1; i < numPoints; i++) {
+          const angle = i * goldenAngle;
+          const r = Math.sqrt(i) * maxRadius * 0.08;
+          if (r <= maxRadius) {
+            const size = map(i, 1, numPoints, 2, 5) * scaleFactor * placement.scale;
+            ellipse(centerX + cos(angle) * r, centerY + sin(angle) * r, size, size);
+          }
+        }
+        break;
+    }
   }
 }
 
 // --- 2. Text Along Spiral Path ---
 function drawSpiralText(voice, section) {
-  const centerX = section.xCenter;
-  const centerY = voice.yCenter;
-  const maxRadius = Math.min(section.width, voice.height) * 0.38;
+  const placements = getSpiralPlacements(voice, section);
+  const baseMaxRadius = Math.min(section.width, voice.height) * 0.38;
+
+  for (const placement of placements) {
+    const centerX = placement.x;
+    const centerY = placement.y;
+    const maxRadius = baseMaxRadius * placement.scale;
 
   // Crumb-style mystical/poetic text fragments
   const textOptions = [
@@ -6551,12 +6651,13 @@ function drawSpiralText(voice, section) {
     push();
     translate(x, y);
     rotate(angle + HALF_PI);
-    textSize(rnd(8, 14) * scaleFactor);
+    textSize(rnd(8, 14) * scaleFactor * placement.scale);
     text(syllables[i], 0, 0);
     pop();
   }
 
   textAlign(LEFT, TOP);
+  }
 }
 
 // --- 3. Segmented Spirals (with rests/gaps) ---
@@ -6723,86 +6824,91 @@ function drawMysticalSymbols(voice, section) {
 
 // --- 6. Mandala-like Patterns ---
 function drawMandalaPattern(voice, section) {
-  const centerX = section.xCenter;
-  const centerY = voice.yCenter;
-  const maxRadius = Math.min(section.width, voice.height) * 0.42;
+  const placements = getSpiralPlacements(voice, section);
+  const baseMaxRadius = Math.min(section.width, voice.height) * 0.42;
 
-  stroke(features.palette.ink);
-  noFill();
-
-  // Multiple layers of rotational symmetry
+  // Determine symmetry and layers once for consistency across placements
   const symmetry = rndChoice([4, 6, 8, 12]);
   const numLayers = rndInt(3, 6);
 
-  for (let layer = 1; layer <= numLayers; layer++) {
-    const layerRadius = (layer / numLayers) * maxRadius;
-    const layerWeight = map(layer, 1, numLayers, 0.5, 2);
-    strokeWeight(layerWeight * scaleFactor);
+  for (const placement of placements) {
+    const centerX = placement.x;
+    const centerY = placement.y;
+    const maxRadius = baseMaxRadius * placement.scale;
 
-    // Circular base
-    if (rndBool(0.7)) {
-      ellipse(centerX, centerY, layerRadius * 2, layerRadius * 2);
-    }
+    stroke(features.palette.ink);
+    noFill();
 
-    // Symmetric elements
-    for (let i = 0; i < symmetry; i++) {
-      const angle = (i / symmetry) * TWO_PI;
+    for (let layer = 1; layer <= numLayers; layer++) {
+      const layerRadius = (layer / numLayers) * maxRadius;
+      const layerWeight = map(layer, 1, numLayers, 0.5, 2) * placement.scale;
+      strokeWeight(layerWeight * scaleFactor);
 
-      push();
-      translate(centerX, centerY);
-      rotate(angle);
-
-      const elementType = rndInt(0, 4);
-
-      switch (elementType) {
-        case 0: // Petal
-          beginShape();
-          vertex(0, 0);
-          bezierVertex(
-            layerRadius * 0.3, -layerRadius * 0.2,
-            layerRadius * 0.7, -layerRadius * 0.1,
-            layerRadius, 0
-          );
-          bezierVertex(
-            layerRadius * 0.7, layerRadius * 0.1,
-            layerRadius * 0.3, layerRadius * 0.2,
-            0, 0
-          );
-          endShape();
-          break;
-
-        case 1: // Line with dot
-          line(layerRadius * 0.3, 0, layerRadius * 0.9, 0);
-          fill(features.palette.ink);
-          ellipse(layerRadius, 0, 4 * scaleFactor, 4 * scaleFactor);
-          noFill();
-          break;
-
-        case 2: // Arc
-          arc(0, 0, layerRadius * 1.5, layerRadius * 1.5,
-              -PI/symmetry * 0.8, PI/symmetry * 0.8);
-          break;
-
-        case 3: // Triangle pointing outward
-          triangle(
-            layerRadius * 0.5, 0,
-            layerRadius * 0.8, -layerRadius * 0.15,
-            layerRadius * 0.8, layerRadius * 0.15
-          );
-          break;
-
-        case 4: // Small circles
-          ellipse(layerRadius * 0.7, 0, layerRadius * 0.15, layerRadius * 0.15);
-          break;
+      // Circular base
+      if (rndBool(0.7)) {
+        ellipse(centerX, centerY, layerRadius * 2, layerRadius * 2);
       }
 
-      pop();
-    }
-  }
+      // Symmetric elements
+      for (let i = 0; i < symmetry; i++) {
+        const angle = (i / symmetry) * TWO_PI;
 
-  // Center decoration
-  fill(features.palette.ink);
-  ellipse(centerX, centerY, maxRadius * 0.08, maxRadius * 0.08);
+        push();
+        translate(centerX, centerY);
+        rotate(angle);
+
+        const elementType = rndInt(0, 4);
+
+        switch (elementType) {
+          case 0: // Petal
+            beginShape();
+            vertex(0, 0);
+            bezierVertex(
+              layerRadius * 0.3, -layerRadius * 0.2,
+              layerRadius * 0.7, -layerRadius * 0.1,
+              layerRadius, 0
+            );
+            bezierVertex(
+              layerRadius * 0.7, layerRadius * 0.1,
+              layerRadius * 0.3, layerRadius * 0.2,
+              0, 0
+            );
+            endShape();
+            break;
+
+          case 1: // Line with dot
+            line(layerRadius * 0.3, 0, layerRadius * 0.9, 0);
+            fill(features.palette.ink);
+            ellipse(layerRadius, 0, 4 * scaleFactor * placement.scale, 4 * scaleFactor * placement.scale);
+            noFill();
+            break;
+
+          case 2: // Arc
+            arc(0, 0, layerRadius * 1.5, layerRadius * 1.5,
+                -PI/symmetry * 0.8, PI/symmetry * 0.8);
+            break;
+
+          case 3: // Triangle pointing outward
+            triangle(
+              layerRadius * 0.5, 0,
+              layerRadius * 0.8, -layerRadius * 0.15,
+              layerRadius * 0.8, layerRadius * 0.15
+            );
+            break;
+
+          case 4: // Small circles
+            ellipse(layerRadius * 0.7, 0, layerRadius * 0.15, layerRadius * 0.15);
+            break;
+        }
+
+        pop();
+      }
+    }
+
+    // Center decoration
+    fill(features.palette.ink);
+    ellipse(centerX, centerY, maxRadius * 0.08, maxRadius * 0.08);
+  }
 }
 
 // --- 7. Fibonacci/Golden Ratio Spiral ---

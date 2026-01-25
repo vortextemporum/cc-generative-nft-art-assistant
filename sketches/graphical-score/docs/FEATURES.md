@@ -691,6 +691,7 @@ All outputs use a standardized double-line frame border:
 
 ## Version History
 
+- **v3.38.0** - Added spiral placement variety system for Crumb/Spiral mode (10 placement patterns)
 - **v3.37.0** - Expanded Energy to 24 values and Grouping to 22 values with diverse new options
 - **v3.36.0** - Renamed Tempo → Energy (14 values) and Time Signature → Grouping (12 values) for graphic score semantics
 - **v3.35.x** - PRNG consistency fixes, panzoom viewer, dark palette print-friendly
