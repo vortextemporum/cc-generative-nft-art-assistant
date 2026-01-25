@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.21.0] - 2026-01-25
+
+### Added
+
+**Time Signature Influence on Visual Grouping** - Time signature now affects element placement and sizing:
+
+- **New time signatures**: Added 5/8 and 9/8 (now 9 total including free/aleatoric)
+- **Accent patterns**: Each meter has characteristic accent weights
+  - 4/4: Strong-weak-medium-weak
+  - 3/4: Waltz pattern (strong-weak-weak)
+  - 6/8, 9/8: Compound meters (grouped in 3s)
+  - 5/4, 5/8, 7/8: Asymmetric groupings (2+3, 3+2+2, etc.)
+  - free/aleatoric: Random groupings with variable cycles
+- **New features added**:
+  - `beatGrouping` - Primary grouping unit (2-7)
+  - `beatSubdivision` - Simple (2) or compound (3)
+  - `accentPattern` - Array of visual weights per beat
+  - `isAsymmetric` - Flag for odd/irregular meters
+  - `groupingCycle` - Pattern repeat length
+- **Helper functions** for drawing code:
+  - `getAccentWeight(position)` - Get accent at position
+  - `getGroupedPositions(xStart, xEnd, count)` - Get beat-aligned x positions
+  - `isStrongBeat(position)` - Check if downbeat
+  - `getSubdivision()` - Get subdivision count
+  - `getAccentedSize(baseSize, position)` - Scale size by accent
+
+### Technical
+
+Time signature parsing creates visual rhythmic patterns even though graphical scores don't use traditional meter. Strong beats create larger/heavier elements, weak beats create smaller/lighter ones.
+
+---
+
 ## [3.20.0] - 2026-01-25
 
 ### Added

@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.21.0
+ * Graphical Score v3.20.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -150,89 +150,6 @@ function rndGaussian(mean = 0, stdDev = 1) {
   const u2 = R();
   const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   return z * stdDev + mean;
-}
-
-// ============================================================
-// TIME SIGNATURE INFLUENCE HELPERS
-// ============================================================
-
-/**
- * Get the accent weight for a position within the time signature pattern
- * @param {number} position - Position in the sequence (0-based)
- * @returns {number} - Accent weight (0.0 to 1.0)
- */
-function getAccentWeight(position) {
-  if (!features || !features.accentPattern) return 1.0;
-  const pattern = features.accentPattern;
-  const cycle = features.groupingCycle || 1;
-  const idx = Math.floor(position / cycle) % pattern.length;
-  return pattern[idx];
-}
-
-/**
- * Get x-positions for beat groupings across a section
- * @param {number} xStart - Start x position
- * @param {number} xEnd - End x position
- * @param {number} count - Number of elements to place
- * @returns {Array} - Array of {x, accent} objects
- */
-function getGroupedPositions(xStart, xEnd, count) {
-  if (!features || !features.beatGrouping) {
-    // Fallback to even spacing
-    const positions = [];
-    for (let i = 0; i < count; i++) {
-      positions.push({
-        x: xStart + (i / (count - 1 || 1)) * (xEnd - xStart),
-        accent: 1.0
-      });
-    }
-    return positions;
-  }
-
-  const groupSize = features.beatGrouping;
-  const pattern = features.accentPattern;
-  const positions = [];
-
-  for (let i = 0; i < count; i++) {
-    const normalizedPos = i / (count - 1 || 1);
-    const x = xStart + normalizedPos * (xEnd - xStart);
-    const beatPos = i % groupSize;
-    const accent = pattern[beatPos % pattern.length];
-
-    positions.push({ x, accent, beatPos, isDownbeat: beatPos === 0 });
-  }
-
-  return positions;
-}
-
-/**
- * Check if a position is on a strong beat (downbeat)
- * @param {number} position - Position in sequence
- * @returns {boolean}
- */
-function isStrongBeat(position) {
-  if (!features || !features.beatGrouping) return true;
-  return (position % features.beatGrouping) === 0;
-}
-
-/**
- * Get subdivision count for current time signature
- * @returns {number} - 2 for simple meters, 3 for compound
- */
-function getSubdivision() {
-  return features?.beatSubdivision || 2;
-}
-
-/**
- * Apply grouping-based size variation
- * @param {number} baseSize - Base element size
- * @param {number} position - Position in sequence
- * @returns {number} - Modified size based on accent
- */
-function getAccentedSize(baseSize, position) {
-  const accent = getAccentWeight(position);
-  // Strong beats are larger (up to 1.3x), weak beats smaller (down to 0.7x)
-  return baseSize * (0.7 + accent * 0.6);
 }
 
 function rollRarity(common, uncommon, rare, legendary) {
@@ -738,69 +655,7 @@ function generateFeatures() {
   }
 
   // Time and tempo aesthetics
-  const timeSignatures = ["4/4", "3/4", "5/4", "6/8", "7/8", "5/8", "9/8", "free", "aleatoric"];
-  const selectedTimeSignature = rndChoice(timeSignatures);
-
-  // Parse time signature for visual influence
-  let beatGrouping = 4;       // Primary grouping unit
-  let beatSubdivision = 2;    // How beats subdivide (2 = simple, 3 = compound)
-  let accentPattern = [1];    // Relative accent weights per beat
-  let isAsymmetric = false;   // Odd meters create irregular patterns
-  let groupingCycle = 1;      // How many groups before pattern repeats
-
-  if (selectedTimeSignature === "4/4") {
-    beatGrouping = 4;
-    beatSubdivision = 2;
-    accentPattern = [1.0, 0.4, 0.7, 0.4];  // Strong, weak, medium, weak
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "3/4") {
-    beatGrouping = 3;
-    beatSubdivision = 2;
-    accentPattern = [1.0, 0.4, 0.5];  // Waltz: strong, weak, weak
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "5/4") {
-    beatGrouping = 5;
-    beatSubdivision = 2;
-    isAsymmetric = true;
-    // 5/4 often groups as 3+2 or 2+3
-    accentPattern = rndBool(0.5) ? [1.0, 0.4, 0.5, 0.8, 0.4] : [1.0, 0.4, 0.8, 0.4, 0.5];
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "6/8") {
-    beatGrouping = 2;  // Two main beats
-    beatSubdivision = 3;  // Compound - each beat has 3 subdivisions
-    accentPattern = [1.0, 0.6];  // Two strong beats
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "7/8") {
-    beatGrouping = 7;
-    beatSubdivision = 2;
-    isAsymmetric = true;
-    // 7/8 groups as 2+2+3, 3+2+2, or 2+3+2
-    const pattern = rndInt(0, 2);
-    if (pattern === 0) accentPattern = [1.0, 0.4, 0.7, 0.4, 0.8, 0.4, 0.5];  // 2+2+3
-    else if (pattern === 1) accentPattern = [1.0, 0.4, 0.5, 0.7, 0.4, 0.8, 0.4];  // 3+2+2
-    else accentPattern = [1.0, 0.4, 0.8, 0.4, 0.5, 0.7, 0.4];  // 2+3+2
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "5/8") {
-    beatGrouping = 5;
-    beatSubdivision = 2;
-    isAsymmetric = true;
-    accentPattern = rndBool(0.5) ? [1.0, 0.4, 0.8, 0.4, 0.5] : [1.0, 0.4, 0.5, 0.8, 0.4];
-    groupingCycle = 1;
-  } else if (selectedTimeSignature === "9/8") {
-    beatGrouping = 3;  // Three main beats
-    beatSubdivision = 3;  // Compound
-    accentPattern = [1.0, 0.5, 0.6];
-    groupingCycle = 1;
-  } else {
-    // "free" or "aleatoric" - irregular groupings
-    beatGrouping = rndInt(2, 7);
-    beatSubdivision = rndChoice([2, 3]);
-    isAsymmetric = true;
-    accentPattern = Array.from({ length: beatGrouping }, () => rnd(0.3, 1.0));
-    accentPattern[0] = 1.0;  // First is always strongest
-    groupingCycle = rndInt(1, 3);  // Can have longer cycles
-  }
-
+  const timeSignatures = ["4/4", "3/4", "5/4", "6/8", "7/8", "free", "aleatoric"];
   const tempoMarkings = [
     "Lento", "Adagio", "Andante", "Moderato", "Allegro",
     "Presto", "Senza tempo", "Liberamente", "Rubato"
@@ -882,17 +737,10 @@ function generateFeatures() {
     paletteType: PALETTES[paletteName].type,
 
     // Musical aesthetics
-    timeSignature: selectedTimeSignature,
+    timeSignature: rndChoice(timeSignatures),
     tempo: selectedTempo,
     tempoModifier,    // Affects density (0.7-1.3)
     tempoSpacing,     // Affects element spacing (0.7-1.4)
-
-    // Time signature influence on visuals
-    beatGrouping,     // Primary grouping unit (2-7)
-    beatSubdivision,  // Simple (2) or compound (3)
-    accentPattern,    // Relative visual weight per beat position
-    isAsymmetric,     // Odd/irregular meter
-    groupingCycle,    // How many groups before pattern repeats
 
     // Technical
     seed: hash.slice(2, 10),
