@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.17.0] - 2026-01-25
+
+### Added
+
+**New Structure Type: Gestural** - Organic flowing curves for voices:
+
+- **gestural** (10% probability, legendary rarity) - 1-2 sections with curved voice paths
+  - Voices follow sine wave curves instead of straight horizontal lines
+  - `curveAmplitude`: 10-40px vertical movement
+  - `curveFrequency`: 0.5-2.5 wave cycles across score
+  - `curvePhase`: Random phase offset for variety between voices
+  - Voice class gains `getYAt()` and `getCurveOffset()` methods for curved positioning
+
+**Variable Palindrome Mirror Point** - Palindrome structure no longer always mirrors at center:
+
+- `mirrorPoint` feature: 0.3-0.7 (was fixed at 0.5)
+- Sections before mirror point and after have different widths
+- Right-side sections get `isMirrored` flag and `mirrorGroup` for matching
+- Creates asymmetric palindrome structures like ABCBA where mirror isn't in center
+
+### Changed
+
+- Structure probabilities rebalanced:
+  - flowing: 32%
+  - sectioned: 23%
+  - mathematical: 17%
+  - fragmentary: 13%
+  - gestural: 10%
+  - palindrome: 5%
+- Voice class extended with gestural curve properties and methods
+
+---
+
 ## [3.16.0] - 2026-01-25
 
 ### Added

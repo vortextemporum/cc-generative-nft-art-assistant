@@ -1,5 +1,5 @@
 /**
- * Graphical Score v3.17.0
+ * Graphical Score v3.16.0
  * A generative graphical score with 14 distinct modes inspired by
  * 20th century avant-garde composers
  *
@@ -521,8 +521,8 @@ const RARITY_CURVES = {
     labels: ["ensemble (3-5)", "chamber (6-8)", "solo (1-2)", "orchestra (9-12)"]
   },
   structure: {
-    probabilities: [0.32, 0.23, 0.17, 0.13, 0.10, 0.05],
-    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "gestural", "palindrome"]
+    probabilities: [0.35, 0.25, 0.18, 0.12, 0.10],
+    labels: ["flowing", "sectioned", "mathematical", "fragmentary", "palindrome"]
   },
   density: {
     probabilities: [0.45, 0.28, 0.18, 0.09],
@@ -583,35 +583,28 @@ function generateFeatures() {
   else if (voiceRarity === "rare") voiceCount = rndInt(1, 2);
   else voiceCount = rndInt(9, 12);
 
-  // Structure - 6 types with weighted selection
+  // Structure - 5 types with weighted selection
   const structureRoll = rnd();
   let structure, sectionCount = 1;
-  if (structureRoll < 0.30) {
+  if (structureRoll < 0.35) {
     structure = "flowing";
     sectionCount = 1;
-  } else if (structureRoll < 0.52) {
+  } else if (structureRoll < 0.60) {
     structure = "sectioned";
     sectionCount = rndInt(2, 5);
-  } else if (structureRoll < 0.68) {
+  } else if (structureRoll < 0.78) {
     structure = "mathematical";
     sectionCount = rndInt(3, 6);
-  } else if (structureRoll < 0.80) {
+  } else if (structureRoll < 0.90) {
     structure = "fragmentary";
     sectionCount = rndInt(5, 9);  // More sections, irregular widths
-  } else if (structureRoll < 0.90) {
-    structure = "gestural";
-    sectionCount = rndInt(1, 2);  // Minimal sections, organic curves
   } else {
     structure = "palindrome";
     sectionCount = rndInt(3, 7);
   }
-
-  // Variable mirror point for palindrome (0.3-0.7 instead of always 0.5)
-  const mirrorPoint = structure === "palindrome" ? rnd(0.3, 0.7) : 0.5;
-
   const structureRarity = structure === "flowing" ? "common" :
     structure === "sectioned" ? "uncommon" :
-    (structure === "palindrome" || structure === "gestural") ? "legendary" : "rare";
+    structure === "palindrome" ? "legendary" : "rare";
 
   // Density
   const densityRarity = rollRarity(0.45, 0.28, 0.18, 0.09);
@@ -715,7 +708,6 @@ function generateFeatures() {
     structure,
     structureRarity,
     sectionCount,
-    mirrorPoint,  // Variable mirror point for palindrome (0.3-0.7)
     density,
     densityRarity,
     densityValue: effectiveDensityValue,  // Tempo-modified density
@@ -791,32 +783,12 @@ class Voice {
     this.activity = rnd(0.3, 1.0);
     this.density = rnd() * features.densityValue;
 
-    // Gestural curve parameters (set in setupComposition for gestural structure)
-    this.hasGesturalCurve = false;
-    this.curveAmplitude = 0;
-    this.curveFrequency = 0;
-    this.curvePhase = 0;
-
     // For voice-based blending, assign a mode
     if (features.blendType === "voiceBased" && features.activeModes.length > 1) {
       this.assignedMode = rndChoice(features.activeModes);
     } else {
       this.assignedMode = features.primaryMode;
     }
-  }
-
-  // Get y-position at given x, accounting for gestural curves
-  getYAt(x, baseY) {
-    if (!this.hasGesturalCurve) return baseY;
-    const normalizedX = (x - MARGIN) / (WIDTH - MARGIN * 2);
-    const curveOffset = Math.sin(normalizedX * this.curveFrequency * TWO_PI + this.curvePhase) * this.curveAmplitude;
-    return baseY + curveOffset;
-  }
-
-  // Get curve offset at position (0-1 normalized)
-  getCurveOffset(normalizedX) {
-    if (!this.hasGesturalCurve) return 0;
-    return Math.sin(normalizedX * this.curveFrequency * TWO_PI + this.curvePhase) * this.curveAmplitude;
   }
 }
 
@@ -902,49 +874,8 @@ function setupComposition() {
       if (sec.isNarrow) sec.densityMod *= 0.5;
       sections.push(sec);
     }
-  } else if (features.structure === "gestural") {
-    // Gestural: minimal sections with organic flowing curves
-    // Voices will have curved paths instead of straight lines
-    for (let i = 0; i < features.sectionCount; i++) {
-      const xStart = MARGIN + (i / features.sectionCount) * scoreWidth;
-      const xEnd = MARGIN + ((i + 1) / features.sectionCount) * scoreWidth;
-      sections.push(new Section(i, features.sectionCount, xStart, xEnd));
-    }
-
-    // Enable gestural curves for all voices (set after voices are created below)
-    // Curve initialization happens after voice creation
-  } else if (features.structure === "palindrome") {
-    // Palindrome: sections mirror around a variable point (not always center)
-    // mirrorPoint is 0.3-0.7 (where 0.5 = center)
-    const mp = features.mirrorPoint;
-    const leftCount = Math.ceil(features.sectionCount * mp);
-    const rightCount = features.sectionCount - leftCount;
-
-    // Create left side sections (before mirror point)
-    for (let i = 0; i < leftCount; i++) {
-      const leftStart = (i / leftCount) * mp;
-      const leftEnd = ((i + 1) / leftCount) * mp;
-      const xStart = MARGIN + leftStart * scoreWidth;
-      const xEnd = MARGIN + leftEnd * scoreWidth;
-      const sec = new Section(i, features.sectionCount, xStart, xEnd);
-      sec.mirrorGroup = i;  // For matching mirrored content
-      sections.push(sec);
-    }
-
-    // Create right side sections (after mirror point, mirrored order)
-    for (let i = 0; i < rightCount; i++) {
-      const rightStart = mp + (i / rightCount) * (1 - mp);
-      const rightEnd = mp + ((i + 1) / rightCount) * (1 - mp);
-      const xStart = MARGIN + rightStart * scoreWidth;
-      const xEnd = MARGIN + rightEnd * scoreWidth;
-      const sec = new Section(leftCount + i, features.sectionCount, xStart, xEnd);
-      // Mirror group matches in reverse order
-      sec.mirrorGroup = Math.max(0, leftCount - 1 - i);
-      sec.isMirrored = true;  // Flag for mirrored content rendering
-      sections.push(sec);
-    }
   } else {
-    // Flowing, sectioned - equal or near-equal divisions
+    // Flowing, sectioned, palindrome - equal or near-equal divisions
     for (let i = 0; i < features.sectionCount; i++) {
       const variance = features.structure === "flowing" ? 0 : rnd(-0.08, 0.08);
       const xStart = MARGIN + (i / features.sectionCount + variance) * scoreWidth;
@@ -952,16 +883,6 @@ function setupComposition() {
       sections.push(new Section(i, features.sectionCount,
         Math.max(MARGIN, xStart),
         Math.min(WIDTH - MARGIN, xEnd)));
-    }
-  }
-
-  // Initialize gestural curves for voices if gestural structure
-  if (features.structure === "gestural") {
-    for (const voice of voices) {
-      voice.hasGesturalCurve = true;
-      voice.curveAmplitude = rnd(10, 40) * scaleFactor;  // How much vertical movement
-      voice.curveFrequency = rnd(0.5, 2.5);  // How many wave cycles across score
-      voice.curvePhase = rnd(0, TWO_PI);  // Phase offset for variety
     }
   }
 }
