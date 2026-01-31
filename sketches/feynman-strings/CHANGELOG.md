@@ -2,6 +2,33 @@
 
 All notable changes to Feynman Strings will be documented in this file.
 
+## [1.5.0] - 2025-01-31
+
+### Added
+- **New Feynman diagram topologies**:
+  - `drawSunsetDiagram()` - Two-loop self-energy (sunrise/sunset)
+  - `drawBoxDiagram()` - Four-point one-loop
+  - `drawTriangleDiagram()` - Three-point one-loop
+  - `drawLadderDiagram()` - Iterative rung structure
+  - `drawSelfEnergyBlob()` - Propagator with blob correction
+  - `drawComptonDiagram()` - Photon-electron scattering
+  - `drawBremsstrahlungDiagram()` - Radiation emission
+  - `drawVertexCorrection()` - Loop correction at vertex
+  - `drawCrossedDiagram()` - Exchange/crossing topology
+- **Wave-based string visualizations** (replaces worldsheets):
+  - `drawVibratingString()` - Standing wave harmonics
+  - `drawClosedStringLoop()` - Circular wave pattern
+  - `drawStringHarmonics()` - Multiple modes displayed
+  - `drawWaveInterference()` - Two waves meeting
+  - `drawWavePacket()` - Localized traveling wave
+  - `drawStringPropagator()` - Wavy line connecting points
+
+### Changed
+- **String mode completely redesigned** - Now uses clean line-based wave visualizations instead of filled worldsheet surfaces
+- **QED mode** now includes Compton scattering, bremsstrahlung, sunset, triangle, vertex corrections
+- **QCD mode** now includes box diagrams, ladder diagrams, crossed diagrams
+- Removed pants diagrams, worldsheets, and other filled surface visualizations from String mode
+
 ## [1.4.0] - 2025-01-31
 
 ### Added
