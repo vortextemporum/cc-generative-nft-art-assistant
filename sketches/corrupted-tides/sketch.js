@@ -383,8 +383,8 @@ function generateFeatures() {
   // Palette corruption type
   const paletteCorruption = rndChoice(['quantized', 'channel-shifted', 'inverted', 'rotated']);
 
-  // Block size for compression artifacts
-  const blockSizes = [4, 8, 16, 32];
+  // Block size for compression artifacts (scaled for high-res)
+  const blockSizes = [4, 8, 16, 32].map(s => Math.round(s * SCALE));
   const blockSizeWeights = [0.15, 0.40, 0.30, 0.15]; // 8x8 most common (like JPEG)
   let blockRoll = R();
   let blockIdx = 0;
@@ -491,7 +491,9 @@ let channelBuffers = { r: null, g: null, b: null };
 let palette;
 let time = 0;
 
-const SIZE = 700;
+const SIZE = 2000;
+const DISPLAY_SIZE = 700;
+const SCALE = SIZE / 700; // Scale factor for visual elements
 
 // =============================================================================
 // CORRUPTED FLOW FIELD
@@ -533,10 +535,10 @@ class BlockCluster {
 
       // Data bend: sometimes use wrong values
       const bendX = rndBool(features.dataBendIntensity) ?
-        (rnd() * 255) : // Use a "color" as position
+        (rnd() * 255 * SCALE) : // Use a "color" as position (scaled)
         Math.cos(angle) * dist;
       const bendY = rndBool(features.dataBendIntensity) ?
-        (rnd() * 255) :
+        (rnd() * 255 * SCALE) :
         Math.sin(angle) * dist;
 
       this.blocks.push({
@@ -596,7 +598,7 @@ function drawCorruptedFlowField(pg, t) {
   const densityMult = density === 'sparse' ? 0.25 : density === 'dense' ? 1.5 : 1.0;
   const particleCount = Math.floor((300 + corruptionIntensity * 400) * densityMult);
 
-  pg.strokeWeight(1);
+  pg.strokeWeight(1 * SCALE);
 
   for (let i = 0; i < particleCount; i++) {
     let x = rnd(0, SIZE);
@@ -617,8 +619,8 @@ function drawCorruptedFlowField(pg, t) {
 
       // Get corrupted flow direction
       const v = corruptedVectorField(x, y, t);
-      x += v.x * 5;
-      y += v.y * 5;
+      x += v.x * 5 * SCALE;
+      y += v.y * 5 * SCALE;
 
       // Bounds with wrapping (data bend style)
       if (x < 0) x = SIZE;
@@ -634,15 +636,15 @@ function drawCorruptedFlowField(pg, t) {
 function drawScanlines(pg, t) {
   const { scanlineDensity, corruptionIntensity } = features;
   const densities = { 'sparse': 8, 'medium': 4, 'dense': 2 };
-  const gap = densities[scanlineDensity];
+  const gap = densities[scanlineDensity] * SCALE;
 
   pg.stroke(0, 30 + corruptionIntensity * 50);
-  pg.strokeWeight(1);
+  pg.strokeWeight(1 * SCALE);
 
   for (let y = 0; y < SIZE; y += gap) {
     // Occasional scanline displacement
     const displaced = rndBool(0.05 * corruptionIntensity);
-    const offset = displaced ? rnd(-10, 10) : 0;
+    const offset = displaced ? rnd(-10, 10) * SCALE : 0;
 
     pg.line(offset, y, SIZE + offset, y);
   }
@@ -675,16 +677,16 @@ function drawBlockArtifacts(pg, t) {
     if (glitchType === 'interlace') {
       // Draw every other line with offset
       const lineY = Math.floor(rnd(0, SIZE / 2)) * 2;
-      pg.rect(rnd(-20, 0), lineY, SIZE + 40, 1);
-      pg.rect(rnd(0, 20), lineY + 1, SIZE + 40, 1);
+      pg.rect(rnd(-20, 0) * SCALE, lineY, SIZE + 40 * SCALE, 1 * SCALE);
+      pg.rect(rnd(0, 20) * SCALE, lineY + 1 * SCALE, SIZE + 40 * SCALE, 1 * SCALE);
     }
 
     if (glitchType === 'pixel-sort') {
       // Horizontal sorted-looking streaks
       const streakY = Math.floor(rnd(0, SIZE));
-      const streakLen = rnd(50, 200) * corruptionIntensity;
+      const streakLen = rnd(50, 200) * SCALE * corruptionIntensity;
       const streakX = rnd(0, SIZE - streakLen);
-      pg.strokeWeight(rnd(1, 3));
+      pg.strokeWeight(rnd(1, 3) * SCALE);
       pg.stroke(col + alpha.toString(16).padStart(2, '0'));
       pg.line(streakX, streakY, streakX + streakLen, streakY);
     }
@@ -694,11 +696,12 @@ function drawBlockArtifacts(pg, t) {
       const cx = rnd(0, SIZE);
       const cy = rnd(0, SIZE);
       pg.noStroke();
+      const dotSize = 2 * SCALE;
       for (let d = 0; d < 20; d++) {
-        const dx = cx + rnd(-30, 30) * corruptionIntensity;
-        const dy = cy + rnd(-30, 30) * corruptionIntensity;
+        const dx = cx + rnd(-30, 30) * SCALE * corruptionIntensity;
+        const dy = cy + rnd(-30, 30) * SCALE * corruptionIntensity;
         pg.fill(palette[rndInt(0, 4)]);
-        pg.rect(Math.floor(dx / 2) * 2, Math.floor(dy / 2) * 2, 2, 2);
+        pg.rect(Math.floor(dx / dotSize) * dotSize, Math.floor(dy / dotSize) * dotSize, dotSize, dotSize);
       }
     }
 
@@ -710,7 +713,7 @@ function drawBlockArtifacts(pg, t) {
       pg.rect(bx, by, blockSize * 2, blockSize * 2);
       // Add harsh edge
       pg.stroke(palette[(rndInt(0, 4) + 1) % 5]);
-      pg.strokeWeight(2);
+      pg.strokeWeight(2 * SCALE);
       pg.noFill();
       pg.rect(bx, by, blockSize * 2, blockSize * 2);
     }
@@ -719,7 +722,7 @@ function drawBlockArtifacts(pg, t) {
 
 function drawCorruptedBorder(pg) {
   const { corruptionIntensity, blockSize } = features;
-  const borderSize = 12;
+  const borderSize = 12 * SCALE;
 
   // Get background color (darkest from palette)
   const bgCol = getBgColor();
@@ -728,25 +731,25 @@ function drawCorruptedBorder(pg) {
 
   // Top
   for (let x = 0; x < SIZE; x += blockSize) {
-    const h = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) : 0);
+    const h = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) * SCALE : 0);
     pg.rect(x, 0, blockSize, h);
   }
 
   // Bottom
   for (let x = 0; x < SIZE; x += blockSize) {
-    const h = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) : 0);
+    const h = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) * SCALE : 0);
     pg.rect(x, SIZE - h, blockSize, h);
   }
 
   // Left
   for (let y = 0; y < SIZE; y += blockSize) {
-    const w = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) : 0);
+    const w = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) * SCALE : 0);
     pg.rect(0, y, w, blockSize);
   }
 
   // Right
   for (let y = 0; y < SIZE; y += blockSize) {
-    const w = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) : 0);
+    const w = borderSize + (rndBool(corruptionIntensity) ? rnd(-4, 8) * SCALE : 0);
     pg.rect(SIZE - w, y, blockSize, w);
   }
 }
@@ -790,12 +793,14 @@ function setup() {
   const basePalette = SIGNAL_SOURCES[features.signalSource];
   palette = corruptPalette(basePalette, features.paletteCorruption, features.corruptionIntensity);
 
-  // Create canvas and place in holder
+  // Create high-res canvas, display at smaller size
   canvas = createCanvas(SIZE, SIZE);
   canvas.id('sketch-canvas');
   canvas.parent('sketch-holder');
+  canvas.style('width', DISPLAY_SIZE + 'px');
+  canvas.style('height', DISPLAY_SIZE + 'px');
 
-  // Create buffers
+  // Create buffers at full resolution
   blockBuffer = createGraphics(SIZE, SIZE);
   flowBuffer = createGraphics(SIZE, SIZE);
 
@@ -805,16 +810,17 @@ function setup() {
   for (let i = 0; i < 50; i++) R();
 
   clusters = [];
+  const margin = 50 * SCALE;
   for (let i = 0; i < features.clusterCount; i++) {
     clusters.push(new BlockCluster(
-      rnd(50, SIZE - 50),
-      rnd(50, SIZE - 50),
-      rnd(30, 100)
+      rnd(margin, SIZE - margin),
+      rnd(margin, SIZE - margin),
+      rnd(30, 100) * SCALE
     ));
   }
 
-  // Set pixel density for crisp rendering
-  pixelDensity(window.devicePixelRatio || 1);
+  // Use pixelDensity 1 since we're manually handling high-res via larger canvas
+  pixelDensity(1);
 
   // Disable image smoothing for crisp blocks
   drawingContext.imageSmoothingEnabled = false;
@@ -983,11 +989,12 @@ function doRegenerate() {
   R = initRandom(hash);
   for (let i = 0; i < 50; i++) R();
   clusters = [];
+  const margin = 50 * SCALE;
   for (let i = 0; i < features.clusterCount; i++) {
     clusters.push(new BlockCluster(
-      rnd(50, SIZE - 50),
-      rnd(50, SIZE - 50),
-      rnd(30, 100)
+      rnd(margin, SIZE - margin),
+      rnd(margin, SIZE - margin),
+      rnd(30, 100) * SCALE
     ));
   }
 
@@ -1006,11 +1013,12 @@ function doRender() {
   R = initRandom(hash);
   for (let i = 0; i < 50; i++) R();
   clusters = [];
+  const margin = 50 * SCALE;
   for (let i = 0; i < features.clusterCount; i++) {
     clusters.push(new BlockCluster(
-      rnd(50, SIZE - 50),
-      rnd(50, SIZE - 50),
-      rnd(30, 100)
+      rnd(margin, SIZE - margin),
+      rnd(margin, SIZE - margin),
+      rnd(30, 100) * SCALE
     ));
   }
 
