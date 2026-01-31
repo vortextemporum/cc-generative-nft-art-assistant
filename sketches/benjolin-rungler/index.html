@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benjolin Rungler</title>
+    <title>Benjolin Rungler - ASCII Art</title>
     <style>
         :root {
-            --bg: #0d0d14;
-            --panel-bg: #151520;
+            --bg: #0a0a0f;
+            --panel-bg: #12121a;
             --text: #e0e0e0;
-            --text-dim: #808090;
+            --text-dim: #606070;
             --accent: #00ff88;
             --accent-dim: #00aa55;
-            --border: #2a2a3a;
+            --border: #252535;
         }
 
         * {
@@ -50,6 +50,12 @@
             color: var(--accent);
         }
 
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 11px;
+            margin-left: 10px;
+        }
+
         .version {
             color: var(--text-dim);
             font-size: 11px;
@@ -67,35 +73,9 @@
             flex-shrink: 0;
         }
 
-        #canvas {
+        #defaultCanvas0, canvas {
             display: block;
-            background: #000;
             border: 1px solid var(--border);
-        }
-
-        #pause-indicator {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 4px;
-            color: var(--accent);
-            font-size: 14px;
-        }
-
-        #override-indicator {
-            display: none;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 100, 0, 0.8);
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            color: white;
         }
 
         .sidebar {
@@ -125,7 +105,6 @@
             align-items: center;
         }
 
-        /* Hash display */
         .hash-display {
             font-size: 10px;
             color: var(--text-dim);
@@ -136,7 +115,6 @@
             margin-bottom: 10px;
         }
 
-        /* Features table */
         .features-table {
             width: 100%;
             border-collapse: collapse;
@@ -160,27 +138,15 @@
             font-weight: 500;
         }
 
-        .features-table td:nth-child(3) {
-            text-align: right;
-            width: 70px;
-        }
-
-        /* Rarity badges */
-        .rarity-badge {
+        .color-swatch {
             display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 6px;
+            vertical-align: middle;
         }
 
-        .rarity-badge.common { background: #3a3a4a; color: #888; }
-        .rarity-badge.uncommon { background: #2a4a3a; color: #4a9; }
-        .rarity-badge.rare { background: #2a3a5a; color: #59f; }
-        .rarity-badge.legendary { background: #4a3a2a; color: #fa5; }
-
-        /* Buttons */
         .button-row {
             display: flex;
             gap: 8px;
@@ -212,62 +178,6 @@
             background: var(--accent);
         }
 
-        button.small {
-            padding: 4px 8px;
-            font-size: 10px;
-        }
-
-        /* Sliders */
-        .slider-group {
-            margin-bottom: 12px;
-        }
-
-        .slider-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .slider-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-            color: var(--text-dim);
-            font-size: 10px;
-        }
-
-        .slider-value {
-            color: var(--text);
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 4px;
-            -webkit-appearance: none;
-            appearance: none;
-            background: var(--border);
-            border-radius: 2px;
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            background: var(--accent);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            background: var(--accent);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-        }
-
-        /* Keyboard hints */
         .hints {
             display: flex;
             flex-wrap: wrap;
@@ -294,83 +204,132 @@
             font-size: 10px;
         }
 
-        /* Feedback buttons */
-        .feedback-buttons {
+        .color-schemes {
             display: flex;
-            gap: 10px;
-        }
-
-        .feedback-buttons button {
-            flex: 1;
-            padding: 12px;
-        }
-
-        button.like {
-            background: #2a4a3a;
-            color: #4a9;
-        }
-
-        button.like:hover {
-            background: #3a5a4a;
-        }
-
-        button.dislike {
-            background: #4a2a3a;
-            color: #a49;
-        }
-
-        button.dislike:hover {
-            background: #5a3a4a;
-        }
-
-        /* Feedback notification */
-        .feedback-notification {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 255, 136, 0.9);
-            color: var(--bg);
-            padding: 15px 30px;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            animation: fadeOut 1s ease-out forwards;
-            z-index: 1000;
-        }
-
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        /* Stats summary */
-        .stats-summary {
-            display: flex;
-            gap: 15px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .scheme-btn {
+            padding: 6px 10px;
+            font-size: 10px;
         }
 
-        .stat-value {
-            font-size: 18px;
-            font-weight: bold;
+        .scheme-btn.active {
+            background: var(--accent-dim);
+            color: var(--bg);
+        }
+
+        .layer-toggles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .toggle-label:hover {
+            color: var(--text);
+        }
+
+        .toggle-label input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .toggle-label input[type="checkbox"]:checked + span {
             color: var(--accent);
         }
 
-        .stat-label {
-            font-size: 9px;
-            color: var(--text-dim);
-            text-transform: uppercase;
+        .param-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 12px;
         }
 
-        /* Responsive */
+        .param-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .param-row label {
+            font-size: 11px;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .param-row label span {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .param-row input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .param-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .param-row input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .param-row select {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .param-row select:focus {
+            outline: none;
+            border-color: var(--accent-dim);
+        }
+
+        .ascii-preview {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px;
+            border-radius: 3px;
+            color: var(--accent);
+            line-height: 1.2;
+            white-space: pre;
+        }
+
         @media (max-width: 900px) {
             .main-container {
                 flex-direction: column;
@@ -384,127 +343,116 @@
             }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 </head>
 <body>
     <header>
-        <h1>Benjolin Rungler</h1>
-        <span class="version">v2.0.0</span>
+        <div>
+            <h1>Benjolin Rungler<span class="subtitle">ASCII Art Mode</span></h1>
+        </div>
+        <span class="version">v4.0.1</span>
     </header>
 
     <div class="main-container">
-        <div class="canvas-container">
-            <canvas id="canvas" width="700" height="700"></canvas>
-            <div id="pause-indicator">PAUSED</div>
-            <div id="override-indicator">MODIFIED</div>
+        <div class="canvas-container" id="canvas-container">
+            <!-- p5.js canvas will be inserted here -->
         </div>
 
         <div class="sidebar">
-            <!-- Stats Summary -->
+            <!-- Overview -->
             <div class="panel">
-                <h2>Overview</h2>
-                <div class="stats-summary">
-                    <div class="stat">
-                        <span class="stat-value">4</span>
-                        <span class="stat-label">Modes</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-value">13</span>
-                        <span class="stat-label">Rungler Bits</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-value">4</span>
-                        <span class="stat-label">Feedback Levels</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-value">3</span>
-                        <span class="stat-label">RGB Offsets</span>
-                    </div>
-                </div>
+                <h2>About</h2>
+                <p style="color: var(--text-dim); line-height: 1.5; margin-bottom: 10px;">
+                    Unified chaos field visualization - all Benjolin signals intersect
+                    and modulate each other across the entire canvas. No panels, pure
+                    visual interplay of oscillators, runglers, resonator, and clock.
+                </p>
+                <div class="ascii-preview">  ∿∿∿ OSC A ∿∿∿   ║║║ OSC B ║║║
+    ╲╲ RUNGLER A    ╱╱ RUNGLER B
+       ◎ RESONATOR SPIRAL ◎
+    ┼┼ COMPARATOR ┼┼  · S&H ·</div>
             </div>
 
             <!-- Features -->
             <div class="panel">
                 <h2>Features</h2>
-                <div class="hash-display" id="hash-display"></div>
+                <div class="hash-display" id="hash-display">Loading...</div>
                 <table class="features-table">
-                    <tbody id="features-body"></tbody>
+                    <tbody id="features-body">
+                        <tr><td>Loading...</td><td></td></tr>
+                    </tbody>
                 </table>
+            </div>
+
+            <!-- Layer Toggles -->
+            <div class="panel">
+                <h2>Layers</h2>
+                <div class="layer-toggles">
+                    <label class="toggle-label"><input type="checkbox" id="layer-oscA" checked><span>OSC A (Horizontal)</span></label>
+                    <label class="toggle-label"><input type="checkbox" id="layer-oscB" checked><span>OSC B (Vertical)</span></label>
+                    <label class="toggle-label"><input type="checkbox" id="layer-runglerA" checked><span>Rungler A</span></label>
+                    <label class="toggle-label"><input type="checkbox" id="layer-runglerB" checked><span>Rungler B</span></label>
+                    <label class="toggle-label"><input type="checkbox" id="layer-resonator" checked><span>Resonator</span></label>
+                    <label class="toggle-label"><input type="checkbox" id="layer-comparator" checked><span>Comparator</span></label>
+                    <label class="toggle-label"><input type="checkbox" id="layer-sh" checked><span>S&H Particles</span></label>
+                    <label class="toggle-label"><input type="checkbox" id="layer-clock" checked><span>Clock Pulses</span></label>
+                </div>
+            </div>
+
+            <!-- Parameters -->
+            <div class="panel">
+                <h2>Parameters</h2>
+                <div class="param-row">
+                    <label>Intersection</label>
+                    <select id="param-intersection">
+                        <option value="additive">Additive</option>
+                        <option value="xor">XOR</option>
+                        <option value="multiply">Multiply</option>
+                        <option value="interference">Interference</option>
+                    </select>
+                </div>
+                <div class="param-row">
+                    <label>Wave Count <span id="waveCount-val">5</span></label>
+                    <input type="range" id="param-waveCount" min="1" max="12" value="5">
+                </div>
+                <div class="param-row">
+                    <label>Speed <span id="speed-val">1.0</span></label>
+                    <input type="range" id="param-speed" min="0.1" max="3" step="0.1" value="1">
+                </div>
+                <div class="param-row">
+                    <label>Density <span id="density-val">0.7</span></label>
+                    <input type="range" id="param-density" min="0.1" max="1.5" step="0.1" value="0.7">
+                </div>
+                <div class="param-row">
+                    <label>Spiral <span id="spiral-val">1.0</span></label>
+                    <input type="range" id="param-spiral" min="0.1" max="4" step="0.1" value="1">
+                </div>
+                <div class="param-row">
+                    <label>Chaos <span id="chaos-val">0.7</span></label>
+                    <input type="range" id="param-chaos" min="0" max="1" step="0.05" value="0.7">
+                </div>
+            </div>
+
+            <!-- Color Schemes -->
+            <div class="panel">
+                <h2>Color Scheme</h2>
+                <div class="color-schemes">
+                    <button class="scheme-btn" onclick="benjolin.setColorScheme(0)">Phosphor</button>
+                    <button class="scheme-btn" onclick="benjolin.setColorScheme(1)">Amber</button>
+                    <button class="scheme-btn" onclick="benjolin.setColorScheme(2)">Blue</button>
+                    <button class="scheme-btn" onclick="benjolin.setColorScheme(3)">Matrix</button>
+                    <button class="scheme-btn" onclick="benjolin.setColorScheme(4)">Thermal</button>
+                    <button class="scheme-btn" onclick="benjolin.setColorScheme(5)">Cyan</button>
+                </div>
             </div>
 
             <!-- Controls -->
             <div class="panel">
                 <h2>Controls</h2>
                 <div class="button-row">
-                    <button id="btn-regenerate" class="primary">Regenerate (R)</button>
-                    <button id="btn-save">Save (S)</button>
-                    <button id="btn-pause">Pause (Space)</button>
+                    <button class="primary" onclick="benjolin.regenerate()">Regenerate (R)</button>
+                    <button onclick="saveCanvas('benjolin-ascii', 'png')">Save PNG (S)</button>
                 </div>
-            </div>
-
-            <!-- Parameter Sliders -->
-            <div class="panel">
-                <h2>
-                    Parameters
-                    <button id="btn-reset" class="small">Reset</button>
-                </h2>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Mode</span>
-                        <span class="slider-value" id="val-mode">Waveform</span>
-                    </div>
-                    <input type="range" id="slider-mode" min="0" max="3" step="1" value="0">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Osc Ratio</span>
-                        <span class="slider-value" id="val-oscRatio">1.0</span>
-                    </div>
-                    <input type="range" id="slider-oscRatio" min="0.2" max="4.0" step="0.01" value="1.0">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Rungler Bits</span>
-                        <span class="slider-value" id="val-runglerBits">8</span>
-                    </div>
-                    <input type="range" id="slider-runglerBits" min="4" max="16" step="1" value="8">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Feedback</span>
-                        <span class="slider-value" id="val-feedbackLevel">Low</span>
-                    </div>
-                    <input type="range" id="slider-feedbackLevel" min="0" max="3" step="1" value="0">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>RGB Offset</span>
-                        <span class="slider-value" id="val-rgbOffsetLevel">Subtle</span>
-                    </div>
-                    <input type="range" id="slider-rgbOffsetLevel" min="0" max="2" step="1" value="0">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Speed</span>
-                        <span class="slider-value" id="val-speedLevel">Medium</span>
-                    </div>
-                    <input type="range" id="slider-speedLevel" min="0" max="2" step="1" value="1">
-                </div>
-            </div>
-
-            <!-- Feedback -->
-            <div class="panel">
-                <h2>Feedback</h2>
-                <div class="feedback-buttons">
-                    <button id="btn-like" class="like">Like (L)</button>
-                    <button id="btn-dislike" class="dislike">Dislike (D)</button>
-                </div>
-                <button id="btn-export-feedback" style="margin-top: 10px; width: 100%;">Export to Console</button>
             </div>
 
             <!-- Keyboard Hints -->
@@ -513,59 +461,154 @@
                 <div class="hints">
                     <div class="hint"><kbd>R</kbd><span class="hint-text">Regenerate</span></div>
                     <div class="hint"><kbd>S</kbd><span class="hint-text">Save PNG</span></div>
-                    <div class="hint"><kbd>Space</kbd><span class="hint-text">Pause</span></div>
-                    <div class="hint"><kbd>L</kbd><span class="hint-text">Like</span></div>
-                    <div class="hint"><kbd>D</kbd><span class="hint-text">Dislike</span></div>
-                    <div class="hint"><kbd>1-4</kbd><span class="hint-text">Force Mode</span></div>
                 </div>
+            </div>
+
+            <!-- Version History -->
+            <div class="panel">
+                <h2>Version</h2>
+                <select id="version-select" style="width: 100%; padding: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 3px;">
+                    <option value="sketch.js">v4.0.1 - Unified Chaos + UI (current)</option>
+                    <option value="versions/v3.3.0-full-architecture.js">v3.3.0 - Full Benjolin Panels</option>
+                    <option value="versions/v2.0.0-webgl.js">v2.0.0 - WebGL Shader</option>
+                    <option value="versions/v1.0.0-sketch.js">v1.0.0 - Initial GLSL</option>
+                </select>
             </div>
         </div>
     </div>
 
     <script src="sketch.js"></script>
     <script>
-        // Update slider value displays
-        const modeNames = ['Waveform', 'Scope', 'Pixel', 'Filter'];
-        const feedbackNames = ['Low', 'Medium', 'High', 'Extreme'];
-        const rgbOffsetNames = ['Subtle', 'Moderate', 'Extreme'];
-        const speedNames = ['Slow', 'Medium', 'Fast'];
+        // Wait for sketch.js to initialize
+        function initUI() {
+            if (typeof window.features === 'undefined' || typeof window.layers === 'undefined') {
+                setTimeout(initUI, 50);
+                return;
+            }
 
-        document.getElementById('slider-mode').addEventListener('input', e => {
-            document.getElementById('val-mode').textContent = modeNames[e.target.value];
-        });
+            console.log('Initializing UI controls...');
 
-        document.getElementById('slider-oscRatio').addEventListener('input', e => {
-            document.getElementById('val-oscRatio').textContent = parseFloat(e.target.value).toFixed(2);
-        });
+            // Move canvas into container
+            const container = document.getElementById('canvas-container');
+            const canvas = document.querySelector('canvas');
+            if (canvas && canvas.parentElement !== container) {
+                container.appendChild(canvas);
+            }
 
-        document.getElementById('slider-runglerBits').addEventListener('input', e => {
-            document.getElementById('val-runglerBits').textContent = e.target.value;
-        });
+            // Setup layer toggle listeners
+            const layerNames = ['oscA', 'oscB', 'runglerA', 'runglerB', 'resonator', 'comparator', 'sh', 'clock'];
+            layerNames.forEach(name => {
+                const el = document.getElementById('layer-' + name);
+                if (el) {
+                    el.addEventListener('change', function() {
+                        window.layers[name] = this.checked;
+                        console.log('Layer', name, '=', this.checked);
+                    });
+                }
+            });
 
-        document.getElementById('slider-feedbackLevel').addEventListener('input', e => {
-            document.getElementById('val-feedbackLevel').textContent = feedbackNames[e.target.value];
-        });
+            // Intersection style
+            document.getElementById('param-intersection').addEventListener('change', function() {
+                window.features.intersectionStyle = this.value;
+                console.log('Intersection =', this.value);
+            });
 
-        document.getElementById('slider-rgbOffsetLevel').addEventListener('input', e => {
-            document.getElementById('val-rgbOffsetLevel').textContent = rgbOffsetNames[e.target.value];
-        });
+            // Wave count
+            document.getElementById('param-waveCount').addEventListener('input', function() {
+                window.features.waveCount = parseInt(this.value);
+                document.getElementById('waveCount-val').textContent = this.value;
+            });
 
-        document.getElementById('slider-speedLevel').addEventListener('input', e => {
-            document.getElementById('val-speedLevel').textContent = speedNames[e.target.value];
-        });
+            // Speed
+            document.getElementById('param-speed').addEventListener('input', function() {
+                window.features.speed = parseFloat(this.value);
+                document.getElementById('speed-val').textContent = parseFloat(this.value).toFixed(1);
+            });
 
-        // Sync slider displays with features on load/regenerate
-        const originalUpdateUI = updateUI;
-        updateUI = function() {
-            originalUpdateUI();
-            const f = features;
-            document.getElementById('val-mode').textContent = modeNames[f.mode];
-            document.getElementById('val-oscRatio').textContent = f.oscRatio.toFixed(2);
-            document.getElementById('val-runglerBits').textContent = f.runglerBits;
-            document.getElementById('val-feedbackLevel').textContent = feedbackNames[f.feedbackLevel];
-            document.getElementById('val-rgbOffsetLevel').textContent = rgbOffsetNames[f.rgbOffsetLevel];
-            document.getElementById('val-speedLevel').textContent = speedNames[f.speedLevel];
-        };
+            // Density
+            document.getElementById('param-density').addEventListener('input', function() {
+                window.features.density = parseFloat(this.value);
+                document.getElementById('density-val').textContent = parseFloat(this.value).toFixed(1);
+            });
+
+            // Spiral
+            document.getElementById('param-spiral').addEventListener('input', function() {
+                window.features.spiralTightness = parseFloat(this.value);
+                document.getElementById('spiral-val').textContent = parseFloat(this.value).toFixed(1);
+            });
+
+            // Chaos
+            document.getElementById('param-chaos').addEventListener('input', function() {
+                window.features.chaos = parseFloat(this.value);
+                document.getElementById('chaos-val').textContent = parseFloat(this.value).toFixed(2);
+            });
+
+            // Initial sync
+            updateFeaturesDisplay();
+
+            // Wrap regenerate to re-sync UI
+            const origRegen = window.benjolin?.regenerate;
+            if (origRegen) {
+                window.benjolin.regenerate = function() {
+                    origRegen();
+                    setTimeout(updateFeaturesDisplay, 50);
+                };
+            }
+
+            console.log('UI controls ready');
+        }
+
+        function updateFeaturesDisplay() {
+            if (typeof window.features === 'undefined' || typeof hash === 'undefined') {
+                return;
+            }
+
+            document.getElementById('hash-display').textContent = hash;
+
+            const f = window.features;
+
+            document.getElementById('features-body').innerHTML = `
+                <tr><td>Color Scheme</td><td><span class="color-swatch" style="background: rgb(${f.colorScheme.fg.join(',')})"></span>${f.colorScheme.name}</td></tr>
+                <tr><td>Intersection</td><td>${f.intersectionStyle}</td></tr>
+                <tr><td>Wave Count</td><td>${f.waveCount}</td></tr>
+                <tr><td>Rate A</td><td>${f.rateA.toFixed(2)}</td></tr>
+                <tr><td>Rate B</td><td>${f.rateB.toFixed(2)}</td></tr>
+                <tr><td>FM A→B</td><td>${(f.fmAtoB * 100).toFixed(0)}%</td></tr>
+                <tr><td>FM B→A</td><td>${(f.fmBtoA * 100).toFixed(0)}%</td></tr>
+                <tr><td>Rungler A Bits</td><td>${f.runglerABits}</td></tr>
+                <tr><td>Rungler B Bits</td><td>${f.runglerBBits}</td></tr>
+                <tr><td>Spiral</td><td>${f.spiralTightness.toFixed(2)}</td></tr>
+                <tr><td>Density</td><td>${f.density.toFixed(2)}</td></tr>
+                <tr><td>Chaos</td><td>${(f.chaos * 100).toFixed(0)}%</td></tr>
+            `;
+
+            // Sync controls to current values
+            const l = window.layers;
+
+            document.getElementById('layer-oscA').checked = l.oscA;
+            document.getElementById('layer-oscB').checked = l.oscB;
+            document.getElementById('layer-runglerA').checked = l.runglerA;
+            document.getElementById('layer-runglerB').checked = l.runglerB;
+            document.getElementById('layer-resonator').checked = l.resonator;
+            document.getElementById('layer-comparator').checked = l.comparator;
+            document.getElementById('layer-sh').checked = l.sh;
+            document.getElementById('layer-clock').checked = l.clock;
+
+            document.getElementById('param-intersection').value = f.intersectionStyle;
+            document.getElementById('param-waveCount').value = f.waveCount;
+            document.getElementById('waveCount-val').textContent = f.waveCount;
+            document.getElementById('param-speed').value = f.speed;
+            document.getElementById('speed-val').textContent = f.speed.toFixed(1);
+            document.getElementById('param-density').value = f.density;
+            document.getElementById('density-val').textContent = f.density.toFixed(1);
+            document.getElementById('param-spiral').value = f.spiralTightness;
+            document.getElementById('spiral-val').textContent = f.spiralTightness.toFixed(1);
+            document.getElementById('param-chaos').value = f.chaos;
+            document.getElementById('chaos-val').textContent = f.chaos.toFixed(2);
+        }
+
+        // Start initialization
+        initUI();
     </script>
 </body>
 </html>

@@ -2,23 +2,26 @@
 
 ## Overview
 
-GLSL shader visualization inspired by Rob Hordijk's Benjolin synthesizer. Features dual chaotic oscillators, a simulated Rungler shift register, and framebuffer feedback - all translated into 4 distinct visual modes with RGB synthesis and edge-of-chaos aesthetics.
+Unified chaos field visualization of Rob Hordijk's Benjolin synthesizer. All signals (oscillators, runglers, resonator, comparator, S&H, clock) intersect and modulate each other across the entire canvas - no panels, pure visual interplay.
 
-**Framework:** Pure WebGL + GLSL
-**Version:** 2.0.0
+**Framework:** p5.js
+**Version:** 4.0.1
 **Canvas:** 700x700
 
 ## File Structure
 
 ```
 benjolin-rungler/
-├── index.html          # Viewer with dev controls
-├── sketch.js           # WebGL setup, hash system, UI
+├── index.html          # Viewer with color scheme controls
+├── sketch.js           # p5.js ASCII renderer
 ├── CLAUDE.md           # This file
 ├── CHANGELOG.md        # Version history
 ├── shaders/
-│   └── benjolin.frag   # Main GLSL fragment shader
+│   └── benjolin.frag   # Legacy GLSL shader (v2.0.0)
 ├── versions/           # Archived versions
+│   ├── v1.0.0-sketch.js
+│   ├── v2.0.0-webgl.js
+│   └── v2.0.0-benjolin.frag
 └── docs/
     ├── FEATURES.md     # Feature/rarity documentation
     └── TECHNICAL.md    # Technical implementation
@@ -28,41 +31,58 @@ benjolin-rungler/
 
 The Benjolin is a chaotic analog synthesizer with:
 - **Two oscillators** that cross-modulate each other's frequency
-- **A Rungler** - a shift register that samples one oscillator at the zero-crossings of the other, creating stepped semi-random CV
+- **Dual Runglers** - shift registers that sample oscillators at zero-crossings
+- **Twin Peak Resonator**, Sample & Hold, and Comparator modules
 
-This sketch translates these concepts visually:
-- Oscillators → wave patterns, Lissajous curves, modulated coordinates
-- Rungler → stepped/quantized values, bit patterns, discrete color steps
-- Cross-modulation → feedback loops, emergent complexity
+This sketch renders all signals as overlapping visual layers:
+- **OSC A**: Horizontal waves sweeping with vertical extensions (∿ ~ ≈)
+- **OSC B**: Vertical waves with circle characters (○ ●)
+- **Rungler A**: Diagonal bands from top-left with bit patterns (█ ░)
+- **Rungler B**: Diagonal bands from top-right
+- **Resonator**: Expanding spiral rings from center (◎ ○)
+- **Comparator**: Grid of ┼ or ╳ based on XOR state
+- **S&H**: Floating particles with trails
+- **Clock**: Expanding rings and vertical pulse lines
 
-## Visual Modes
+### Intersection Styles (hash-derived)
+- `additive` - signals accumulate brightness
+- `xor` - signals cancel at intersections (creates ╳ patterns)
+- `multiply` - overlapping signals boost each other
+- `interference` - wave interference patterns using sin phase
 
-| Mode | Description | Rarity |
-|------|-------------|--------|
-| **Waveform** | Multi-channel audio waveform visualization | Common |
-| **Scope** | Oscilloscope Lissajous, waveforms, phosphor glow | Common |
-| **Pixel** | Bitcrushed shift register, glitch rows | Uncommon |
-| **Filter** | Filter resonance frequency response sweeps | Rare/Legendary |
+## Color Schemes
+
+| Scheme | Background | Foreground | Style |
+|--------|------------|------------|-------|
+| **Phosphor** | Dark green | Bright green | Classic CRT oscilloscope |
+| **Amber** | Dark brown | Amber/orange | Vintage terminal |
+| **Blue** | Dark blue | Cyan/blue | Modern scope |
+| **Matrix** | Black | Green | Hacker aesthetic |
+| **Thermal** | Dark purple | Pink/orange | Heat vision |
 
 ## Key Features (Hash-Derived)
 
 | Feature | Range | Description |
 |---------|-------|-------------|
-| `mode` | 0-3 | Visual mode selection |
-| `oscRatio` | 0.2-4.0 | Frequency ratio between oscillators |
-| `runglerBits` | 4-16 | Shift register bit length |
-| `feedbackAmt` | 0.0-0.9 | Framebuffer feedback intensity |
-| `rgbOffset` | 0.002-0.08 | RGB channel separation amount |
-| `speed` | 0.02-0.25 | Animation speed multiplier |
+| `colorScheme` | 0-5 | Visual color scheme (Phosphor, Amber, Blue, Matrix, Thermal, Cyan) |
+| `intersectionStyle` | string | How layers blend: additive, xor, multiply, interference |
+| `waveCount` | 3-7 | Parallel waves per oscillator |
+| `rateA` | 0.3-1.2 | Oscillator A frequency |
+| `rateB` | 0.2-0.9 | Oscillator B frequency |
+| `fmAtoB` | 0.1-0.8 | Cross-modulation depth A→B |
+| `fmBtoA` | 0.1-0.8 | Cross-modulation depth B→A |
+| `runglerABits` | 6-12 | Rungler A shift register bits |
+| `runglerBBits` | 6-12 | Rungler B shift register bits |
+| `spiralTightness` | 0.3-0.8 | Resonator spiral shape |
+| `density` | 15-40 | S&H particle count |
+| `chaos` | 0.3-0.9 | Overall chaos level |
 
 ## Rarity System
 
-- **Common (45%):** Waveform or Scope mode, subtle RGB
-- **Uncommon (30%):** Pixel mode or elevated settings
-- **Rare (18%):** Filter mode with interesting oscillator ratios
-- **Legendary (7%):** Filter + extreme feedback + golden ratio oscillators
-
-Golden ratios: 1.618, 2.0, 1.5, 0.618, 1.414
+- **Common:** Default parameter ranges
+- **Uncommon:** modDepthA > 0.6
+- **Rare:** runglerBits > 10
+- **Legendary:** loopEnabled + filterResonance > 0.7
 
 ## Quick Commands
 
@@ -81,16 +101,11 @@ npx serve .
 |-----|--------|
 | R | Regenerate with new hash |
 | S | Save PNG |
-| Space | Pause/resume |
-| L | Like current output |
-| D | Dislike current output |
-| 1-4 | Force visual mode |
 
 ## Making Changes
 
 ### Before Editing
-1. Archive current version: `cp sketch.js versions/v2.0.0-sketch.js`
-2. Archive shader: `cp shaders/benjolin.frag versions/v2.0.0-benjolin.frag`
+1. Archive current version: `cp sketch.js versions/v3.0.0-ascii.js`
 
 ### After Editing
 1. Update version in `sketch.js` comment header
@@ -99,77 +114,82 @@ npx serve .
 4. Consider if change is Major/Minor/Patch
 
 ### Version Guidelines
-- **Major (2.0.0):** Same hash produces different output
-- **Minor (1.1.0):** New features, backward compatible
-- **Patch (1.0.1):** Bug fixes, no visual change
+- **Major (3.0.0):** Same hash produces different output
+- **Minor (3.1.0):** New features, backward compatible
+- **Patch (3.0.1):** Bug fixes, no visual change
 
-## GLSL Shader Architecture
+## ASCII Rendering Architecture
 
-The fragment shader (`shaders/benjolin.frag`) contains:
-
-### Oscillator System
-```glsl
-struct Oscillators {
-    float osc1;    // First triangle-ish oscillator
-    float osc2;    // Second oscillator at ratio frequency
-    float rungler; // Stepped random value from shift register sim
-};
+### Character Buffer
+The sketch uses a 2D character buffer with layer info:
+```javascript
+charBuffer[y][x] = { char: '█', brightness: 1, hue: 0, layer: 1 };
 ```
 
-### Mode Functions
-- `modeWaveform()` - Multi-channel audio waveforms with glow
-- `modeScope()` - Lissajous curves, waveform traces
-- `modePixel()` - Bitcrushed patterns, glitch rows
-- `modeFilter()` - Filter frequency response with resonance peaks
-
-### Uniforms
-```glsl
-uniform vec2 uResolution;
-uniform float uTime;
-uniform sampler2D uFeedback;  // Previous frame for feedback
-uniform int uMode;
-uniform float uOscRatio;
-uniform float uRunglerBits;
-uniform float uFeedbackAmt;
-uniform float uRgbOffset;
-uniform float uSpeed;
+### Blend Function
+All layers use `blendChar()` for intersection handling:
+```javascript
+function blendChar(x, y, char, brightness, hue, layer) {
+    // Handles additive, xor, multiply, interference styles
+}
 ```
+
+### Benjolin Class
+Simulates the full Benjolin synthesizer:
+```javascript
+class Benjolin {
+    oscA, oscB           // Oscillator outputs (-1 to 1)
+    phaseA, phaseB       // Phase accumulators
+    runglerA, runglerB   // Dual shift registers
+    cvA, cvB             // Stepped CV outputs
+    sampleHold           // S&H value
+    comparator           // XOR comparator state
+    resonator            // Twin peak filter state
+}
+```
+
+### Visual Layer Functions
+- `drawOscillatorWaves()` - Horizontal (A) and vertical (B) waves
+- `drawRunglerBands()` - Diagonal bands with bit patterns
+- `drawResonatorField()` - Expanding spiral rings from center
+- `drawComparatorGrid()` - Grid of ┼ or ╳ based on XOR
+- `drawSHParticles()` - Floating particles with trails
+- `drawClockPulses()` - Expanding rings on clock ticks
 
 ## Console API
 
 Access via browser console:
 ```javascript
-benjolin.features()        // Current feature values
-benjolin.regenerate()      // New hash
-benjolin.setParameter('mode', 2)  // Override parameter
-benjolin.resetToOriginal() // Clear overrides
-benjolin.getFeedbackStats() // Like/dislike stats
-benjolin.exportFeedback()  // Full feedback data
-benjolin.getRarityCurves() // Probability distributions
+benjolin.features()           // Current feature values
+benjolin.regenerate()         // New hash
+benjolin.setColorScheme(idx)  // Change color scheme (0-4)
 ```
 
 ## Common Modifications
 
-### Add a new visual mode
-1. Add mode function in `benjolin.frag`: `vec3 modeNewMode(vec2 uv, Oscillators osc, float t)`
-2. Add case in main(): `else if (uMode == 4) { col = modeNewMode(...); }`
-3. Update `MODE_NAMES` array in `sketch.js`
-4. Update slider max value in `index.html`
-5. Adjust rarity probabilities
+### Add a new module to the diagram
+1. Define position constants in `drawBenjolinDiagram()`
+2. Use `drawBox()` for the module outline
+3. Add internal visualization (waveform, bits, etc.)
+4. Connect with signal flow using `drawArrow()` or particle animation
 
 ### Adjust chaos level
-- Increase `mod1`/`mod2` multipliers in `benjolin()` function
-- Increase feedback multiplier in oscillator equations
-- Adjust the `0.3 *` coefficients
+- Modify `modDepthA`/`modDepthB` ranges in `generateFeatures()`
+- Change oscillator frequency multipliers in `BenjolinCore.update()`
+- Adjust the `* 0.5` coefficients in cross-modulation
 
-### Change color palette
-- RGB offset affects chromatic aberration
-- Each mode has its own color logic
-- Scope mode has phosphor-style green
-- Waveform mode has green/cyan/pink channel colors
-- Filter mode has green/cyan/orange/purple sweep colors
+### Add a new color scheme
+Add to `COLOR_SCHEMES` array:
+```javascript
+{ name: 'Name', bg: [r,g,b], fg: [r,g,b], accent: [r,g,b] }
+```
+
+### Modify the block diagram layout
+- All positions are defined in `drawBenjolinDiagram()`
+- `startX`, `startY` control overall offset
+- Each module has its own position variables (oscAX, runglerX, vcfX, etc.)
 
 ### Performance optimization
-- Reduce loop iterations in `modeScope()` Lissajous sampling
-- Lower `fbm()` octave count
-- Reduce filter sweep count in `modeFilter()`
+- Reduce character buffer size via `charW`/`charH`
+- Simplify waveform drawing loops
+- Reduce signal flow particle count
