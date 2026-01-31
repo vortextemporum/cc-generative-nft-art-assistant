@@ -84,6 +84,7 @@ For every edit request, follow this workflow:
 - [ ] Update `index.html` version dropdown if it exists
 - [ ] Update `docs/LEARNINGS.md` with any discoveries
 - [ ] Run quick validation if possible
+- [ ] **Create atomic git commit** with all changed files
 
 ### 4. Version Management (MANDATORY)
 
@@ -197,6 +198,42 @@ Track edits in `.claude/state/edit-history.json`:
   }
 }
 ```
+
+### 9. Git Commit (MANDATORY)
+
+**After all file changes are complete**, create a single atomic commit:
+
+```bash
+# Add all changed sketch files
+git add sketches/{sketch-name}/sketch.js \
+        sketches/{sketch-name}/versions/ \
+        sketches/{sketch-name}/CHANGELOG.md \
+        sketches/{sketch-name}/index.html \
+        sketches/{sketch-name}/docs/
+
+# Create commit with proper message
+git commit -m "$(cat <<'EOF'
+feat({sketch-name}): {brief description} v{NEW_VERSION}
+
+- {Change 1}
+- {Change 2}
+- Archived v{OLD_VERSION}
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+**Commit types:**
+- `feat`: New features, visual changes (minor/major)
+- `fix`: Bug fixes (patch)
+- `perf`: Performance improvements (patch)
+- `refactor`: Code cleanup, no visual change (patch)
+
+**Important:**
+- One commit per edit session (atomic)
+- Include all related files in the same commit
+- Never skip the commit step
 
 ## Agent Behavior
 

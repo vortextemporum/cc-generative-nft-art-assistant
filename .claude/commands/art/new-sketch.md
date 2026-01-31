@@ -187,6 +187,26 @@ Document implementation:
 3. List immediate TODOs based on discovery conversation
 4. Suggest first implementation steps
 
+### 6. Git Commit (MANDATORY)
+
+**After all files are created**, create a single atomic commit:
+
+```bash
+git add sketches/{sketch-name}/
+git commit -m "$(cat <<'EOF'
+feat({sketch-name}): initial sketch v1.0.0
+
+- {Core concept/technique}
+- {Framework used}
+- {Key features}
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+**Never skip the initial commit** - this establishes the baseline version in git history.
+
 ## Standards (All Frameworks)
 
 - **Randomness**: Always use hash-based sfc32 PRNG for determinism

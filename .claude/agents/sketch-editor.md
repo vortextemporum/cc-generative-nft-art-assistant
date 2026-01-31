@@ -88,6 +88,34 @@ Append to docs/LEARNINGS.md:
 
 {What was learned during this edit session}
 ```
+
+## Step 7: Create Atomic Git Commit (MANDATORY)
+
+**After completing all file changes**, create a single atomic commit:
+
+```bash
+git add sketches/{sketch-name}/sketch.js \
+        sketches/{sketch-name}/versions/v{OLD_VERSION}*.js \
+        sketches/{sketch-name}/CHANGELOG.md \
+        sketches/{sketch-name}/index.html \
+        sketches/{sketch-name}/docs/LEARNINGS.md
+git commit -m "$(cat <<'EOF'
+feat({sketch-name}): {brief description} v{NEW_VERSION}
+
+- {Change 1}
+- {Change 2}
+- Archived v{OLD_VERSION}
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+**Commit message types:**
+- `feat({sketch})`: New features, visual changes (minor/major version)
+- `fix({sketch})`: Bug fixes, corrections (patch version)
+- `perf({sketch})`: Performance improvements (patch version)
+- `refactor({sketch})`: Code cleanup, no visual change (patch version)
 </edit_workflow>
 
 <safety_rules>
@@ -209,4 +237,5 @@ Edit complete when:
 - [ ] Related files updated
 - [ ] Learnings documented (if applicable)
 - [ ] Edit history recorded
+- [ ] **Atomic git commit created** (all changed files in single commit)
 </success_criteria>
