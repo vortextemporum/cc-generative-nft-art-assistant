@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feynman Strings - Brush Edition</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.brush@1.1/dist/p5.brush.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0d0d14;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 16px;
+      font-weight: 400;
+      margin-bottom: 15px;
+      color: #888;
+    }
+
+    h1 span {
+      color: #fd79a8;
+    }
+
+    #sketch-holder {
+      background: #1a1a24;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      background: #2a2a3a;
+      border: 1px solid #3a3a4a;
+      color: #e0e0e0;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #3a3a4a;
+      border-color: #5a5a6a;
+    }
+
+    button.primary {
+      background: #4a4a6a;
+      border-color: #6a6aaa;
+    }
+
+    button.toggle {
+      background: #6a4a6a;
+      border-color: #aa6aaa;
+    }
+
+    button.toggle.active {
+      background: #8a5a8a;
+      border-color: #cc7acc;
+    }
+
+    .info {
+      margin-top: 15px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+
+    .timing {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #888;
+      font-family: monospace;
+    }
+
+    .comparison {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .version-label {
+      text-align: center;
+      font-size: 11px;
+      color: #666;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Feynman Strings <span>p5.brush Edition</span></h1>
+
+  <div id="sketch-holder"></div>
+
+  <div class="controls">
+    <button class="primary" onclick="window.regenerate()">Regenerate (R)</button>
+    <button class="toggle active" id="brush-toggle" onclick="toggleBrushMode()">Brush: ON</button>
+    <button onclick="saveCanvas('feynman-brush-' + window.getHash().slice(2,10), 'png')">Save PNG (S)</button>
+  </div>
+
+  <div class="timing" id="timing">Render time: --</div>
+
+  <div class="info">
+    Press <b>B</b> to toggle brush mode | <b>R</b> to regenerate
+  </div>
+
+  <!-- Brush wrapper -->
+  <script>
+    // ============================================================
+    // BRUSH WRAPPER - Intercept p5 drawing calls
+    // ============================================================
+
+    let useBrush = true;
+    let brushReady = false;
+    let renderStartTime = 0;
+
+    // Store original p5 functions (will be set after p5 loads)
+    let originals = {};
+    let shapeVertices = [];
+    let inShape = false;
+
+    function initBrushWrapper() {
+      if (typeof brush === 'undefined') {
+        console.warn("p5.brush not loaded, falling back to standard p5");
+        useBrush = false;
+        return;
+      }
+
+      brush.load();
+      brushReady = true;
+      console.log("p5.brush initialized");
+
+      // Store original functions
+      originals.line = window.line;
+      originals.ellipse = window.ellipse;
+      originals.circle = window.circle;
+      originals.arc = window.arc;
+      originals.beginShape = window.beginShape;
+      originals.vertex = window.vertex;
+      originals.endShape = window.endShape;
+      originals.bezierVertex = window.bezierVertex;
+      originals.curveVertex = window.curveVertex;
+      originals.rect = window.rect;
+
+      // Override with brush versions
+      window.line = brushLine;
+      window.ellipse = brushEllipse;
+      window.circle = brushCircle;
+      window.arc = brushArc;
+      window.beginShape = brushBeginShape;
+      window.vertex = brushVertex;
+      window.endShape = brushEndShape;
+      window.bezierVertex = brushBezierVertex;
+      window.curveVertex = brushCurveVertex;
+      window.rect = brushRect;
+    }
+
+    function setBrushFromStroke() {
+      if (!brushReady) return;
+
+      const ctx = drawingContext;
+      const col = ctx.strokeStyle;
+      const w = Math.max(0.3, ctx.lineWidth * 0.7);
+
+      // Use marker for thicker lines, pen for thin
+      const brushType = w > 1.5 ? "marker" : "pen";
+      brush.set(brushType, col, w);
+    }
+
+    function brushLine(x1, y1, x2, y2) {
+      if (!brushReady || !useBrush) {
+        return originals.line(x1, y1, x2, y2);
+      }
+      setBrushFromStroke();
+      brush.line(x1, y1, x2, y2);
+    }
+
+    function brushRect(x, y, w, h) {
+      if (!brushReady || !useBrush) {
+        return originals.rect(x, y, w, h);
+      }
+      setBrushFromStroke();
+      // Draw as 4 lines
+      brush.line(x, y, x + w, y);
+      brush.line(x + w, y, x + w, y + h);
+      brush.line(x + w, y + h, x, y + h);
+      brush.line(x, y + h, x, y);
+    }
+
+    function brushEllipse(x, y, w, h) {
+      if (!brushReady || !useBrush) {
+        return originals.ellipse(x, y, w, h || w);
+      }
+      setBrushFromStroke();
+
+      // Approximate ellipse with polygon
+      const segments = Math.max(16, Math.min(32, Math.floor((w + (h || w)) / 8)));
+      const points = [];
+      for (let i = 0; i < segments; i++) {
+        const angle = (TWO_PI / segments) * i;
+        points.push([
+          x + cos(angle) * w / 2,
+          y + sin(angle) * (h || w) / 2
+        ]);
+      }
+
+      // Draw as connected lines
+      for (let i = 0; i < points.length; i++) {
+        const next = (i + 1) % points.length;
+        brush.line(points[i][0], points[i][1], points[next][0], points[next][1]);
+      }
+    }
+
+    function brushCircle(x, y, d) {
+      brushEllipse(x, y, d, d);
+    }
+
+    function brushArc(x, y, w, h, start, stop, mode) {
+      if (!brushReady || !useBrush) {
+        return originals.arc(x, y, w, h, start, stop, mode);
+      }
+      setBrushFromStroke();
+
+      const arcLength = stop - start;
+      const segments = Math.max(6, Math.floor(arcLength * 8));
+      let prevX = x + cos(start) * w / 2;
+      let prevY = y + sin(start) * h / 2;
+
+      for (let i = 1; i <= segments; i++) {
+        const angle = start + arcLength * (i / segments);
+        const currX = x + cos(angle) * w / 2;
+        const currY = y + sin(angle) * h / 2;
+        brush.line(prevX, prevY, currX, currY);
+        prevX = currX;
+        prevY = currY;
+      }
+    }
+
+    function brushBeginShape() {
+      shapeVertices = [];
+      inShape = true;
+    }
+
+    function brushVertex(x, y) {
+      if (inShape) {
+        shapeVertices.push([x, y]);
+      }
+    }
+
+    function brushBezierVertex(cx1, cy1, cx2, cy2, x, y) {
+      if (!inShape || shapeVertices.length === 0) return;
+
+      const last = shapeVertices[shapeVertices.length - 1];
+      const steps = 6;
+      for (let t = 1; t <= steps; t++) {
+        const tt = t / steps;
+        const u = 1 - tt;
+        const px = u*u*u*last[0] + 3*u*u*tt*cx1 + 3*u*tt*tt*cx2 + tt*tt*tt*x;
+        const py = u*u*u*last[1] + 3*u*u*tt*cy1 + 3*u*tt*tt*cy2 + tt*tt*tt*y;
+        shapeVertices.push([px, py]);
+      }
+    }
+
+    function brushCurveVertex(x, y) {
+      if (inShape) {
+        shapeVertices.push([x, y]);
+      }
+    }
+
+    function brushEndShape(mode) {
+      if (!brushReady || !useBrush || shapeVertices.length < 2) {
+        if (!useBrush && originals.beginShape) {
+          originals.beginShape();
+          for (const v of shapeVertices) {
+            originals.vertex(v[0], v[1]);
+          }
+          originals.endShape(mode);
+        }
+        inShape = false;
+        return;
+      }
+
+      setBrushFromStroke();
+
+      for (let i = 0; i < shapeVertices.length - 1; i++) {
+        brush.line(
+          shapeVertices[i][0], shapeVertices[i][1],
+          shapeVertices[i+1][0], shapeVertices[i+1][1]
+        );
+      }
+
+      if (mode === CLOSE && shapeVertices.length > 2) {
+        brush.line(
+          shapeVertices[shapeVertices.length-1][0],
+          shapeVertices[shapeVertices.length-1][1],
+          shapeVertices[0][0],
+          shapeVertices[0][1]
+        );
+      }
+
+      inShape = false;
+    }
+
+    function toggleBrushMode() {
+      useBrush = !useBrush;
+      const btn = document.getElementById('brush-toggle');
+      btn.textContent = "Brush: " + (useBrush ? "ON" : "OFF");
+      btn.classList.toggle('active', useBrush);
+      window.render();
+    }
+
+    // Keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'b' || e.key === 'B') {
+        toggleBrushMode();
+      }
+    });
+
+    // Hook into render to measure timing
+    const originalRender = window.render;
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const origRender = window.render;
+        window.render = function() {
+          renderStartTime = performance.now();
+          origRender();
+          const elapsed = performance.now() - renderStartTime;
+          document.getElementById('timing').textContent =
+            `Render time: ${elapsed.toFixed(0)}ms (${useBrush ? 'brush' : 'standard'})`;
+        };
+      }, 200);
+    });
+  </script>
+
+  <!-- Load main sketch with modified setup -->
+  <script>
+    // Patch setup to init brush
+    const originalSetup = window.setup;
+
+    // We need to intercept setup from sketch.js
+    let setupPatched = false;
+
+    const checkAndPatch = setInterval(() => {
+      if (window.setup && !setupPatched) {
+        setupPatched = true;
+        clearInterval(checkAndPatch);
+
+        const origSetup = window.setup;
+        window.setup = function() {
+          origSetup();
+          initBrushWrapper();
+          // Re-render with brush
+          setTimeout(() => window.render(), 100);
+        };
+      }
+    }, 10);
+  </script>
+  <script src="sketch.js"></script>
+</body>
+</html>

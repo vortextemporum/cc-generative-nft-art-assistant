@@ -5,7 +5,7 @@ p5.brush (by Alejandro Campos Uribe) adds natural media simulation to p5.js. Use
 ## Installation
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/p5.brush@1.0.0/dist/p5.brush.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5.brush@1.1/dist/p5.brush.js"></script>
 ```
 
 Or via npm:
