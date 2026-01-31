@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corrupted Tides</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0f;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    header {
+      text-align: center;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #ff3366;
+      margin-bottom: 4px;
+      text-shadow: 2px 0 #00ffff, -2px 0 #ff0066;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: #666;
+      letter-spacing: 2px;
+    }
+
+    .main-content {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .canvas-wrapper {
+      background: #0d0d14;
+      padding: 10px;
+      border: 1px solid #1a1a2e;
+      box-shadow:
+        0 0 20px rgba(255, 51, 102, 0.1),
+        0 0 40px rgba(0, 255, 255, 0.05);
+    }
+
+    .canvas-wrapper canvas {
+      display: block;
+    }
+
+    .panels {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 280px;
+    }
+
+    .panel {
+      background: #0d0d14;
+      border: 1px solid #1a1a2e;
+      padding: 12px;
+    }
+
+    .panel h2 {
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #1a1a2e;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel h2 button {
+      font-size: 9px;
+      padding: 2px 8px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .panel h2 button:hover {
+      border-color: #ff3366;
+      color: #ff3366;
+    }
+
+    /* Hash display */
+    .hash-display {
+      font-size: 10px;
+      color: #444;
+      word-break: break-all;
+      padding: 6px;
+      background: #080810;
+      border: 1px solid #151520;
+      margin-bottom: 10px;
+    }
+
+    /* Features table */
+    .features-table {
+      width: 100%;
+    }
+
+    .feature-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid #111;
+    }
+
+    .feature-row:last-child {
+      border-bottom: none;
+    }
+
+    .feature-name {
+      color: #666;
+    }
+
+    .feature-value {
+      color: #e0e0e0;
+      text-align: right;
+    }
+
+    .rarity-badge {
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 2px;
+      margin-left: 4px;
+    }
+
+    .rarity-common { background: #333; color: #888; }
+    .rarity-uncommon { background: #1a4a1a; color: #4a4; }
+    .rarity-rare { background: #1a1a6a; color: #66f; }
+    .rarity-legendary { background: #4a1a4a; color: #f6f; }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #888;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn:hover {
+      border-color: #ff3366;
+      color: #ff3366;
+      box-shadow: 0 0 10px rgba(255, 51, 102, 0.2);
+    }
+
+    .btn.primary {
+      border-color: #ff3366;
+      color: #ff3366;
+    }
+
+    .btn.primary:hover {
+      background: #ff3366;
+      color: #000;
+    }
+
+    /* Keyboard hints */
+    .shortcuts {
+      font-size: 10px;
+      color: #444;
+      margin-top: 10px;
+    }
+
+    .shortcuts kbd {
+      background: #1a1a2e;
+      padding: 2px 6px;
+      border-radius: 2px;
+      margin-right: 4px;
+    }
+
+    /* Sliders panel */
+    .slider-group {
+      margin-bottom: 12px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .slider-label span:first-child {
+      color: #666;
+    }
+
+    .slider-label span:last-child {
+      color: #ff3366;
+      font-size: 10px;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      background: #080810;
+      border: 1px solid #1a1a2e;
+      color: #e0e0e0;
+      padding: 4px 6px;
+      font-family: inherit;
+      font-size: 11px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #ff3366;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    /* Feedback panel */
+    .feedback-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-like {
+      flex: 1;
+      border-color: #3a3;
+      color: #3a3;
+    }
+
+    .btn-like:hover {
+      background: #3a3;
+      color: #000;
+    }
+
+    .btn-dislike {
+      flex: 1;
+      border-color: #a33;
+      color: #a33;
+    }
+
+    .btn-dislike:hover {
+      background: #a33;
+      color: #000;
+    }
+
+    /* Rarity curves */
+    .rarity-chart {
+      margin-bottom: 12px;
+    }
+
+    .rarity-chart-title {
+      font-size: 10px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .rarity-bars {
+      display: flex;
+      height: 20px;
+      border: 1px solid #1a1a2e;
+      overflow: hidden;
+    }
+
+    .rarity-bar {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      color: #000;
+      transition: all 0.3s;
+    }
+
+    .rarity-bar.active {
+      box-shadow: inset 0 0 0 2px #fff;
+    }
+
+    .rarity-bar-common { background: #555; }
+    .rarity-bar-uncommon { background: #4a4; }
+    .rarity-bar-rare { background: #66f; }
+    .rarity-bar-legendary { background: #f6f; }
+
+    /* Version */
+    .version {
+      font-size: 10px;
+      color: #333;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    /* Glitch text effect */
+    @keyframes glitch {
+      0%, 100% { text-shadow: 2px 0 #00ffff, -2px 0 #ff0066; }
+      25% { text-shadow: -2px 0 #00ffff, 2px 0 #ff0066; }
+      50% { text-shadow: 2px 2px #00ffff, -2px -2px #ff0066; }
+      75% { text-shadow: -2px 2px #00ffff, 2px -2px #ff0066; }
+    }
+
+    h1 {
+      animation: glitch 3s infinite;
+    }
+
+    /* Override indicator */
+    .override-indicator {
+      display: none;
+      font-size: 9px;
+      color: #ff6600;
+      margin-top: 8px;
+    }
+
+    .override-indicator.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Corrupted Tides</h1>
+      <div class="subtitle">Digital Decay / Compression Artifacts / Pseudomath</div>
+    </header>
+
+    <div class="main-content">
+      <div class="canvas-wrapper" id="sketch-holder"></div>
+
+      <div class="panels">
+        <!-- Hash & Controls -->
+        <div class="panel">
+          <h2>Signal</h2>
+          <div class="hash-display" id="hash-display"></div>
+          <div class="controls">
+            <button class="btn primary" id="btn-regenerate">Regenerate</button>
+            <button class="btn" id="btn-save">Save PNG</button>
+          </div>
+          <div class="shortcuts">
+            <kbd>R</kbd> Regenerate
+            <kbd>S</kbd> Save
+            <kbd>Space</kbd> Pause
+          </div>
+        </div>
+
+        <!-- Features -->
+        <div class="panel">
+          <h2>Features</h2>
+          <div class="features-table" id="features-table"></div>
+        </div>
+
+        <!-- Parameters -->
+        <div class="panel">
+          <h2>
+            Parameters
+            <button id="btn-reset">Reset</button>
+          </h2>
+          <div id="sliders-container"></div>
+          <div class="override-indicator" id="override-indicator">
+            Parameters modified from original
+          </div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="panel">
+          <h2>Feedback</h2>
+          <div class="feedback-buttons">
+            <button class="btn btn-like" id="btn-like">Like (L)</button>
+            <button class="btn btn-dislike" id="btn-dislike">Dislike (D)</button>
+          </div>
+          <div class="shortcuts" style="margin-top: 8px;">
+            <button class="btn" id="btn-export" style="width: 100%;">Export Stats to Console</button>
+          </div>
+        </div>
+
+        <!-- Rarity Curves -->
+        <div class="panel">
+          <h2>Rarity Distribution</h2>
+          <div id="rarity-charts"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="version">v1.0.0</div>
+  </div>
+
+  <script src="sketch.js"></script>
+  <script>
+    // Wait for sketch to initialize
+    window.addEventListener('load', () => {
+      setTimeout(initUI, 100);
+    });
+
+    function initUI() {
+      updateHashDisplay();
+      updateFeaturesTable();
+      createSliders();
+      createRarityCharts();
+
+      // Button handlers
+      document.getElementById('btn-regenerate').addEventListener('click', () => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }));
+      });
+
+      document.getElementById('btn-save').addEventListener('click', () => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }));
+      });
+
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        if (window.corruptedTides) {
+          window.corruptedTides.resetToOriginal();
+          updateFeaturesTable();
+          updateOverrideIndicator();
+          renderFrame();
+        }
+      });
+
+      document.getElementById('btn-like').addEventListener('click', () => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }));
+      });
+
+      document.getElementById('btn-dislike').addEventListener('click', () => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
+      });
+
+      document.getElementById('btn-export').addEventListener('click', () => {
+        if (window.corruptedTides) {
+          console.log('Feedback data:', window.corruptedTides.exportFeedback());
+        }
+      });
+
+      // Listen for hash changes
+      window.addEventListener('hashChanged', (e) => {
+        updateHashDisplay();
+        updateFeaturesTable();
+        updateRarityCharts();
+        updateOverrideIndicator();
+      });
+    }
+
+    function updateHashDisplay() {
+      const hash = window.corruptedTides?.getHash() || '';
+      document.getElementById('hash-display').textContent = hash;
+    }
+
+    function updateFeaturesTable() {
+      const features = window.corruptedTides?.getFeatures() || {};
+      const container = document.getElementById('features-table');
+
+      const displayFeatures = [
+        { key: 'signalSource', name: 'Signal Source' },
+        { key: 'corruptionLevel', name: 'Corruption', rarity: true },
+        { key: 'paletteCorruption', name: 'Palette Mode' },
+        { key: 'blockSize', name: 'Block Size', format: v => `${v}x${v}` },
+        { key: 'glitchType', name: 'Glitch Type' },
+        { key: 'driftSpeed', name: 'Drift', rarity: true },
+        { key: 'pseudoMath', name: 'Algorithm' },
+        { key: 'scanlineDensity', name: 'Scanlines' }
+      ];
+
+      container.innerHTML = displayFeatures.map(f => {
+        let value = features[f.key];
+        if (f.format) value = f.format(value);
+
+        let badge = '';
+        if (f.rarity) {
+          const rarityClass = getRarityClass(f.key, features[f.key]);
+          badge = `<span class="rarity-badge rarity-${rarityClass}">${rarityClass}</span>`;
+        }
+
+        return `
+          <div class="feature-row">
+            <span class="feature-name">${f.name}</span>
+            <span class="feature-value">${value}${badge}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getRarityClass(key, value) {
+      const curves = window.corruptedTides?.getRarityCurves() || {};
+      if (!curves[key]) return 'common';
+
+      const idx = curves[key].labels.indexOf(value);
+      if (idx === -1) return 'common';
+
+      // Map probability to rarity
+      const prob = curves[key].probabilities[idx];
+      if (prob <= 0.1) return 'legendary';
+      if (prob <= 0.2) return 'rare';
+      if (prob <= 0.35) return 'uncommon';
+      return 'common';
+    }
+
+    function createSliders() {
+      const container = document.getElementById('sliders-container');
+      const features = window.corruptedTides?.getFeatures() || {};
+
+      const sliderConfigs = [
+        { key: 'corruptionIntensity', name: 'Intensity', min: 0, max: 1, step: 0.01 },
+        { key: 'channelDisplacement', name: 'Channel Shift', min: 0, max: 20, step: 0.5 },
+        { key: 'k1', name: 'Field K1', min: 1, max: 20, step: 0.5 },
+        { key: 'k2', name: 'Field K2', min: 1, max: 10, step: 0.5 },
+        { key: 'fieldScale', name: 'Field Scale', min: 0.1, max: 5, step: 0.1 }
+      ];
+
+      const selectConfigs = [
+        { key: 'pseudoMath', name: 'Algorithm', options: ['broken-trig', 'recursive-error', 'modulo-glitch', 'quantized-flow', 'coercion-drift'] },
+        { key: 'glitchType', name: 'Glitch Type', options: ['block', 'scanline', 'channel', 'mixed'] },
+        { key: 'blockSize', name: 'Block Size', options: [4, 8, 16, 32] }
+      ];
+
+      // Create range sliders
+      sliderConfigs.forEach(config => {
+        const group = document.createElement('div');
+        group.className = 'slider-group';
+        group.innerHTML = `
+          <div class="slider-label">
+            <span>${config.name}</span>
+            <span id="val-${config.key}">${features[config.key]?.toFixed(2) || 0}</span>
+          </div>
+          <input type="range" id="slider-${config.key}"
+            min="${config.min}" max="${config.max}" step="${config.step}"
+            value="${features[config.key] || 0}">
+        `;
+        container.appendChild(group);
+
+        const slider = group.querySelector('input');
+        slider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          document.getElementById(`val-${config.key}`).textContent = val.toFixed(2);
+          if (window.corruptedTides) {
+            window.corruptedTides.setParameter(config.key, val);
+            updateOverrideIndicator();
+            renderFrame();
+          }
+        });
+      });
+
+      // Create selects
+      selectConfigs.forEach(config => {
+        const group = document.createElement('div');
+        group.className = 'slider-group';
+        group.innerHTML = `
+          <div class="slider-label">
+            <span>${config.name}</span>
+          </div>
+          <select id="select-${config.key}">
+            ${config.options.map(opt => `
+              <option value="${opt}" ${features[config.key] == opt ? 'selected' : ''}>${opt}</option>
+            `).join('')}
+          </select>
+        `;
+        container.appendChild(group);
+
+        const select = group.querySelector('select');
+        select.addEventListener('change', (e) => {
+          let val = e.target.value;
+          if (!isNaN(val)) val = parseInt(val);
+          if (window.corruptedTides) {
+            window.corruptedTides.setParameter(config.key, val);
+            updateOverrideIndicator();
+            renderFrame();
+          }
+        });
+      });
+    }
+
+    function updateOverrideIndicator() {
+      const indicator = document.getElementById('override-indicator');
+      const hasOverrides = window.corruptedTides?.hasModifications() || false;
+      indicator.classList.toggle('visible', hasOverrides);
+    }
+
+    function createRarityCharts() {
+      const container = document.getElementById('rarity-charts');
+      const curves = window.corruptedTides?.getRarityCurves() || {};
+      const features = window.corruptedTides?.getFeatures() || {};
+
+      container.innerHTML = Object.entries(curves).map(([key, curve]) => {
+        const currentValue = features[key];
+        const currentIdx = curve.labels.indexOf(currentValue);
+
+        const bars = curve.probabilities.map((prob, idx) => {
+          const rarityClass = prob <= 0.1 ? 'legendary' : prob <= 0.2 ? 'rare' : prob <= 0.35 ? 'uncommon' : 'common';
+          const isActive = idx === currentIdx;
+          const width = prob * 100;
+
+          return `<div class="rarity-bar rarity-bar-${rarityClass} ${isActive ? 'active' : ''}"
+            style="width: ${width}%"
+            title="${curve.labels[idx]}: ${(prob * 100).toFixed(0)}%">
+            ${width > 15 ? curve.labels[idx] : ''}
+          </div>`;
+        }).join('');
+
+        return `
+          <div class="rarity-chart">
+            <div class="rarity-chart-title">${key}</div>
+            <div class="rarity-bars">${bars}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateRarityCharts() {
+      createRarityCharts();
+    }
+  </script>
+</body>
+</html>
