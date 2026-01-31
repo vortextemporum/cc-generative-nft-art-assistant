@@ -373,9 +373,6 @@ let flowBuffer;
 let channelBuffers = { r: null, g: null, b: null };
 let palette;
 let time = 0;
-let glitchEvent = 0;
-let glitchOffset = { x: 0, y: 0 };
-let isPaused = false;
 
 const SIZE = 700;
 
@@ -440,14 +437,9 @@ class BlockCluster {
     const { corruptionIntensity } = features;
 
     for (const block of this.blocks) {
-      // Animate block with drift
-      const drift = getDriftAmount(t);
-      const ox = Math.sin(t * 0.001 + block.phase) * drift;
-      const oy = Math.cos(t * 0.001 + block.phase * 1.3) * drift;
-
       // Quantize position (compression artifact)
-      const qx = Math.floor((block.x + ox) / features.blockSize) * features.blockSize;
-      const qy = Math.floor((block.y + oy) / features.blockSize) * features.blockSize;
+      const qx = Math.floor(block.x / features.blockSize) * features.blockSize;
+      const qy = Math.floor(block.y / features.blockSize) * features.blockSize;
 
       // Color with potential corruption
       let col = palette[block.colorIdx];
@@ -476,33 +468,7 @@ let clusters = [];
 // DRIFT & GLITCH EVENTS
 // =============================================================================
 
-function getDriftAmount(t) {
-  const driftMultipliers = {
-    'still': 0,
-    'glacial': 2,
-    'slow': 5,
-    'restless': 12
-  };
-  return driftMultipliers[features.driftSpeed] || 0;
-}
 
-function updateGlitchEvent(t) {
-  // Random glitch events
-  if (rndBool(features.glitchEventFreq)) {
-    glitchEvent = 1.0;
-    glitchOffset = {
-      x: rnd(-20, 20) * features.corruptionIntensity,
-      y: rnd(-10, 10) * features.corruptionIntensity
-    };
-  }
-
-  // Decay glitch event
-  glitchEvent *= 0.95;
-  if (glitchEvent < 0.01) {
-    glitchEvent = 0;
-    glitchOffset = { x: 0, y: 0 };
-  }
-}
 
 // =============================================================================
 // RENDERING SYSTEMS
@@ -591,24 +557,23 @@ function drawBlockArtifacts(pg, t) {
 
 function drawChannelDisplacement(destPg, srcPg, t) {
   const { channelDisplacement } = features;
-  const glitchMod = 1 + glitchEvent * 3;
 
   // Load pixels
   srcPg.loadPixels();
   destPg.loadPixels();
 
-  const disp = channelDisplacement * glitchMod;
+  const disp = channelDisplacement;
 
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
       const i = (y * SIZE + x) * 4;
 
       // Red channel - shifted left
-      const rX = Math.floor(x - disp + glitchOffset.x);
+      const rX = Math.floor(x - disp);
       const rI = (y * SIZE + Math.max(0, Math.min(SIZE - 1, rX))) * 4;
 
       // Green channel - center (with slight vertical shift)
-      const gY = Math.floor(y + disp * 0.3 + glitchOffset.y);
+      const gY = Math.floor(y + disp * 0.3);
       const gI = (Math.max(0, Math.min(SIZE - 1, gY)) * SIZE + x) * 4;
 
       // Blue channel - shifted right
@@ -761,21 +726,21 @@ function renderFrame() {
   loadPixels();
   blockBuffer.loadPixels();
 
-  const disp = features.channelDisplacement * (1 + glitchEvent * 3);
+  const disp = features.channelDisplacement;
 
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
       const i = (y * SIZE + x) * 4;
 
-      // Red - shifted
-      const rX = Math.floor(x - disp + glitchOffset.x);
+      // Red - shifted left
+      const rX = Math.floor(x - disp);
       const rI = (y * SIZE + Math.max(0, Math.min(SIZE - 1, rX))) * 4;
 
       // Green - slight vertical
-      const gY = Math.floor(y + disp * 0.2 + glitchOffset.y);
+      const gY = Math.floor(y + disp * 0.2);
       const gI = (Math.max(0, Math.min(SIZE - 1, gY)) * SIZE + x) * 4;
 
-      // Blue - shifted opposite
+      // Blue - shifted right
       const bX = Math.floor(x + disp);
       const bI = (y * SIZE + Math.max(0, Math.min(SIZE - 1, bX))) * 4;
 
@@ -793,16 +758,8 @@ function renderFrame() {
 }
 
 function draw() {
-  if (isPaused) return;
-
-  // Update time and glitch events
-  time = millis();
-  updateGlitchEvent(time);
-
-  // Only re-render if animating
-  if (features.driftSpeed !== 'still' || glitchEvent > 0) {
-    renderFrame();
-  }
+  // Static image - no animation loop
+  noLoop();
 }
 
 // =============================================================================
@@ -842,10 +799,6 @@ function keyPressed() {
 
     // Dispatch event for UI update
     window.dispatchEvent(new CustomEvent('hashChanged', { detail: { hash, features } }));
-  }
-
-  if (key === ' ') {
-    isPaused = !isPaused;
   }
 
   if (key === 'l' || key === 'L') {
@@ -936,6 +889,11 @@ function getRarityCurves() {
 // =============================================================================
 
 function doRegenerate() {
+  // Clear everything first
+  clear();
+  blockBuffer.clear();
+  flowBuffer.clear();
+
   // Regenerate with new hash
   hash = "0x" + Array(64).fill(0).map(() =>
     "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
