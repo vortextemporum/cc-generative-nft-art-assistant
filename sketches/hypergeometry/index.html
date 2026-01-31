@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HYPERGEOMETRY</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a12;
+      color: #e0e0e0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .canvas-section {
+      flex: 0 0 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    #sketch-holder {
+      width: 700px;
+      height: 700px;
+      background: #050510;
+      border: 1px solid #2a2a3e;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border: 1px solid #3a3a5e;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    button:hover { background: #2a2a4e; border-color: #5a5a8e; }
+    button:active { background: #3a3a5e; }
+
+    .hash-display {
+      font-size: 11px;
+      color: #666;
+      background: #0d0d14;
+      padding: 8px 12px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+
+    .sidebar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 400px;
+      overflow-y: auto;
+      max-height: calc(100vh - 40px);
+    }
+
+    .panel {
+      background: #0d0d14;
+      border: 1px solid #2a2a3e;
+      border-radius: 4px;
+      padding: 15px;
+    }
+
+    .panel h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .control-row {
+      margin-bottom: 12px;
+    }
+
+    .control-row label {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .control-row select {
+      width: 100%;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      border: 1px solid #3a3a5e;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .control-row select:hover { border-color: #5a5a8e; }
+
+    .control-row input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: #1a1a2e;
+      border-radius: 2px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .control-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #5a5a8e;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a1a2e;
+      font-size: 12px;
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { color: #888; }
+
+    .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 20px;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #2a2a3e;
+      border-radius: 20px;
+      transition: 0.3s;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #666;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider { background-color: #3a5a4e; }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+      background-color: #4ade80;
+    }
+
+    .shortcuts {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .shortcuts span {
+      display: inline-block;
+      margin-right: 12px;
+      margin-bottom: 4px;
+    }
+
+    .shortcuts kbd {
+      background: #1a1a2e;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-right: 4px;
+    }
+
+    .version {
+      font-size: 10px;
+      color: #444;
+      text-align: right;
+      padding: 10px;
+    }
+
+    .info-text {
+      font-size: 10px;
+      color: #555;
+      margin-top: 8px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="canvas-section">
+      <div id="sketch-holder"></div>
+
+      <div class="controls">
+        <button id="btn-regenerate">Regenerate (R)</button>
+        <button id="btn-save">Save PNG (S)</button>
+        <button id="btn-pause">Pause (Space)</button>
+      </div>
+
+      <div class="hash-display" id="hash-display"></div>
+
+      <div class="shortcuts">
+        <span><kbd>R</kbd> Regenerate</span>
+        <span><kbd>S</kbd> Save</span>
+        <span><kbd>Space</kbd> Pause</span>
+        <span><kbd>F</kbd> Faces</span>
+        <span><kbd>W</kbd> Wireframe</span>
+        <span><kbd>V</kbd> Vertices</span>
+        <span><kbd>P</kbd> Projection</span>
+        <span><kbd>B</kbd> Bloom</span>
+        <span><kbd>D</kbd> Depth</span>
+        <span><kbd>U</kbd> Pulse</span>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <!-- Feature Selection -->
+      <div class="panel">
+        <h2>Shape</h2>
+        <div class="control-row">
+          <label>Primary Polytope</label>
+          <select id="select-polytope"></select>
+        </div>
+        <div class="control-row">
+          <label>Secondary Polytope</label>
+          <select id="select-secondary"></select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Behavior</h2>
+        <div class="control-row">
+          <label>Rotation Type</label>
+          <select id="select-rotation"></select>
+        </div>
+        <div class="control-row">
+          <label>Morphing</label>
+          <select id="select-morph"></select>
+        </div>
+        <div class="control-row">
+          <label>CSG Operation</label>
+          <select id="select-csg"></select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Appearance</h2>
+        <div class="control-row">
+          <label>Palette</label>
+          <select id="select-palette"></select>
+        </div>
+        <div class="control-row">
+          <label>View Distance: <span id="val-viewDistance">3</span></label>
+          <input type="range" id="slider-viewDistance" min="2" max="6" step="0.1" value="3">
+        </div>
+        <div class="control-row">
+          <label>Face Opacity: <span id="val-faceOpacity">0.15</span></label>
+          <input type="range" id="slider-faceOpacity" min="0" max="0.5" step="0.01" value="0.15">
+        </div>
+        <div class="control-row">
+          <label>Wire Opacity: <span id="val-wireOpacity">0.7</span></label>
+          <input type="range" id="slider-wireOpacity" min="0.1" max="1" step="0.05" value="0.7">
+        </div>
+      </div>
+
+      <!-- Display Settings (Global) -->
+      <div class="panel">
+        <h2>Display</h2>
+        <div class="toggle-row">
+          <span class="toggle-label">Faces</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-faces" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Wireframe</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-wireframe" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Vertices</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-vertices" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Stereographic Projection</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-projection">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="info-text">
+          Stereographic projection curves edges and reveals internal structure.
+        </div>
+      </div>
+
+      <!-- Effects -->
+      <div class="panel">
+        <h2>Effects</h2>
+        <div class="toggle-row">
+          <span class="toggle-label">Bloom Glow</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-bloom" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Depth Cueing (W-axis)</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-depth" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Breathing Pulse</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-pulse">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="info-text">
+          Depth cueing varies opacity/size by W coordinate. Bloom adds glow.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="version">HYPERGEOMETRY v2.2.0</div>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Post-processing (order matters: shaders before passes) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+  <!-- Sketch -->
+  <script src="sketch.js"></script>
+
+  <script>
+    const hg = window.hypergeometry;
+
+    // Initialize
+    hg.init();
+
+    // Populate dropdowns
+    function populateDropdowns() {
+      const polySelect = document.getElementById('select-polytope');
+      const secSelect = document.getElementById('select-secondary');
+      const rotSelect = document.getElementById('select-rotation');
+      const morphSelect = document.getElementById('select-morph');
+      const csgSelect = document.getElementById('select-csg');
+      const palSelect = document.getElementById('select-palette');
+
+      // Clear
+      polySelect.innerHTML = '';
+      secSelect.innerHTML = '<option value="">None</option>';
+      rotSelect.innerHTML = '';
+      morphSelect.innerHTML = '';
+      csgSelect.innerHTML = '';
+      palSelect.innerHTML = '';
+
+      // Polytopes
+      for (const key of hg.POLYTOPE_KEYS) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = hg.POLYTOPES[key].name;
+        polySelect.appendChild(opt);
+
+        const opt2 = document.createElement('option');
+        opt2.value = key;
+        opt2.textContent = hg.POLYTOPES[key].name;
+        secSelect.appendChild(opt2);
+      }
+
+      // Rotation types
+      for (const key of hg.ROTATION_KEYS) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = hg.ROTATION_TYPES[key].name;
+        rotSelect.appendChild(opt);
+      }
+
+      // Morph types
+      for (const key of hg.MORPH_KEYS) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = hg.MORPH_TYPES[key].name;
+        morphSelect.appendChild(opt);
+      }
+
+      // CSG types
+      for (const key of hg.CSG_KEYS) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = hg.CSG_TYPES[key].name;
+        csgSelect.appendChild(opt);
+      }
+
+      // Palettes
+      for (const key of hg.PALETTE_NAMES) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = hg.PALETTES[key].name;
+        palSelect.appendChild(opt);
+      }
+    }
+
+    // Update UI from features
+    function updateUI() {
+      const f = hg.getFeatures();
+
+      document.getElementById('hash-display').textContent = hg.getHash();
+
+      document.getElementById('select-polytope').value = f.polytopeType;
+      document.getElementById('select-secondary').value = f.secondaryPolytope || '';
+      document.getElementById('select-rotation').value = f.rotationType;
+      document.getElementById('select-morph').value = f.morphType;
+      document.getElementById('select-csg').value = f.csgType;
+      document.getElementById('select-palette').value = f.palette;
+
+      document.getElementById('slider-viewDistance').value = f.viewDistance;
+      document.getElementById('val-viewDistance').textContent = f.viewDistance.toFixed(1);
+
+      document.getElementById('slider-faceOpacity').value = f.faceOpacity;
+      document.getElementById('val-faceOpacity').textContent = f.faceOpacity.toFixed(2);
+
+      document.getElementById('slider-wireOpacity').value = f.wireOpacity;
+      document.getElementById('val-wireOpacity').textContent = f.wireOpacity.toFixed(2);
+
+      // Display settings (global - don't change on regenerate)
+      document.getElementById('toggle-faces').checked = hg.displaySettings.showFaces;
+      document.getElementById('toggle-wireframe').checked = hg.displaySettings.showWireframe;
+      document.getElementById('toggle-vertices').checked = hg.displaySettings.showVertices;
+      document.getElementById('toggle-projection').checked = hg.displaySettings.projectionType === 'stereographic';
+      document.getElementById('toggle-bloom').checked = hg.displaySettings.bloomEnabled;
+      document.getElementById('toggle-depth').checked = hg.displaySettings.depthCueing;
+      document.getElementById('toggle-pulse').checked = hg.displaySettings.pulseEnabled;
+    }
+
+    window.updateUI = updateUI;
+
+    // Event listeners for dropdowns
+    document.getElementById('select-polytope').addEventListener('change', e => {
+      hg.setFeature('polytopeType', e.target.value);
+    });
+
+    document.getElementById('select-secondary').addEventListener('change', e => {
+      hg.setFeature('secondaryPolytope', e.target.value || null);
+    });
+
+    document.getElementById('select-rotation').addEventListener('change', e => {
+      hg.setFeature('rotationType', e.target.value);
+    });
+
+    document.getElementById('select-morph').addEventListener('change', e => {
+      hg.setFeature('morphType', e.target.value);
+    });
+
+    document.getElementById('select-csg').addEventListener('change', e => {
+      hg.setFeature('csgType', e.target.value);
+    });
+
+    document.getElementById('select-palette').addEventListener('change', e => {
+      hg.setFeature('palette', e.target.value);
+    });
+
+    // Sliders
+    document.getElementById('slider-viewDistance').addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      hg.setFeature('viewDistance', val);
+      document.getElementById('val-viewDistance').textContent = val.toFixed(1);
+    });
+
+    document.getElementById('slider-faceOpacity').addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      hg.setFeature('faceOpacity', val);
+      document.getElementById('val-faceOpacity').textContent = val.toFixed(2);
+    });
+
+    document.getElementById('slider-wireOpacity').addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      hg.setFeature('wireOpacity', val);
+      document.getElementById('val-wireOpacity').textContent = val.toFixed(2);
+    });
+
+    // Display toggles (global)
+    document.getElementById('toggle-faces').addEventListener('change', e => {
+      hg.displaySettings.showFaces = e.target.checked;
+    });
+
+    document.getElementById('toggle-wireframe').addEventListener('change', e => {
+      hg.displaySettings.showWireframe = e.target.checked;
+    });
+
+    document.getElementById('toggle-vertices').addEventListener('change', e => {
+      hg.displaySettings.showVertices = e.target.checked;
+    });
+
+    document.getElementById('toggle-projection').addEventListener('change', e => {
+      hg.displaySettings.projectionType = e.target.checked ? 'stereographic' : 'perspective';
+    });
+
+    document.getElementById('toggle-bloom').addEventListener('change', e => {
+      hg.displaySettings.bloomEnabled = e.target.checked;
+      hg.updateBloom();
+    });
+
+    document.getElementById('toggle-depth').addEventListener('change', e => {
+      hg.displaySettings.depthCueing = e.target.checked;
+    });
+
+    document.getElementById('toggle-pulse').addEventListener('change', e => {
+      hg.displaySettings.pulseEnabled = e.target.checked;
+    });
+
+    // Buttons
+    document.getElementById('btn-regenerate').addEventListener('click', () => {
+      hg.regenerate();
+    });
+
+    document.getElementById('btn-save').addEventListener('click', () => {
+      hg.saveImage();
+    });
+
+    document.getElementById('btn-pause').addEventListener('click', () => {
+      const paused = hg.togglePause();
+      document.getElementById('btn-pause').textContent = paused ? 'Resume (Space)' : 'Pause (Space)';
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+      switch (e.key.toLowerCase()) {
+        case 'r':
+          hg.regenerate();
+          break;
+        case 's':
+          hg.saveImage();
+          break;
+        case ' ':
+          e.preventDefault();
+          const paused = hg.togglePause();
+          document.getElementById('btn-pause').textContent = paused ? 'Resume (Space)' : 'Pause (Space)';
+          break;
+        case 'f':
+          hg.displaySettings.showFaces = !hg.displaySettings.showFaces;
+          document.getElementById('toggle-faces').checked = hg.displaySettings.showFaces;
+          break;
+        case 'w':
+          hg.displaySettings.showWireframe = !hg.displaySettings.showWireframe;
+          document.getElementById('toggle-wireframe').checked = hg.displaySettings.showWireframe;
+          break;
+        case 'v':
+          hg.displaySettings.showVertices = !hg.displaySettings.showVertices;
+          document.getElementById('toggle-vertices').checked = hg.displaySettings.showVertices;
+          break;
+        case 'p':
+          hg.displaySettings.projectionType = hg.displaySettings.projectionType === 'perspective' ? 'stereographic' : 'perspective';
+          document.getElementById('toggle-projection').checked = hg.displaySettings.projectionType === 'stereographic';
+          break;
+        case 'b':
+          hg.displaySettings.bloomEnabled = !hg.displaySettings.bloomEnabled;
+          document.getElementById('toggle-bloom').checked = hg.displaySettings.bloomEnabled;
+          hg.updateBloom();
+          break;
+        case 'd':
+          hg.displaySettings.depthCueing = !hg.displaySettings.depthCueing;
+          document.getElementById('toggle-depth').checked = hg.displaySettings.depthCueing;
+          break;
+        case 'u':
+          hg.displaySettings.pulseEnabled = !hg.displaySettings.pulseEnabled;
+          document.getElementById('toggle-pulse').checked = hg.displaySettings.pulseEnabled;
+          break;
+      }
+    });
+
+    // Initialize
+    populateDropdowns();
+    updateUI();
+  </script>
+</body>
+</html>
