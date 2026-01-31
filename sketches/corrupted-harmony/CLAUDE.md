@@ -1,0 +1,151 @@
+# Corrupted Harmony - AI Assistant Guide
+
+## Project Overview
+
+**Corrupted Harmony** is an isometric generative cityscape where buildings from different architectural eras and visual realities coexist. Each structure is processed through a different visual filter (dithered, liquified, stenciled, glitched, corrupted) while maintaining a dreamlike harmony.
+
+**Version**: 1.0.0
+**Framework**: p5.js
+**Platform**: Art Blocks / fxhash compatible
+
+## File Structure
+
+```
+corrupted-harmony/
+├── index.html          # Viewer with feature display
+├── sketch.js           # Main sketch (all logic)
+├── CLAUDE.md           # This file
+├── README.md           # Project documentation
+├── CHANGELOG.md        # Version history
+├── versions/           # Archived versions
+│   └── .gitkeep
+└── docs/
+    ├── FEATURES.md     # Rarity & feature system
+    └── TECHNICAL.md    # Implementation details
+```
+
+## Current Version: 1.0.0
+
+### Key Concepts
+
+1. **Isometric Projection**: 30-degree isometric view using `isoProject(x, y, z)` helper
+2. **Building Class**: Each building has style, effect, dimensions, and weirdness properties
+3. **Effect Pipeline**: Buildings render to off-screen buffer, effect applied, then composited
+4. **Weirdness System**: Per-building anomalies (melt, float, time-echo, scale-shift)
+
+### Architecture Styles
+- `brutalist` - Concrete slabs with ledges
+- `deco` - Art Deco setbacks with spires
+- `modernist` - Glass towers with frame lines
+- `gothic` - Pointed roofs with pinnacles
+- `retro-futurist` - Bulging forms with domes
+- `geometric` - Pure shapes (cube, pyramid)
+- `organic` - Bulging biological forms
+
+### Visual Effects
+- `dither` - Floyd-Steinberg, Bayer, stipple, halftone
+- `liquify` - Displacement with dripping
+- `stencil` - Posterization (3-6 levels)
+- `glitch` - RGB shift, scanlines, displacement
+- `corrupt` - Block artifacts, data moshing
+- `clean` - No effect (reference point)
+
+### Weirdness Types
+- `melt` - Buildings dripping/fusing
+- `float` - Floating chunks
+- `scale-shift` - Size anomalies
+- `time-echo` - Ghost overlays
+- `invert` - Upside-down (legendary only)
+
+## Quick Commands
+
+```bash
+# Open in browser
+open index.html
+
+# Test with specific hash
+# Add ?hash=0x... to URL
+```
+
+## Making Changes
+
+### Before Any Edit
+```bash
+# Archive current version
+cp sketch.js versions/v1.0.0-sketch.js
+```
+
+### Workflow
+1. Read the relevant section in `docs/TECHNICAL.md`
+2. Make focused changes
+3. Test multiple hashes (R key to regenerate)
+4. Update version in sketch.js, index.html, CHANGELOG.md
+5. Commit with descriptive message
+
+### Version Numbering
+- **Major** (2.0.0): Changes hash→output mapping
+- **Minor** (1.1.0): New features, backward compatible
+- **Patch** (1.0.1): Bug fixes, no visual changes
+
+## Key Functions
+
+| Function | Purpose |
+|----------|---------|
+| `generateFeatures()` | Derive all features from hash |
+| `generateCity()` | Create building array |
+| `Building` class | Individual building with style/effect |
+| `drawBuildingToBuffer()` | Render building to off-screen graphics |
+| `applyEffectToBuffer()` | Apply dither/liquify/etc. to buffer |
+| `isoProject(x,y,z)` | Convert 3D to isometric 2D |
+| `drawIsoBox()` | Draw isometric rectangular prism |
+
+## Effect Implementations
+
+### Dithering (`applyDitherEffect`)
+- Access `pg.pixels[]` directly
+- Bayer uses 4x4 threshold matrix
+- Floyd-Steinberg propagates error to neighbors
+
+### Liquify (`applyLiquifyEffect`)
+- Uses `noise()` for displacement field
+- Bottom section has additional drip effect
+- Reads from original, writes to new positions
+
+### Glitch (`applyGlitchEffect`)
+- RGB channel horizontal shift
+- Scanline darkening
+- Random horizontal displacement lines
+
+### Corruption (`applyCorruptEffect`)
+- 8x8 block-based corruption
+- Modes: color shift, invert, solid, channel swap
+- Vertical "data mosh" streaks
+
+## Palette System
+
+Palettes are arrays of 6 hex colors ordered light→dark:
+```javascript
+PALETTES = {
+  muted: ['#2d2d2d', '#4a4a4a', '#6b6b6b', '#8c8c8c', '#adadad', '#d4d4d4'],
+  // [0]=darkest, [5]=lightest
+}
+```
+
+Used as: `[0]` windows dark, `[2-3]` building sides, `[4-5]` highlights
+
+## Debugging
+
+```javascript
+// In browser console:
+window.sketchAPI.getFeatures()  // Current features
+window.sketchAPI.getHash()      // Current hash
+window.sketchAPI.regenerate()   // New random hash
+window.sketchAPI.setParameter('buildingCount', 30)  // Override
+```
+
+## Common Issues
+
+1. **Buildings overlapping wrong**: Check `getSortDepth()` sort order
+2. **Effect not visible**: Ensure buffer has content before effect
+3. **Colors wrong**: Check palette index (0=dark, 5=light)
+4. **Weirdness not showing**: Check `weirdnessLevel` feature value
