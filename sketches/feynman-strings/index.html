@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feynman Strings</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0d0d14;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      gap: 30px;
+      max-width: 1400px;
+    }
+
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    #sketch-holder {
+      background: #1a1a24;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    #sketch-holder canvas {
+      display: block;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #2a2a3a;
+      border: 1px solid #3a3a4a;
+      color: #e0e0e0;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #3a3a4a;
+      border-color: #5a5a6a;
+    }
+
+    button.primary {
+      background: #4a4a6a;
+      border-color: #6a6aaa;
+    }
+
+    button.like {
+      background: #2a4a2a;
+      border-color: #4a8a4a;
+    }
+
+    button.like:hover {
+      background: #3a6a3a;
+    }
+
+    button.dislike {
+      background: #4a2a2a;
+      border-color: #8a4a4a;
+    }
+
+    button.dislike:hover {
+      background: #6a3a3a;
+    }
+
+    .hash-display {
+      font-size: 11px;
+      color: #888;
+      word-break: break-all;
+      background: #1a1a24;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+
+    .side-panel {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel {
+      background: #1a1a24;
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    .panel h2 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel h2 button {
+      padding: 4px 10px;
+      font-size: 11px;
+    }
+
+    /* Features Table */
+    .features-table {
+      width: 100%;
+      font-size: 12px;
+    }
+
+    .feature-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #2a2a3a;
+    }
+
+    .feature-row:last-child {
+      border-bottom: none;
+    }
+
+    .feature-name {
+      color: #888;
+    }
+
+    .feature-value {
+      color: #e0e0e0;
+      font-weight: 500;
+    }
+
+    .rarity-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .rarity-common { background: #3a3a4a; color: #aaa; }
+    .rarity-uncommon { background: #2a4a3a; color: #4a9; }
+    .rarity-rare { background: #3a3a6a; color: #88f; }
+    .rarity-legendary { background: #5a3a2a; color: #fa4; }
+
+    .mode-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      margin: 2px;
+    }
+
+    .mode-tag.qed { background: #f1c40f33; color: #f1c40f; }
+    .mode-tag.qcd { background: #e6394633; color: #e63946; }
+    .mode-tag.string { background: #74b9ff33; color: #74b9ff; }
+    .mode-tag.vacuum { background: #63696733; color: #b2bec3; }
+    .mode-tag.bubble { background: #00cec933; color: #00cec9; }
+    .mode-tag.spinNetwork { background: #a29bfe33; color: #a29bfe; }
+
+    /* Sliders Panel */
+    .slider-group {
+      margin-bottom: 15px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    .slider-value {
+      color: #e0e0e0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      background: #2a2a3a;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #6a6aaa;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    select {
+      width: 100%;
+      background: #2a2a3a;
+      border: 1px solid #3a3a4a;
+      color: #e0e0e0;
+      padding: 8px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    /* Rarity Curves */
+    .rarity-chart {
+      margin-bottom: 15px;
+    }
+
+    .rarity-chart-title {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .rarity-bars {
+      display: flex;
+      gap: 3px;
+      height: 40px;
+      align-items: flex-end;
+    }
+
+    .rarity-bar {
+      flex: 1;
+      background: #3a3a4a;
+      border-radius: 2px 2px 0 0;
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .rarity-bar.active {
+      background: #6a6aaa;
+    }
+
+    .rarity-bar-label {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .rarity-bar.active .rarity-bar-label {
+      color: #aaa;
+    }
+
+    /* Feedback Panel */
+    .feedback-stats {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+    }
+
+    /* Keyboard hints */
+    .keyboard-hints {
+      display: flex;
+      gap: 15px;
+      font-size: 11px;
+      color: #666;
+      margin-top: 10px;
+    }
+
+    .key {
+      display: inline-block;
+      background: #2a2a3a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    /* Version */
+    .version {
+      font-size: 10px;
+      color: #444;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* Special features highlight */
+    .special-feature {
+      background: linear-gradient(90deg, #fa433320, transparent);
+      border-left: 2px solid #fa4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="main-panel">
+      <div id="sketch-holder"></div>
+
+      <div class="controls">
+        <button class="primary" onclick="window.regenerate()">Regenerate (R)</button>
+        <button onclick="saveCanvas('feynman-strings-' + hash.slice(2,10), 'png')">Save PNG (S)</button>
+        <button class="like" onclick="like()">Like (L)</button>
+        <button class="dislike" onclick="dislike()">Dislike (D)</button>
+      </div>
+
+      <div class="hash-display" id="hash-display"></div>
+
+      <div class="keyboard-hints">
+        <span><span class="key">R</span> Regenerate</span>
+        <span><span class="key">S</span> Save</span>
+        <span><span class="key">L</span> Like</span>
+        <span><span class="key">D</span> Dislike</span>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <!-- Features Panel -->
+      <div class="panel">
+        <h2>Features</h2>
+        <div class="features-table" id="features-table"></div>
+      </div>
+
+      <!-- Parameters Panel -->
+      <div class="panel">
+        <h2>
+          Parameters
+          <button onclick="resetParameters()">Reset</button>
+        </h2>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Density</span>
+            <span class="slider-value" id="density-value">1.0</span>
+          </div>
+          <input type="range" id="density-slider" min="0.2" max="4.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Line Weight</span>
+            <span class="slider-value" id="lineWeight-value">2</span>
+          </div>
+          <input type="range" id="lineWeight-slider" min="0.5" max="6" step="0.25" value="2">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Loop Probability</span>
+            <span class="slider-value" id="loopProb-value">0.5</span>
+          </div>
+          <input type="range" id="loopProb-slider" min="0" max="1.5" step="0.05" value="0.5">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Connection Density</span>
+            <span class="slider-value" id="connDensity-value">0.5</span>
+          </div>
+          <input type="range" id="connDensity-slider" min="0.1" max="1.0" step="0.05" value="0.5">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Style</span>
+          </div>
+          <select id="style-select">
+            <option value="technical">Technical</option>
+            <option value="geometric">Geometric (LeWitt)</option>
+            <option value="artistic">Artistic</option>
+            <option value="abstract">Abstract</option>
+            <option value="chaotic">Chaotic</option>
+            <option value="maximalist">Maximalist</option>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Palette</span>
+          </div>
+          <select id="palette-select">
+            <optgroup label="Dark">
+              <option value="blackboard">Blackboard</option>
+              <option value="cosmic">Cosmic</option>
+              <option value="void">Void</option>
+              <option value="midnight">Midnight</option>
+              <option value="matrix">Matrix</option>
+            </optgroup>
+            <optgroup label="Light">
+              <option value="paper">Paper</option>
+              <option value="parchment">Parchment</option>
+              <option value="minimal">Minimal</option>
+              <option value="lewitt">LeWitt B&W</option>
+              <option value="lewittColor">LeWitt Color</option>
+            </optgroup>
+            <optgroup label="Colored">
+              <option value="blueprint">Blueprint</option>
+              <option value="infrared">Infrared</option>
+              <option value="plasma">Plasma</option>
+              <option value="quantum">Quantum</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Composition</span>
+          </div>
+          <select id="composition-select">
+            <option value="centered">Centered</option>
+            <option value="scattered">Scattered</option>
+            <option value="flowing">Flowing</option>
+            <option value="layered">Layered</option>
+            <option value="grid">Grid (LeWitt)</option>
+            <option value="radial">Radial</option>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Background Pattern</span>
+          </div>
+          <select id="bgPattern-select">
+            <option value="none">None</option>
+            <option value="grid">Grid</option>
+            <option value="lines">Lines</option>
+            <option value="dots">Dots</option>
+            <option value="arcs">Arcs (LeWitt)</option>
+            <option value="diagonal">Diagonal</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Rarity Curves Panel -->
+      <div class="panel">
+        <h2>Rarity Curves</h2>
+        <div id="rarity-curves"></div>
+      </div>
+
+      <!-- Feedback Panel -->
+      <div class="panel">
+        <h2>Feedback</h2>
+        <div class="feedback-stats" id="feedback-stats">
+          No feedback recorded yet
+        </div>
+        <button style="margin-top: 10px; width: 100%;" onclick="exportStats()">Export to Console</button>
+      </div>
+
+      <div class="version">Feynman Strings v1.1.0</div>
+    </div>
+  </div>
+
+  <script src="sketch.js"></script>
+  <script>
+    // Update displays after sketch loads
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        updateFeaturesDisplay();
+        updateRarityCurves();
+        updateFeedbackStats();
+        setupSliders();
+      }, 100);
+    });
+
+    // Expose UI update function for sketch.js to call
+    window.updateUI = function() {
+      updateFeaturesDisplay();
+      updateRarityCurves();
+    };
+
+    function updateFeaturesDisplay() {
+      const features = window.getFeatures();
+      const table = document.getElementById('features-table');
+      const hashDisplay = document.getElementById('hash-display');
+
+      hashDisplay.textContent = window.getHash();
+
+      let html = '';
+
+      // Modes
+      html += `<div class="feature-row">
+        <span class="feature-name">Modes</span>
+        <span class="feature-value">
+          ${features.modes.map(m => `<span class="mode-tag ${m}">${m.toUpperCase()}</span>`).join('')}
+        </span>
+      </div>`;
+
+      // Mode blend
+      const blendRarity = features.modeBlend === 'chaos' ? 'legendary' :
+                         features.modeBlend === 'triple' ? 'rare' :
+                         features.modeBlend === 'dual' ? 'uncommon' : 'common';
+      html += `<div class="feature-row">
+        <span class="feature-name">Blend</span>
+        <span class="feature-value">
+          <span class="rarity-badge rarity-${blendRarity}">${features.modeBlend}</span>
+        </span>
+      </div>`;
+
+      // Density
+      const densityRarity = features.densityName === 'chaotic' ? 'legendary' :
+                           features.densityName === 'dense' ? 'rare' :
+                           features.densityName === 'minimal' ? 'uncommon' : 'common';
+      html += `<div class="feature-row">
+        <span class="feature-name">Density</span>
+        <span class="feature-value">
+          <span class="rarity-badge rarity-${densityRarity}">${features.densityName}</span>
+        </span>
+      </div>`;
+
+      // Style
+      const styleRarity = features.style === 'chaotic' ? 'rare' : 'common';
+      html += `<div class="feature-row">
+        <span class="feature-name">Style</span>
+        <span class="feature-value">
+          <span class="rarity-badge rarity-${styleRarity}">${features.style}</span>
+        </span>
+      </div>`;
+
+      // Composition
+      html += `<div class="feature-row">
+        <span class="feature-name">Composition</span>
+        <span class="feature-value">${features.composition}</span>
+      </div>`;
+
+      // Palette
+      html += `<div class="feature-row">
+        <span class="feature-name">Palette</span>
+        <span class="feature-value">${features.palette}</span>
+      </div>`;
+
+      // Vertex count
+      html += `<div class="feature-row">
+        <span class="feature-name">Vertices</span>
+        <span class="feature-value">${features.vertexCount}</span>
+      </div>`;
+
+      // Special features
+      if (features.hasHiggs) {
+        html += `<div class="feature-row special-feature">
+          <span class="feature-name">Special</span>
+          <span class="feature-value">
+            <span class="rarity-badge rarity-legendary">Higgs</span>
+          </span>
+        </div>`;
+      }
+      if (features.hasCalabiYau) {
+        html += `<div class="feature-row special-feature">
+          <span class="feature-name">Special</span>
+          <span class="feature-value">
+            <span class="rarity-badge rarity-legendary">Calabi-Yau</span>
+          </span>
+        </div>`;
+      }
+      if (features.hasGraviton) {
+        html += `<div class="feature-row special-feature">
+          <span class="feature-name">Special</span>
+          <span class="feature-value">
+            <span class="rarity-badge rarity-legendary">Graviton</span>
+          </span>
+        </div>`;
+      }
+      if (features.hasSupersymmetry) {
+        html += `<div class="feature-row special-feature">
+          <span class="feature-name">Special</span>
+          <span class="feature-value">
+            <span class="rarity-badge rarity-legendary">SUSY</span>
+          </span>
+        </div>`;
+      }
+
+      // Show background pattern and symmetry
+      if (features.backgroundPattern && features.backgroundPattern !== "none") {
+        html += `<div class="feature-row">
+          <span class="feature-name">Pattern</span>
+          <span class="feature-value">${features.backgroundPattern}</span>
+        </div>`;
+      }
+      if (features.symmetry && features.symmetry !== "none") {
+        html += `<div class="feature-row">
+          <span class="feature-name">Symmetry</span>
+          <span class="feature-value">${features.symmetry}</span>
+        </div>`;
+      }
+
+      table.innerHTML = html;
+
+      // Update slider values
+      document.getElementById('density-slider').value = features.density;
+      document.getElementById('density-value').textContent = features.density.toFixed(2);
+      document.getElementById('lineWeight-slider').value = features.lineWeight;
+      document.getElementById('lineWeight-value').textContent = features.lineWeight.toFixed(1);
+      document.getElementById('loopProb-slider').value = features.loopProbability;
+      document.getElementById('loopProb-value').textContent = features.loopProbability.toFixed(2);
+      document.getElementById('connDensity-slider').value = features.connectionDensity || 0.5;
+      document.getElementById('connDensity-value').textContent = (features.connectionDensity || 0.5).toFixed(2);
+      document.getElementById('style-select').value = features.style;
+      document.getElementById('palette-select').value = features.palette;
+      document.getElementById('composition-select').value = features.composition;
+      document.getElementById('bgPattern-select').value = features.backgroundPattern || 'none';
+    }
+
+    function updateRarityCurves() {
+      const curves = window.getRarityCurves();
+      const features = window.getFeatures();
+      const container = document.getElementById('rarity-curves');
+
+      let html = '';
+
+      for (const [key, curve] of Object.entries(curves)) {
+        const currentValue = features[key] || features[key + 'Name'];
+
+        html += `<div class="rarity-chart">
+          <div class="rarity-chart-title">${key}</div>
+          <div class="rarity-bars">`;
+
+        const maxProb = Math.max(...curve.probabilities);
+
+        curve.labels.forEach((label, i) => {
+          const height = (curve.probabilities[i] / maxProb) * 100;
+          const isActive = label === currentValue;
+
+          html += `<div class="rarity-bar ${isActive ? 'active' : ''}" style="height: ${height}%">
+            <span class="rarity-bar-label">${label}</span>
+          </div>`;
+        });
+
+        html += `</div></div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function updateFeedbackStats() {
+      const stats = window.getFeedbackStats();
+      const container = document.getElementById('feedback-stats');
+
+      if (stats.totalLiked === 0 && stats.totalDisliked === 0) {
+        container.textContent = 'No feedback recorded yet';
+        return;
+      }
+
+      container.innerHTML = `
+        Liked: ${stats.totalLiked} | Disliked: ${stats.totalDisliked}<br>
+        <small>Check console for detailed stats</small>
+      `;
+    }
+
+    function setupSliders() {
+      // Density slider
+      document.getElementById('density-slider').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById('density-value').textContent = val.toFixed(2);
+        window.setParameter('density', val);
+        window.render();
+      });
+
+      // Line weight slider
+      document.getElementById('lineWeight-slider').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById('lineWeight-value').textContent = val.toFixed(1);
+        window.setParameter('lineWeight', val);
+        window.render();
+      });
+
+      // Loop probability slider
+      document.getElementById('loopProb-slider').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById('loopProb-value').textContent = val.toFixed(2);
+        window.setParameter('loopProbability', val);
+        window.render();
+      });
+
+      // Connection density slider
+      document.getElementById('connDensity-slider').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        document.getElementById('connDensity-value').textContent = val.toFixed(2);
+        window.setParameter('connectionDensity', val);
+        window.render();
+      });
+
+      // Style select
+      document.getElementById('style-select').addEventListener('change', (e) => {
+        window.setParameter('style', e.target.value);
+        window.setParameter('showLabels', e.target.value === 'technical');
+        window.render();
+      });
+
+      // Palette select
+      document.getElementById('palette-select').addEventListener('change', (e) => {
+        window.setParameter('palette', e.target.value);
+        window.render();
+      });
+
+      // Composition select
+      document.getElementById('composition-select').addEventListener('change', (e) => {
+        window.setParameter('composition', e.target.value);
+        window.render();
+      });
+
+      // Background pattern select
+      document.getElementById('bgPattern-select').addEventListener('change', (e) => {
+        window.setParameter('backgroundPattern', e.target.value);
+        window.render();
+      });
+    }
+
+    function resetParameters() {
+      window.resetToOriginal();
+      window.render();
+      updateFeaturesDisplay();
+    }
+
+    function like() {
+      window.recordFeedback(true);
+      updateFeedbackStats();
+    }
+
+    function dislike() {
+      window.recordFeedback(false);
+      updateFeedbackStats();
+    }
+
+    function exportStats() {
+      console.log('=== Feynman Strings Feedback ===');
+      console.log(JSON.stringify(window.exportFeedback(), null, 2));
+      console.log('=== Stats Summary ===');
+      console.log(window.getFeedbackStats());
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'l' || e.key === 'L') like();
+      if (e.key === 'd' || e.key === 'D') dislike();
+    });
+  </script>
+</body>
+</html>
