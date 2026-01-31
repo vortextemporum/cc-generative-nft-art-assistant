@@ -207,8 +207,7 @@ const PSEUDO_FUNCTIONS = {
   // Normal would be: cos(x) + sin(y)
   // Wrong: treating coordinates as if they were different things
   'broken-trig': (x, y, t, k1, k2) => ({
-    // Divide by wrong values, use wrong operations
-    x: Math.cos(k1 * y) + Math.sin(k2 * x) * Math.tan(t * 0.01),
+    x: Math.cos(k1 * y) + Math.sin(k2 * x) * Math.tan(t * 0.01 + 0.1),
     y: Math.sin(k2 * y) - Math.cos(k1 * x) / (Math.abs(Math.sin(t * 0.02)) + 0.1)
   }),
 
@@ -220,8 +219,8 @@ const PSEUDO_FUNCTIONS = {
 
   // Modulo artifacts - wrapping at wrong intervals
   'modulo-glitch': (x, y, t, k1, k2) => ({
-    x: ((x * k1) % (y + 0.001)) * Math.sin(t * 0.01),
-    y: ((y * k2) % (x + 0.001)) * Math.cos(t * 0.01)
+    x: ((x * k1) % (Math.abs(y) + 0.1)) * 0.5,
+    y: ((y * k2) % (Math.abs(x) + 0.1)) * 0.5
   }),
 
   // Integer truncation creating stepping
@@ -232,12 +231,120 @@ const PSEUDO_FUNCTIONS = {
 
   // Type coercion errors - treating floats as if they were ints
   'coercion-drift': (x, y, t, k1, k2) => ({
-    x: (((x * 1000) | 0) ^ ((y * 1000) | 0)) / 1000 * Math.sin(k1 + t * 0.001),
-    y: (((x * 1000) | 0) & ((y * 1000) | 0)) / 1000 * Math.cos(k2 + t * 0.001)
-  })
+    x: (((x * 1000) | 0) ^ ((y * 1000) | 0)) / 1000 * Math.sin(k1),
+    y: (((x * 1000) | 0) & ((y * 1000) | 0)) / 1000 * Math.cos(k2)
+  }),
+
+  // Polar coordinate confusion - mixing cartesian and polar
+  'polar-melt': (x, y, t, k1, k2) => {
+    const r = Math.sqrt(x * x + y * y);
+    const theta = Math.atan2(y, x);
+    // Use polar as cartesian, cartesian as polar
+    return {
+      x: Math.cos(r * k1) * theta,
+      y: Math.sin(theta * k2) * r * 0.3
+    };
+  },
+
+  // Overflow simulation - values wrap around like integer overflow
+  'overflow-wrap': (x, y, t, k1, k2) => {
+    const scale = 127;
+    const ox = ((x * k1 * scale) % 256) - 128;
+    const oy = ((y * k2 * scale) % 256) - 128;
+    return {
+      x: Math.sin(ox / 64) + Math.cos(oy / 32),
+      y: Math.cos(ox / 32) - Math.sin(oy / 64)
+    };
+  },
+
+  // Signed/unsigned confusion
+  'sign-corrupt': (x, y, t, k1, k2) => {
+    // Treat negative as large positive (like unsigned interpretation)
+    const ux = x < 0 ? x + 10 : x;
+    const uy = y < 0 ? y + 10 : y;
+    return {
+      x: Math.sin(ux * k1) - Math.sin(x * k1),
+      y: Math.cos(uy * k2) - Math.cos(y * k2)
+    };
+  },
+
+  // Bitwise rotation patterns
+  'bit-rotate': (x, y, t, k1, k2) => {
+    const ix = Math.floor(Math.abs(x * 100)) & 0xFF;
+    const iy = Math.floor(Math.abs(y * 100)) & 0xFF;
+    // Simulate bit rotation
+    const rx = ((ix << 3) | (ix >> 5)) & 0xFF;
+    const ry = ((iy << 5) | (iy >> 3)) & 0xFF;
+    return {
+      x: (rx / 128 - 1) * Math.sin(k1),
+      y: (ry / 128 - 1) * Math.cos(k2)
+    };
+  },
+
+  // Frequency modulation errors (FM synthesis gone wrong)
+  'fm-distort': (x, y, t, k1, k2) => {
+    const carrier = Math.sin(x * k1 + y * k2);
+    const modulator = Math.sin(y * k1 * 3.14159);
+    // FM with wrong modulation index
+    return {
+      x: Math.sin(x * k1 + modulator * k2 * 5),
+      y: Math.cos(y * k2 + carrier * k1 * 5)
+    };
+  },
+
+  // Phase cancellation artifacts
+  'phase-cancel': (x, y, t, k1, k2) => {
+    const p1 = Math.sin(x * k1 + y * k2);
+    const p2 = Math.sin(x * k1 + y * k2 + Math.PI * 0.99); // Almost cancelled
+    const p3 = Math.cos(x * k2 - y * k1);
+    const p4 = Math.cos(x * k2 - y * k1 + Math.PI * 0.99);
+    return {
+      x: (p1 + p2) * 10, // Amplify the residual
+      y: (p3 + p4) * 10
+    };
+  },
+
+  // Feedback loop simulation
+  'feedback-loop': (x, y, t, k1, k2) => {
+    let fx = x, fy = y;
+    // Simulate 3 iterations of feedback
+    for (let i = 0; i < 3; i++) {
+      const nx = Math.sin(fy * k1) * 0.8 + fx * 0.2;
+      const ny = Math.cos(fx * k2) * 0.8 + fy * 0.2;
+      fx = nx; fy = ny;
+    }
+    return { x: fx, y: fy };
+  },
+
+  // Denormal number artifacts (simulated floating point errors)
+  'denormal-drift': (x, y, t, k1, k2) => {
+    // Simulate denormalized floating point behavior
+    const epsilon = 1e-10;
+    const dx = x < epsilon && x > -epsilon ? x * 1e10 : x;
+    const dy = y < epsilon && y > -epsilon ? y * 1e10 : y;
+    return {
+      x: Math.sin(dx * k1) + (Math.abs(x) < 0.1 ? Math.sin(k1 * 100 * x) : 0),
+      y: Math.cos(dy * k2) + (Math.abs(y) < 0.1 ? Math.cos(k2 * 100 * y) : 0)
+    };
+  },
+
+  // Catastrophic cancellation
+  'catastrophic': (x, y, t, k1, k2) => {
+    const big = 1e6;
+    // Subtract nearly equal large numbers
+    const cx = (big + x * k1) - (big + x * k1 * 0.9999);
+    const cy = (big + y * k2) - (big + y * k2 * 0.9999);
+    return {
+      x: cx * 10000,
+      y: cy * 10000
+    };
+  }
 };
 
 const PSEUDO_NAMES = Object.keys(PSEUDO_FUNCTIONS);
+// ['broken-trig', 'recursive-error', 'modulo-glitch', 'quantized-flow', 'coercion-drift',
+//  'polar-melt', 'overflow-wrap', 'sign-corrupt', 'bit-rotate', 'fm-distort',
+//  'phase-cancel', 'feedback-loop', 'denormal-drift', 'catastrophic']
 
 // =============================================================================
 // FEATURE SYSTEM
@@ -288,8 +395,11 @@ function generateFeatures() {
   }
   const blockSize = blockSizes[blockIdx];
 
-  // Glitch type
-  const glitchType = rndChoice(['block', 'scanline', 'channel', 'mixed']);
+  // Glitch type - expanded with more visual modes
+  const glitchType = rndChoice([
+    'block', 'scanline', 'channel', 'mixed',
+    'interlace', 'pixel-sort', 'dither-error', 'bit-crush'
+  ]);
 
   // Drift speed for animation
   const driftRarity = rollRarity(0.30, 0.35, 0.25, 0.10);
@@ -551,6 +661,49 @@ function drawBlockArtifacts(pg, t) {
 
     if (glitchType === 'scanline' || glitchType === 'mixed') {
       pg.rect(0, y, SIZE, blockSize * 0.5);
+    }
+
+    if (glitchType === 'interlace') {
+      // Draw every other line with offset
+      const lineY = Math.floor(rnd(0, SIZE / 2)) * 2;
+      pg.rect(rnd(-20, 0), lineY, SIZE + 40, 1);
+      pg.rect(rnd(0, 20), lineY + 1, SIZE + 40, 1);
+    }
+
+    if (glitchType === 'pixel-sort') {
+      // Horizontal sorted-looking streaks
+      const streakY = Math.floor(rnd(0, SIZE));
+      const streakLen = rnd(50, 200) * corruptionIntensity;
+      const streakX = rnd(0, SIZE - streakLen);
+      pg.strokeWeight(rnd(1, 3));
+      pg.stroke(col + alpha.toString(16).padStart(2, '0'));
+      pg.line(streakX, streakY, streakX + streakLen, streakY);
+    }
+
+    if (glitchType === 'dither-error') {
+      // Scattered dither-like dots in clusters
+      const cx = rnd(0, SIZE);
+      const cy = rnd(0, SIZE);
+      pg.noStroke();
+      for (let d = 0; d < 20; d++) {
+        const dx = cx + rnd(-30, 30) * corruptionIntensity;
+        const dy = cy + rnd(-30, 30) * corruptionIntensity;
+        pg.fill(palette[rndInt(0, 4)]);
+        pg.rect(Math.floor(dx / 2) * 2, Math.floor(dy / 2) * 2, 2, 2);
+      }
+    }
+
+    if (glitchType === 'bit-crush') {
+      // Large blocky regions with harsh color boundaries
+      const bx = Math.floor(rnd(0, SIZE) / (blockSize * 2)) * blockSize * 2;
+      const by = Math.floor(rnd(0, SIZE) / (blockSize * 2)) * blockSize * 2;
+      pg.fill(palette[rndInt(0, 4)]);
+      pg.rect(bx, by, blockSize * 2, blockSize * 2);
+      // Add harsh edge
+      pg.stroke(palette[(rndInt(0, 4) + 1) % 5]);
+      pg.strokeWeight(2);
+      pg.noFill();
+      pg.rect(bx, by, blockSize * 2, blockSize * 2);
     }
   }
 }
@@ -838,17 +991,13 @@ const RARITY_CURVES = {
     probabilities: [0.45, 0.30, 0.18, 0.07],
     labels: ['minimal', 'moderate', 'heavy', 'catastrophic']
   },
-  driftSpeed: {
-    probabilities: [0.30, 0.35, 0.25, 0.10],
-    labels: ['still', 'glacial', 'slow', 'restless']
-  },
   blockSize: {
     probabilities: [0.15, 0.40, 0.30, 0.15],
-    labels: ['4x4', '8x8', '16x16', '32x32']
+    labels: ['4', '8', '16', '32']
   },
   glitchType: {
-    probabilities: [0.25, 0.25, 0.25, 0.25],
-    labels: ['block', 'scanline', 'channel', 'mixed']
+    probabilities: [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125],
+    labels: ['block', 'scanline', 'channel', 'mixed', 'interlace', 'pixel-sort', 'dither-error', 'bit-crush']
   },
   paletteCorruption: {
     probabilities: [0.25, 0.25, 0.25, 0.25],
@@ -903,6 +1052,29 @@ function doSave() {
   saveCanvas(`corrupted-tides-${hash.slice(2, 10)}`, 'png');
 }
 
+function doRender() {
+  // Regenerate clusters with current features (needed when params change)
+  R = initRandom(hash);
+  for (let i = 0; i < 50; i++) R();
+  clusters = [];
+  for (let i = 0; i < features.clusterCount; i++) {
+    clusters.push(new BlockCluster(
+      rnd(50, SIZE - 50),
+      rnd(50, SIZE - 50),
+      rnd(30, 100)
+    ));
+  }
+
+  // Update palette in case corruption params changed
+  palette = corruptPalette(
+    SIGNAL_SOURCES[features.signalSource],
+    features.paletteCorruption,
+    features.corruptionIntensity
+  );
+
+  renderFrame();
+}
+
 window.corruptedTides = {
   getFeatures: () => features,
   getHash: () => hash,
@@ -914,5 +1086,5 @@ window.corruptedTides = {
   recordFeedback,
   regenerate: doRegenerate,
   save: doSave,
-  render: () => renderFrame()
+  render: doRender
 };

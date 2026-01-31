@@ -556,8 +556,12 @@
       ];
 
       const selectConfigs = [
-        { key: 'pseudoMath', name: 'Algorithm', options: ['broken-trig', 'recursive-error', 'modulo-glitch', 'quantized-flow', 'coercion-drift'] },
-        { key: 'glitchType', name: 'Glitch Type', options: ['block', 'scanline', 'channel', 'mixed'] },
+        { key: 'pseudoMath', name: 'Algorithm', options: [
+          'broken-trig', 'recursive-error', 'modulo-glitch', 'quantized-flow', 'coercion-drift',
+          'polar-melt', 'overflow-wrap', 'sign-corrupt', 'bit-rotate', 'fm-distort',
+          'phase-cancel', 'feedback-loop', 'denormal-drift', 'catastrophic'
+        ]},
+        { key: 'glitchType', name: 'Glitch Type', options: ['block', 'scanline', 'channel', 'mixed', 'interlace', 'pixel-sort', 'dither-error', 'bit-crush'] },
         { key: 'blockSize', name: 'Block Size', options: [4, 8, 16, 32] }
       ];
 
