@@ -1,5 +1,5 @@
 /**
- * CORRUPTED HARMONY v2.0.0
+ * CORRUPTED HARMONY v2.7.0
  * A fully populated isometric city where different visual realities coexist
  * Buildings, parks, plazas, roads, and urban infrastructure - all corrupted together
  */
@@ -51,6 +51,13 @@ function rndShuffle(arr) {
   return a;
 }
 
+// Helper to create color with alpha (0-255)
+function colorAlpha(c, a) {
+  const col = color(c);
+  col.setAlpha(a);
+  return col;
+}
+
 function rollRarity() {
   const r = R();
   if (r < 0.05) return 'legendary';
@@ -64,9 +71,10 @@ function rollRarity() {
 // =============================================================================
 
 let features = {};
-const GRID_SIZE = 7; // 7x7 city blocks
-const BLOCK_SIZE = 60; // pixels per block in iso space
-const ROAD_WIDTH = 12;
+const GRID_SIZE = 6; // 6x6 city blocks - more buildings!
+const BLOCK_SIZE = 280; // pixels per block in iso space
+const ROAD_WIDTH = 25; // narrower roads = more building space
+const PROP_SCALE = 4; // Scale factor for props/furniture
 
 const EFFECT_TYPES = ['dither', 'liquify', 'stencil', 'glitch', 'corrupt', 'clean'];
 const DITHER_MODES = ['floyd-steinberg', 'bayer', 'stipple', 'halftone'];
@@ -164,7 +172,7 @@ function generateFeatures() {
                          rndChoice(['dither', 'stencil', 'clean']);
 
   const density = rndChoice(['sparse', 'normal', 'dense', 'packed']);
-  const parkRatio = rnd(0.1, 0.3);
+  const parkRatio = rnd(0.05, 0.15); // Less parks = more buildings!
   const hasRiver = rndBool(0.2);
   const timeOfDay = rndChoice(['day', 'dusk', 'night', 'dawn']);
 
@@ -256,16 +264,16 @@ function generateBlockContent(gx, gy) {
 
 function generateBuildingBlock(block, bx, by) {
   // How many buildings fit in this block?
-  const density = features.density === 'packed' ? rndInt(3, 5) :
-                  features.density === 'dense' ? rndInt(2, 4) :
-                  features.density === 'normal' ? rndInt(1, 3) : rndInt(1, 2);
+  const density = features.density === 'packed' ? rndInt(4, 7) :
+                  features.density === 'dense' ? rndInt(3, 6) :
+                  features.density === 'normal' ? rndInt(2, 4) : rndInt(2, 3);
 
   const subdivisions = subdividePlot(BLOCK_SIZE, BLOCK_SIZE, density);
 
   for (const sub of subdivisions) {
     const style = rndChoice(ARCH_STYLES);
     const effect = getEffect();
-    const height = rndInt(30, 120);
+    const height = rndInt(180, 550);
 
     block.buildings.push({
       x: bx + sub.x,
@@ -437,7 +445,7 @@ function generateMarket(block, bx, by) {
           y: by + 5 + r * stallD,
           w: stallW - 3,
           d: stallD - 3,
-          color: rndInt(0, 4)
+          color: rndInt(0, 3)
         });
       }
     }
@@ -531,21 +539,50 @@ function getEffect() {
 function generateWeirdness() {
   const weirdness = [];
   const level = features.weirdnessLevel;
-  const chance = level === 'reality-collapse' ? 0.7 :
-                 level === 'chaotic' ? 0.4 :
-                 level === 'moderate' ? 0.2 : 0.05;
+  const chance = level === 'reality-collapse' ? 0.85 :
+                 level === 'chaotic' ? 0.6 :
+                 level === 'moderate' ? 0.35 : 0.1;
 
+  // Melt - buildings dripping/fusing
   if (rndBool(chance)) {
-    weirdness.push({ type: 'melt', intensity: rnd(0.3, 0.8) });
+    weirdness.push({
+      type: 'melt',
+      intensity: rnd(0.3, 0.9),
+      direction: rndChoice(['down', 'left', 'right'])
+    });
   }
-  if (rndBool(chance * 0.6)) {
-    weirdness.push({ type: 'float', offset: rnd(5, 20) });
+
+  // Float - buildings hovering with detached chunks
+  if (rndBool(chance * 0.7)) {
+    weirdness.push({
+      type: 'float',
+      offset: rnd(8, 35),
+      chunks: rndInt(1, 4)
+    });
   }
+
+  // Time echo - ghostly duplicate offset
+  if (rndBool(chance * 0.5)) {
+    weirdness.push({
+      type: 'echo',
+      opacity: rnd(0.15, 0.45),
+      dx: rnd(-20, 20),
+      dy: rnd(-25, 10)
+    });
+  }
+
+  // Scale shift - part of building scaled differently
   if (rndBool(chance * 0.4)) {
-    weirdness.push({ type: 'echo', opacity: rnd(0.2, 0.4), dx: rnd(-10, 10), dy: rnd(-15, 5) });
+    weirdness.push({
+      type: 'scale-shift',
+      factor: rnd(0.6, 1.6),
+      section: rndChoice(['top', 'middle', 'bottom'])
+    });
   }
-  if (level === 'reality-collapse' && rndBool(0.2)) {
-    weirdness.push({ type: 'invert' });
+
+  // Invert - upside down (rare/legendary only)
+  if ((level === 'reality-collapse' || level === 'chaotic') && rndBool(0.15)) {
+    weirdness.push({ type: 'invert', full: rndBool(0.5) });
   }
 
   return weirdness;
@@ -589,6 +626,46 @@ function applyDither(pg, w, h, mode) {
         const threshold = (bayer[y % 4][x % 4] / 16) * 255;
         const val = gray > threshold ? 255 : 0;
         pg.pixels[i] = pg.pixels[i+1] = pg.pixels[i+2] = val;
+      }
+    }
+  } else if (mode === 'stipple') {
+    // PURE NOISE - random threshold per pixel creates static/noise look
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        if (pg.pixels[i + 3] < 10) continue;
+        const gray = (pg.pixels[i] + pg.pixels[i+1] + pg.pixels[i+2]) / 3;
+        const threshold = R() * 255; // Random threshold = noise!
+        const val = gray > threshold ? 255 : 0;
+        pg.pixels[i] = pg.pixels[i+1] = pg.pixels[i+2] = val;
+      }
+    }
+  } else if (mode === 'halftone') {
+    // Halftone dots pattern
+    const dotSize = 4;
+    for (let by = 0; by < h; by += dotSize) {
+      for (let bx = 0; bx < w; bx += dotSize) {
+        let sum = 0, count = 0;
+        for (let dy = 0; dy < dotSize && by + dy < h; dy++) {
+          for (let dx = 0; dx < dotSize && bx + dx < w; dx++) {
+            const i = ((by + dy) * w + (bx + dx)) * 4;
+            if (pg.pixels[i + 3] > 10) {
+              sum += (pg.pixels[i] + pg.pixels[i+1] + pg.pixels[i+2]) / 3;
+              count++;
+            }
+          }
+        }
+        const avg = count > 0 ? sum / count : 0;
+        const radius = (1 - avg / 255) * dotSize / 2;
+        for (let dy = 0; dy < dotSize && by + dy < h; dy++) {
+          for (let dx = 0; dx < dotSize && bx + dx < w; dx++) {
+            const i = ((by + dy) * w + (bx + dx)) * 4;
+            if (pg.pixels[i + 3] < 10) continue;
+            const dist = Math.sqrt((dx - dotSize/2)**2 + (dy - dotSize/2)**2);
+            const val = dist < radius ? 0 : 255;
+            pg.pixels[i] = pg.pixels[i+1] = pg.pixels[i+2] = val;
+          }
+        }
       }
     }
   } else {
@@ -716,22 +793,46 @@ function applyCorrupt(pg, w, h, intensity) {
 
 function drawBuilding(pg, b, pal) {
   const cols = pal.building;
-  const colTop = color(cols[4]);
-  const colLeft = color(cols[2]);
-  const colRight = color(cols[3]);
+  // Strong contrast between faces for readable shapes
+  const colTop = color(cols[4]);      // Brightest - top face catches light
+  const colRight = color(cols[3]);    // Medium - right face (lit side)
+  const colLeft = color(cols[1]);     // Darkest - left face (shadow side)
+  const colDark = color(cols[0]);     // Very dark for accents
+  const colAccent = color(pal.accent);
 
-  // Float offset for weirdness
+  pg.noStroke(); // No outlines - let shading define shape
+
+  // Process weirdness effects
   let zOffset = 0;
+  let meltIntensity = 0;
+  let meltDir = 'down';
+  let scaleShift = null;
+  let isInverted = false;
+
   for (const w of b.weirdness) {
-    if (w.type === 'float') zOffset = w.offset;
+    if (w.type === 'float') zOffset = w.offset * PROP_SCALE;
+    if (w.type === 'melt') { meltIntensity = w.intensity || 0.5; meltDir = w.direction || 'down'; }
+    if (w.type === 'scale-shift') scaleShift = w;
+    if (w.type === 'invert') isInverted = true;
+  }
+
+  // Draw time echo ghost first (behind building)
+  for (const weird of b.weirdness) {
+    if (weird.type === 'echo') {
+      const echoX = weird.dx * PROP_SCALE || rnd(-15, 15) * PROP_SCALE;
+      const echoY = weird.dy * PROP_SCALE || rnd(-20, 5) * PROP_SCALE;
+      pg.push();
+      isoBox(pg, b.x + echoX, b.y + echoY, zOffset, b.w, b.d, b.h,
+             colorAlpha(cols[4], 60), colorAlpha(cols[2], 60), colorAlpha(cols[3], 60));
+      pg.pop();
+    }
   }
 
   if (b.style === 'scaffolding') {
-    // Construction scaffolding
-    pg.stroke(pal.building[1]);
-    pg.strokeWeight(1);
+    pg.stroke(cols[1]);
+    pg.strokeWeight(PROP_SCALE);
     pg.noFill();
-    for (let z = 0; z < b.h; z += 10) {
+    for (let z = 0; z < b.h; z += 12 * PROP_SCALE) {
       const p1 = iso(b.x, b.y, z + zOffset);
       const p2 = iso(b.x + b.w, b.y, z + zOffset);
       const p3 = iso(b.x + b.w, b.y + b.d, z + zOffset);
@@ -745,192 +846,349 @@ function drawBuilding(pg, b, pal) {
     return;
   }
 
-  // Draw time echo first
-  for (const w of b.weirdness) {
-    if (w.type === 'echo') {
-      pg.push();
-      pg.tint(255, w.opacity * 255);
-      isoBox(pg, b.x + w.dx, b.y + w.dy, zOffset, b.w, b.d, b.h,
-             color(cols[4] + '60'), color(cols[2] + '60'), color(cols[3] + '60'));
-      pg.noTint();
-      pg.pop();
-    }
-  }
-
   pg.noStroke();
 
-  if (b.style === 'deco') {
-    // Art Deco with setbacks
-    let curH = zOffset;
-    let curW = b.w, curD = b.d;
-    for (let i = 0; i < 3; i++) {
-      const secH = b.h / 3;
+  // BRUTALIST - concrete slabs with heavy ledges
+  if (b.style === 'brutalist') {
+    isoBox(pg, b.x, b.y, zOffset, b.w, b.d, b.h, colTop, colLeft, colRight);
+    // Heavy ledges at intervals
+    const ledgeCount = Math.floor(b.h / (40 * PROP_SCALE)) + 1;
+    for (let i = 1; i <= ledgeCount; i++) {
+      const ledgeH = i * (b.h / (ledgeCount + 1));
+      const ledgeD = 6 * PROP_SCALE;
+      isoBox(pg, b.x - ledgeD, b.y - ledgeD, zOffset + ledgeH - 3*PROP_SCALE,
+                     b.w + ledgeD*2, b.d + ledgeD*2, 4*PROP_SCALE, colTop, colDark, colDark);
+    }
+    // Rooftop mechanical
+    const mechW = b.w * 0.25, mechD = b.d * 0.25;
+    isoBox(pg, b.x + b.w*0.1, b.y + b.d*0.1, zOffset + b.h, mechW, mechD, b.h*0.08, colDark, colDark, colDark);
+
+  // DECO - setbacks with ornate spire
+  } else if (b.style === 'deco') {
+    let curH = zOffset, curW = b.w, curD = b.d;
+    const setbacks = 4;
+    for (let i = 0; i < setbacks; i++) {
+      const secH = b.h / setbacks;
       const offW = (b.w - curW) / 2;
       const offD = (b.d - curD) / 2;
       isoBox(pg, b.x + offW, b.y + offD, curH, curW, curD, secH, colTop, colLeft, colRight);
       curH += secH;
-      curW *= 0.75;
-      curD *= 0.75;
+      curW *= 0.78;
+      curD *= 0.78;
     }
+    // Ornate spire
+    const spireH = b.h * 0.25;
+    const spireW = curW * 0.4;
+    isoBox(pg, b.x + b.w/2 - spireW/2, b.y + b.d/2 - spireW/2, curH, spireW, spireW, spireH, colAccent, colLeft, colRight);
+    // Antenna tip
+    const tipP1 = iso(b.x + b.w/2, b.y + b.d/2, curH + spireH);
+    const tipP2 = iso(b.x + b.w/2, b.y + b.d/2, curH + spireH + spireH*0.5);
+    pg.strokeWeight(2);
+    pg.line(tipP1.x, tipP1.y, tipP2.x, tipP2.y);
+
+  // GOTHIC - pointed roof with pinnacles
   } else if (b.style === 'gothic') {
-    // Gothic with pointed roof
-    isoBox(pg, b.x, b.y, zOffset, b.w, b.d, b.h * 0.7, colTop, colLeft, colRight);
-    // Roof
-    const apex = iso(b.x + b.w/2, b.y + b.d/2, zOffset + b.h);
-    const c1 = iso(b.x, b.y, zOffset + b.h * 0.7);
-    const c2 = iso(b.x + b.w, b.y, zOffset + b.h * 0.7);
-    const c3 = iso(b.x + b.w, b.y + b.d, zOffset + b.h * 0.7);
-    pg.fill(colLeft);
-    pg.triangle(apex.x, apex.y, c1.x, c1.y, c2.x, c2.y);
-    pg.fill(colRight);
-    pg.triangle(apex.x, apex.y, c2.x, c2.y, c3.x, c3.y);
-  } else if (b.style === 'organic') {
-    // Bulging organic form
+    isoBox(pg, b.x, b.y, zOffset, b.w, b.d, b.h * 0.65, colTop, colLeft, colRight);
+    // Pointed roof
+    const roofBase = zOffset + b.h * 0.65;
+    const apex = iso(b.x + b.w/2, b.y + b.d/2, zOffset + b.h * 1.1);
+    const c1 = iso(b.x, b.y, roofBase);
+    const c2 = iso(b.x + b.w, b.y, roofBase);
+    const c3 = iso(b.x + b.w, b.y + b.d, roofBase);
+    const c4 = iso(b.x, b.y + b.d, roofBase);
+    pg.fill(colDark); pg.beginShape(); pg.vertex(apex.x, apex.y); pg.vertex(c1.x, c1.y); pg.vertex(c4.x, c4.y); pg.endShape(CLOSE);
+    pg.fill(colLeft); pg.beginShape(); pg.vertex(apex.x, apex.y); pg.vertex(c1.x, c1.y); pg.vertex(c2.x, c2.y); pg.endShape(CLOSE);
+    pg.fill(colRight); pg.beginShape(); pg.vertex(apex.x, apex.y); pg.vertex(c2.x, c2.y); pg.vertex(c3.x, c3.y); pg.endShape(CLOSE);
+    // Pinnacles at corners
+    const pinH = b.h * 0.15, pinW = 5 * PROP_SCALE;
+    isoBox(pg, b.x + 2*PROP_SCALE, b.y + 2*PROP_SCALE, roofBase, pinW, pinW, pinH, colAccent, colDark, colDark);
+    isoBox(pg, b.x + b.w - pinW - 2*PROP_SCALE, b.y + 2*PROP_SCALE, roofBase, pinW, pinW, pinH, colAccent, colDark, colDark);
+
+  // MODERNIST - glass tower with frame lines
+  } else if (b.style === 'modernist') {
+    const glassTop = color(cols[5] || cols[4]);
+    const glassLeft = colorAlpha(cols[4], 200);
+    const glassRight = colorAlpha(cols[4], 180);
+    isoBox(pg, b.x, b.y, zOffset, b.w, b.d, b.h, glassTop, glassLeft, glassRight);
+    // Vertical frame lines
+    pg.stroke(colDark);
+    pg.strokeWeight(1);
+    for (let i = 1; i < 5; i++) {
+      const xOff = b.x + (i / 5) * b.w;
+      const p1 = iso(xOff, b.y, zOffset);
+      const p2 = iso(xOff, b.y, zOffset + b.h);
+      pg.line(p1.x, p1.y, p2.x, p2.y);
+    }
+    // Horizontal bands
+    for (let z = zOffset; z < zOffset + b.h; z += b.h / 6) {
+      const p1 = iso(b.x, b.y, z);
+      const p2 = iso(b.x + b.w, b.y, z);
+      pg.line(p1.x, p1.y, p2.x, p2.y);
+    }
+    // Rooftop antenna
+    const antP1 = iso(b.x + b.w/2, b.y + b.d/2, zOffset + b.h);
+    const antP2 = iso(b.x + b.w/2, b.y + b.d/2, zOffset + b.h * 1.15);
+    pg.strokeWeight(2);
+    pg.line(antP1.x, antP1.y, antP2.x, antP2.y);
+
+  // RETRO - bulging sci-fi with dome
+  } else if (b.style === 'retro') {
     const segs = 6;
     for (let i = 0; i < segs; i++) {
-      const t = i / segs;
-      const bulge = 1 + Math.sin(t * Math.PI * 2) * 0.2;
-      const segW = b.w * bulge;
-      const segD = b.d * bulge;
-      const segH = b.h / segs;
-      const offW = (b.w - segW) / 2;
-      const offD = (b.d - segD) / 2;
-      isoBox(pg, b.x + offW, b.y + offD, zOffset + i * segH, segW, segD, segH + 1, colTop, colLeft, colRight);
+      const t = i / (segs - 1);
+      const bulge = 1 + Math.sin(t * Math.PI) * 0.25;
+      const segW = b.w * bulge, segD = b.d * bulge;
+      const offW = (b.w - segW) / 2, offD = (b.d - segD) / 2;
+      isoBox(pg, b.x + offW, b.y + offD, zOffset + i * b.h/segs, segW, segD, b.h/segs + 1, colTop, colLeft, colRight);
     }
+    // Dome on top
+    pg.noStroke();
+    for (let i = 0; i < 5; i++) {
+      const t = i / 4;
+      const r = b.w * 0.4 * Math.cos(t * Math.PI / 2);
+      const domeZ = zOffset + b.h + b.w * 0.2 * Math.sin(t * Math.PI / 2);
+      const dP = iso(b.x + b.w/2, b.y + b.d/2, domeZ);
+      pg.fill(i % 2 === 0 ? colAccent : colTop);
+      pg.ellipse(dP.x, dP.y, r, r * 0.5);
+    }
+
+  // GEOMETRIC - pyramid or crystal shape
+  } else if (b.style === 'geometric') {
+    isoBox(pg, b.x, b.y, zOffset, b.w, b.d, b.h * 0.6, colTop, colLeft, colRight);
+    // Pyramid top
+    const pyBase = zOffset + b.h * 0.6;
+    const apex = iso(b.x + b.w/2, b.y + b.d/2, zOffset + b.h * 1.2);
+    const c1 = iso(b.x, b.y, pyBase);
+    const c2 = iso(b.x + b.w, b.y, pyBase);
+    const c3 = iso(b.x + b.w, b.y + b.d, pyBase);
+    const c4 = iso(b.x, b.y + b.d, pyBase);
+    pg.fill(colDark); pg.beginShape(); pg.vertex(apex.x, apex.y); pg.vertex(c1.x, c1.y); pg.vertex(c4.x, c4.y); pg.endShape(CLOSE);
+    pg.fill(colTop); pg.beginShape(); pg.vertex(apex.x, apex.y); pg.vertex(c1.x, c1.y); pg.vertex(c2.x, c2.y); pg.endShape(CLOSE);
+    pg.fill(colRight); pg.beginShape(); pg.vertex(apex.x, apex.y); pg.vertex(c2.x, c2.y); pg.vertex(c3.x, c3.y); pg.endShape(CLOSE);
+
+  // ORGANIC - twisted bio-form
+  } else if (b.style === 'organic') {
+    const segs = 8;
+    for (let i = 0; i < segs; i++) {
+      const t = i / segs;
+      const twist = Math.sin(t * Math.PI * 3) * 8 * PROP_SCALE;
+      const bulge = 1 + Math.sin(t * Math.PI * 2) * 0.15;
+      const segW = b.w * bulge, segD = b.d * bulge;
+      const offW = (b.w - segW) / 2 + twist, offD = (b.d - segD) / 2;
+      isoBox(pg, b.x + offW, b.y + offD, zOffset + i * b.h/segs, segW, segD, b.h/segs + 1, colTop, colLeft, colRight);
+    }
+    // Organic blob top
+    const blobP = iso(b.x + b.w/2, b.y + b.d/2, zOffset + b.h);
+    pg.fill(colAccent);
+    pg.noStroke();
+    pg.ellipse(blobP.x, blobP.y - b.h*0.05, b.w * 0.5, b.d * 0.25);
+
+  // DEFAULT
   } else {
-    // Default box
     isoBox(pg, b.x, b.y, zOffset, b.w, b.d, b.h, colTop, colLeft, colRight);
+  }
+
+  pg.noStroke();
+
+  // Apply melt effect - dripping edges
+  if (meltIntensity > 0) {
+    pg.fill(colorAlpha(cols[2], 150));
+    const dripCount = Math.floor(meltIntensity * 8);
+    for (let i = 0; i < dripCount; i++) {
+      const dx = b.x + rnd(0, b.w);
+      const dy = meltDir === 'down' ? b.y + b.d : b.y;
+      const dripH = rnd(10, 40) * PROP_SCALE * meltIntensity;
+      const dripW = rnd(3, 8) * PROP_SCALE;
+      const p = iso(dx, dy, zOffset + b.h - rnd(0, b.h * 0.3));
+      pg.ellipse(p.x, p.y + dripH/2, dripW, dripH);
+    }
   }
 
   // Windows
   drawWindows(pg, b, pal, zOffset);
+
+  // Floating chunks for float weirdness
+  for (const w of b.weirdness) {
+    if (w.type === 'float' && w.chunks) {
+      for (let c = 0; c < w.chunks; c++) {
+        const chunkW = b.w * rnd(0.15, 0.3);
+        const chunkD = b.d * rnd(0.15, 0.3);
+        const chunkH = rnd(10, 25) * PROP_SCALE;
+        const chunkX = b.x + rnd(-b.w*0.3, b.w);
+        const chunkY = b.y + rnd(-b.d*0.3, b.d);
+        const chunkZ = zOffset + b.h + rnd(20, 60) * PROP_SCALE;
+        isoBox(pg, chunkX, chunkY, chunkZ, chunkW, chunkD, chunkH, colTop, colLeft, colRight);
+      }
+    }
+  }
 }
 
 function drawWindows(pg, b, pal, zOffset) {
+  const S = PROP_SCALE;
   const winCol = color(pal.building[0]);
   const litCol = color(pal.accent);
-  const rows = Math.floor(b.h / 12);
-  const cols = Math.floor(b.w / 8);
+  const winSpacingH = 15 * S;
+  const winSpacingW = 10 * S;
+  const winW = 4 * S;
+  const winH = 5 * S;
 
+  const rows = Math.max(1, Math.floor(b.h / winSpacingH));
+  const colsX = Math.max(1, Math.floor(b.w / winSpacingW));
+  const colsY = Math.max(1, Math.floor(b.d / winSpacingW));
+
+  // Windows on RIGHT face (front-facing, along x-axis at y=b.y+b.d edge)
   for (let r = 1; r < rows; r++) {
-    for (let c = 1; c <= cols; c++) {
+    for (let c = 1; c <= colsX; c++) {
       if (rndBool(0.7)) {
-        const wx = b.x + (c / (cols + 1)) * b.w;
+        const wx = b.x + (c / (colsX + 1)) * b.w;
+        const wy = b.y + b.d; // Right face edge
         const wz = zOffset + (r / rows) * b.h;
         const lit = features.timeOfDay === 'night' ? rndBool(0.6) : rndBool(0.1);
         pg.fill(lit ? litCol : winCol);
-        const wp = iso(wx, b.y, wz);
-        pg.rect(wp.x - 2, wp.y - 3, 4, 5);
+        // Draw as small isometric quad on the face
+        const p1 = iso(wx - winW/2, wy, wz - winH/2);
+        const p2 = iso(wx + winW/2, wy, wz - winH/2);
+        const p3 = iso(wx + winW/2, wy, wz + winH/2);
+        const p4 = iso(wx - winW/2, wy, wz + winH/2);
+        pg.quad(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+      }
+    }
+  }
+
+  // Windows on LEFT face (front-facing, along y-axis at x=b.x edge)
+  for (let r = 1; r < rows; r++) {
+    for (let c = 1; c <= colsY; c++) {
+      if (rndBool(0.7)) {
+        const wx = b.x; // Left face edge
+        const wy = b.y + (c / (colsY + 1)) * b.d;
+        const wz = zOffset + (r / rows) * b.h;
+        const lit = features.timeOfDay === 'night' ? rndBool(0.6) : rndBool(0.1);
+        pg.fill(lit ? litCol : winCol);
+        // Draw as small isometric quad on the face
+        const p1 = iso(wx, wy - winW/2, wz - winH/2);
+        const p2 = iso(wx, wy + winW/2, wz - winH/2);
+        const p3 = iso(wx, wy + winW/2, wz + winH/2);
+        const p4 = iso(wx, wy - winW/2, wz + winH/2);
+        pg.quad(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
       }
     }
   }
 }
 
 function drawTree(pg, t, pal) {
+  const S = PROP_SCALE;
   const trunk = color(pal.building[1]);
   const leaves = color(pal.tree);
+  const sz = t.size * S;
 
   // Trunk
-  isoBox(pg, t.x - 1, t.y - 1, 0, 2, 2, t.size * 0.4, trunk, trunk, trunk);
+  isoBox(pg, t.x - 1*S, t.y - 1*S, 0, 2*S, 2*S, sz * 0.4, trunk, trunk, trunk);
 
   // Foliage - layered circles
-  const p = iso(t.x, t.y, t.size * 0.5);
+  const p = iso(t.x, t.y, sz * 0.5);
   pg.fill(leaves);
   pg.noStroke();
   for (let i = 3; i > 0; i--) {
-    pg.ellipse(p.x, p.y - i * 3, t.size * (0.5 + i * 0.15), t.size * (0.3 + i * 0.1));
+    pg.ellipse(p.x, p.y - i * 3 * S, sz * (0.5 + i * 0.15), sz * (0.3 + i * 0.1));
   }
 }
 
 function drawLamp(pg, l, pal) {
+  const S = PROP_SCALE;
   const post = color(pal.building[1]);
   const light = color(pal.accent);
 
-  isoBox(pg, l.x - 0.5, l.y - 0.5, 0, 1, 1, 12, post, post, post);
-  const top = iso(l.x, l.y, 12);
+  isoBox(pg, l.x - 0.5*S, l.y - 0.5*S, 0, 1*S, 1*S, 12*S, post, post, post);
+  const top = iso(l.x, l.y, 12*S);
   pg.fill(light);
-  pg.ellipse(top.x, top.y - 2, 4, 3);
+  pg.ellipse(top.x, top.y - 2*S, 4*S, 3*S);
 
   // Light glow at night
   if (features.timeOfDay === 'night') {
-    pg.fill(color(pal.accent + '30'));
-    pg.ellipse(top.x, top.y, 15, 10);
+    pg.fill(colorAlpha(pal.accent, 48));
+    pg.ellipse(top.x, top.y, 15*S, 10*S);
   }
 }
 
 function drawBench(pg, b, pal) {
+  const S = PROP_SCALE;
   const wood = color(pal.building[2]);
   const metal = color(pal.building[1]);
 
-  isoBox(pg, b.x, b.y, 0, 6, 2, 3, wood, wood, metal);
+  isoBox(pg, b.x, b.y, 0, 6*S, 2*S, 3*S, wood, wood, metal);
 }
 
 function drawFountain(pg, f, pal) {
+  const S = PROP_SCALE;
   const stone = color(pal.building[3]);
   const water = color(pal.water);
 
   // Base
-  isoBox(pg, f.x - 8, f.y - 8, 0, 16, 16, 3, stone, stone, stone);
+  isoBox(pg, f.x - 8*S, f.y - 8*S, 0, 16*S, 16*S, 3*S, stone, stone, stone);
   // Water
-  isoRect(pg, f.x - 6, f.y - 6, 12, 12, water);
+  isoRect(pg, f.x - 6*S, f.y - 6*S, 12*S, 12*S, water);
   // Center spout
-  isoBox(pg, f.x - 1, f.y - 1, 0, 2, 2, 8, stone, stone, stone);
+  isoBox(pg, f.x - 1*S, f.y - 1*S, 0, 2*S, 2*S, 8*S, stone, stone, stone);
   // Water spray (simplified)
-  const top = iso(f.x, f.y, 10);
-  pg.fill(color(pal.water + '80'));
-  pg.ellipse(top.x, top.y - 3, 8, 6);
+  const top = iso(f.x, f.y, 10*S);
+  pg.fill(colorAlpha(pal.water, 128));
+  pg.ellipse(top.x, top.y - 3*S, 8*S, 6*S);
 }
 
 function drawStall(pg, s, pal) {
+  const S = PROP_SCALE;
   const colors = [pal.accent, pal.building[4], pal.grass, pal.building[3]];
   const canopyCol = color(colors[s.color || 0]);
   const frame = color(pal.building[1]);
 
-  const w = s.w || 8;
-  const d = s.d || 6;
+  const w = (s.w || 8) * S;
+  const d = (s.d || 6) * S;
 
   // Table
-  isoBox(pg, s.x, s.y, 0, w, d, 4, frame, frame, frame);
+  isoBox(pg, s.x, s.y, 0, w, d, 4*S, frame, frame, frame);
   // Canopy
-  isoBox(pg, s.x - 1, s.y - 1, 8, w + 2, d + 2, 1, canopyCol, canopyCol, canopyCol);
+  isoBox(pg, s.x - 1*S, s.y - 1*S, 8*S, w + 2*S, d + 2*S, 1*S, canopyCol, canopyCol, canopyCol);
   // Poles
-  isoBox(pg, s.x, s.y, 4, 1, 1, 4, frame, frame, frame);
-  isoBox(pg, s.x + w - 1, s.y, 4, 1, 1, 4, frame, frame, frame);
+  isoBox(pg, s.x, s.y, 4*S, 1*S, 1*S, 4*S, frame, frame, frame);
+  isoBox(pg, s.x + w - 1*S, s.y, 4*S, 1*S, 1*S, 4*S, frame, frame, frame);
 }
 
 function drawCrane(pg, c, pal) {
+  const S = PROP_SCALE;
   const metal = color(pal.building[2]);
   const accent = color(pal.accent);
 
   // Base
-  isoBox(pg, c.x - 3, c.y - 3, 0, 6, 6, 5, metal, metal, metal);
+  isoBox(pg, c.x - 3*S, c.y - 3*S, 0, 6*S, 6*S, 5*S, metal, metal, metal);
   // Tower
   pg.stroke(metal);
-  pg.strokeWeight(2);
-  const base = iso(c.x, c.y, 5);
-  const top = iso(c.x, c.y, c.height);
+  pg.strokeWeight(2*S);
+  const base = iso(c.x, c.y, 5*S);
+  const top = iso(c.x, c.y, c.height * S);
   pg.line(base.x, base.y, top.x, top.y);
   // Arm
-  const armEnd = iso(c.x + 30, c.y, c.height - 5);
+  const armEnd = iso(c.x + 30*S, c.y, c.height * S - 5*S);
   pg.line(top.x, top.y, armEnd.x, armEnd.y);
   // Cable
   pg.stroke(accent);
-  pg.strokeWeight(1);
-  pg.line(armEnd.x, armEnd.y, armEnd.x, armEnd.y + 30);
+  pg.strokeWeight(1*S);
+  pg.line(armEnd.x, armEnd.y, armEnd.x, armEnd.y + 30*S);
   pg.noStroke();
 }
 
 function drawPond(pg, p, pal) {
+  const S = PROP_SCALE;
   pg.fill(color(pal.water));
   const center = iso(p.x, p.y, 0);
-  pg.ellipse(center.x, center.y, p.w, p.d * 0.6);
+  pg.ellipse(center.x, center.y, p.w * S, p.d * 0.6 * S);
 }
 
 function drawBoat(pg, b, pal) {
+  const S = PROP_SCALE;
   const wood = color(pal.building[2]);
-  const p = iso(b.x, b.y, 1);
+  const p = iso(b.x, b.y, 1*S);
   pg.fill(wood);
-  pg.ellipse(p.x, p.y, 8, 4);
+  pg.ellipse(p.x, p.y, 8*S, 4*S);
 }
 
 // =============================================================================
@@ -940,7 +1198,8 @@ function drawBoat(pg, b, pal) {
 let mainBuffer;
 
 function setup() {
-  createCanvas(2000, 2000);
+  const canvas = createCanvas(2000, 2000);
+  canvas.parent('sketch-container');
   pixelDensity(1);
   noLoop();
 
@@ -961,6 +1220,9 @@ function setup() {
 }
 
 function draw() {
+  // Clear canvas completely before redraw
+  clear();
+
   const pal = PALETTES[features.palette];
 
   // Sky gradient
@@ -979,13 +1241,14 @@ function draw() {
   }
   noStroke();
 
-  // Create main city buffer
+  // Create main city buffer (dispose old one if exists)
+  if (mainBuffer) mainBuffer.remove();
   const bufferSize = GRID_SIZE * (BLOCK_SIZE + ROAD_WIDTH) + ROAD_WIDTH;
   mainBuffer = createGraphics(bufferSize * 2, bufferSize * 2);
   mainBuffer.pixelDensity(1);
 
   // Center the isometric view
-  mainBuffer.translate(mainBuffer.width / 2, mainBuffer.height * 0.3);
+  mainBuffer.translate(mainBuffer.width / 2, mainBuffer.height * 0.5);
 
   // Draw ground first
   drawGround(mainBuffer, pal);
@@ -1024,11 +1287,16 @@ function draw() {
     if (el.type === 'block-ground') {
       drawBlockGround(mainBuffer, el.block, el.gx, el.gy, pal);
     } else if (el.type === 'building') {
-      // Create individual buffer for building to apply effects
+      // Create dynamic buffer sized to building (MUCH faster than fixed large buffers)
       const b = el.data;
-      const bBuf = createGraphics(200, 250);
+      const padding = 60;
+      const bufW = Math.max(b.w, b.d) * 2 + padding * 2;
+      const bufH = b.h + Math.max(b.w, b.d) + padding * 2;
+      const bBuf = createGraphics(bufW, bufH);
       bBuf.pixelDensity(1);
-      bBuf.translate(100, 200);
+      const originX = bufW / 2;
+      const originY = bufH - padding - Math.max(b.w, b.d) * 0.5;
+      bBuf.translate(originX, originY);
       drawBuilding(bBuf, { ...b, x: -b.w/2, y: -b.d/2 }, pal);
 
       // Apply effect
@@ -1036,17 +1304,20 @@ function draw() {
 
       // Draw to main buffer
       const pos = iso(b.x + b.w/2, b.y + b.d/2, 0);
-      mainBuffer.image(bBuf, pos.x - 100, pos.y - 200);
+      mainBuffer.image(bBuf, pos.x - originX, pos.y - originY);
+      bBuf.remove(); // Clean up building buffer
     } else if (el.type === 'prop') {
       drawProp(mainBuffer, el.data, el.propType, pal);
     }
   }
 
-  // Draw main buffer to canvas with scaling
-  const scale = 0.85;
-  const offsetX = (width - mainBuffer.width * scale) / 2;
-  const offsetY = height * 0.15;
-  image(mainBuffer, offsetX, offsetY, mainBuffer.width * scale, mainBuffer.height * scale);
+  // Draw main buffer to canvas - FILL IT COMPLETELY WITH BUILDINGS
+  const scale = Math.min(width / mainBuffer.width, height / mainBuffer.height) * 2.2;
+  const scaledW = mainBuffer.width * scale;
+  const scaledH = mainBuffer.height * scale;
+  const offsetX = (width - scaledW) / 2;
+  const offsetY = (height - scaledH) / 2 - height * 0.22; // Move up more
+  image(mainBuffer, offsetX, offsetY, scaledW, scaledH);
 
   // Trigger preview
   if (typeof fxpreview === 'function') fxpreview();
@@ -1062,7 +1333,7 @@ function drawGround(pg, pal) {
 
 function drawRoads(pg, pal) {
   const roadCol = color(pal.road);
-  const lineCol = color(pal.building[3] + '60');
+  const lineCol = colorAlpha(pal.building[3], 96);
 
   pg.noStroke();
 
@@ -1080,14 +1351,14 @@ function drawRoads(pg, pal) {
 
   // Road markings
   pg.stroke(lineCol);
-  pg.strokeWeight(1);
+  pg.strokeWeight(PROP_SCALE);
   for (let gx = 0; gx < GRID_SIZE; gx++) {
     for (let gy = 0; gy < GRID_SIZE; gy++) {
       // Crosswalk hints at intersections
       const ix = gx * (BLOCK_SIZE + ROAD_WIDTH);
       const iy = gy * (BLOCK_SIZE + ROAD_WIDTH);
-      const p1 = iso(ix - 2, iy - ROAD_WIDTH/2, 0.1);
-      const p2 = iso(ix - 2, iy - ROAD_WIDTH/2 - ROAD_WIDTH, 0.1);
+      const p1 = iso(ix - 2 * PROP_SCALE, iy - ROAD_WIDTH/2, 0.1);
+      const p2 = iso(ix - 2 * PROP_SCALE, iy - ROAD_WIDTH/2 - ROAD_WIDTH, 0.1);
       pg.line(p1.x, p1.y, p2.x, p2.y);
     }
   }
@@ -1095,8 +1366,10 @@ function drawRoads(pg, pal) {
 }
 
 function drawBlockGround(pg, block, gx, gy, pal) {
+  const S = PROP_SCALE;
   const bx = gx * (BLOCK_SIZE + ROAD_WIDTH);
   const by = gy * (BLOCK_SIZE + ROAD_WIDTH);
+  const pathW = Math.max(4, BLOCK_SIZE * 0.03);
 
   if (block.isGrass) {
     isoRect(pg, bx, by, BLOCK_SIZE, BLOCK_SIZE, color(pal.grass));
@@ -1104,39 +1377,41 @@ function drawBlockGround(pg, block, gx, gy, pal) {
     // Draw paths
     if (block.pathStyle === 'cross') {
       const pathCol = color(pal.building[2]);
-      isoRect(pg, bx + BLOCK_SIZE/2 - 2, by, 4, BLOCK_SIZE, pathCol);
-      isoRect(pg, bx, by + BLOCK_SIZE/2 - 2, BLOCK_SIZE, 4, pathCol);
+      isoRect(pg, bx + BLOCK_SIZE/2 - pathW/2, by, pathW, BLOCK_SIZE, pathCol);
+      isoRect(pg, bx, by + BLOCK_SIZE/2 - pathW/2, BLOCK_SIZE, pathW, pathCol);
     }
   } else if (block.isWater) {
     isoRect(pg, bx, by, BLOCK_SIZE, BLOCK_SIZE, color(pal.water));
     // Water ripples
-    pg.stroke(color(pal.building[4] + '30'));
-    pg.strokeWeight(1);
+    pg.stroke(colorAlpha(pal.building[4], 48));
+    pg.strokeWeight(S);
     for (let i = 0; i < 3; i++) {
-      const cx = bx + BLOCK_SIZE/2 + rnd(-10, 10);
-      const cy = by + BLOCK_SIZE/2 + rnd(-10, 10);
+      const cx = bx + BLOCK_SIZE/2 + rnd(-10, 10) * S;
+      const cy = by + BLOCK_SIZE/2 + rnd(-10, 10) * S;
       const p = iso(cx, cy, 0);
       pg.noFill();
-      pg.ellipse(p.x, p.y, 10 + i * 5, 6 + i * 3);
+      pg.ellipse(p.x, p.y, (10 + i * 5) * S, (6 + i * 3) * S);
     }
     pg.noStroke();
   } else if (block.isPaved) {
     isoRect(pg, bx, by, BLOCK_SIZE, BLOCK_SIZE, color(pal.building[1]));
     // Tile pattern
-    pg.stroke(color(pal.building[0] + '40'));
-    pg.strokeWeight(0.5);
-    for (let tx = 0; tx < BLOCK_SIZE; tx += 8) {
+    pg.stroke(colorAlpha(pal.building[0], 64));
+    pg.strokeWeight(S * 0.5);
+    const tileSize = Math.max(8, BLOCK_SIZE * 0.04);
+    for (let tx = 0; tx < BLOCK_SIZE; tx += tileSize) {
       const p1 = iso(bx + tx, by, 0.1);
       const p2 = iso(bx + tx, by + BLOCK_SIZE, 0.1);
       pg.line(p1.x, p1.y, p2.x, p2.y);
     }
     pg.noStroke();
   } else if (block.isDirt) {
-    isoRect(pg, bx, by, BLOCK_SIZE, BLOCK_SIZE, color(pal.building[1] + 'cc'));
+    isoRect(pg, bx, by, BLOCK_SIZE, BLOCK_SIZE, colorAlpha(pal.building[1], 204));
   }
 }
 
 function drawProp(pg, p, type, pal) {
+  const S = PROP_SCALE;
   switch (type) {
     case 'tree':
     case 'street-tree':
@@ -1165,29 +1440,29 @@ function drawProp(pg, p, type, pal) {
       break;
     case 'statue':
     case 'obelisk':
-      isoBox(pg, p.x - 2, p.y - 2, 0, 4, 4, 15, color(pal.building[3]), color(pal.building[2]), color(pal.building[2]));
+      isoBox(pg, p.x - 2*S, p.y - 2*S, 0, 4*S, 4*S, 15*S, color(pal.building[3]), color(pal.building[2]), color(pal.building[2]));
       break;
     case 'gazebo':
-      isoBox(pg, p.x - 6, p.y - 6, 0, 12, 12, 2, color(pal.building[2]), color(pal.building[1]), color(pal.building[1]));
-      isoBox(pg, p.x - 5, p.y - 5, 8, 10, 10, 1, color(pal.building[3]), color(pal.building[2]), color(pal.building[2]));
+      isoBox(pg, p.x - 6*S, p.y - 6*S, 0, 12*S, 12*S, 2*S, color(pal.building[2]), color(pal.building[1]), color(pal.building[1]));
+      isoBox(pg, p.x - 5*S, p.y - 5*S, 8*S, 10*S, 10*S, 1*S, color(pal.building[3]), color(pal.building[2]), color(pal.building[2]));
       break;
     case 'bridge':
-      isoBox(pg, p.x, p.y, 2, p.w, p.d, 2, color(pal.building[2]), color(pal.building[1]), color(pal.building[1]));
+      isoBox(pg, p.x, p.y, 2*S, p.w * S, p.d * S, 2*S, color(pal.building[2]), color(pal.building[1]), color(pal.building[1]));
       break;
     case 'trashcan':
-      isoBox(pg, p.x, p.y, 0, 2, 2, 4, color(pal.building[1]), color(pal.building[0]), color(pal.building[0]));
+      isoBox(pg, p.x, p.y, 0, 2*S, 2*S, 4*S, color(pal.building[1]), color(pal.building[0]), color(pal.building[0]));
       break;
     case 'hydrant':
-      isoBox(pg, p.x, p.y, 0, 2, 2, 4, color('#aa3333'), color('#881111'), color('#991111'));
+      isoBox(pg, p.x, p.y, 0, 2*S, 2*S, 4*S, color('#aa3333'), color('#881111'), color('#991111'));
       break;
     case 'mailbox':
-      isoBox(pg, p.x, p.y, 0, 1, 1, 5, color('#3333aa'), color('#111188'), color('#111199'));
-      isoBox(pg, p.x - 1, p.y - 1, 5, 3, 3, 3, color('#3333aa'), color('#111188'), color('#111199'));
+      isoBox(pg, p.x, p.y, 0, 1*S, 1*S, 5*S, color('#3333aa'), color('#111188'), color('#111199'));
+      isoBox(pg, p.x - 1*S, p.y - 1*S, 5*S, 3*S, 3*S, 3*S, color('#3333aa'), color('#111188'), color('#111199'));
       break;
     case 'debris':
       pg.fill(color(pal.building[1]));
       const dp = iso(p.x, p.y, 0);
-      pg.ellipse(dp.x, dp.y, rnd(3, 8), rnd(2, 5));
+      pg.ellipse(dp.x, dp.y, rnd(3, 8) * S, rnd(2, 5) * S);
       break;
   }
 }

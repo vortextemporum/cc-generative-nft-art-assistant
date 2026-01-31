@@ -2,6 +2,72 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [2.4.0] - 2026-02-01
+
+### Added
+- Restored detailed building styles from v1.0.0:
+  - Brutalist: heavy concrete ledges at intervals, rooftop mechanical boxes
+  - Deco: 4-tier setbacks with ornate spires and antenna tips
+  - Gothic: pointed roofs with corner pinnacles
+  - Modernist: glass towers with frame lines and rooftop antennas
+  - Retro: bulging sci-fi forms with layered domes
+  - Geometric: pyramid/crystal tops
+  - Organic: twisted bio-forms with blob tops
+- Enhanced weirdness system:
+  - Melt effect with direction (down/left/right) and dripping visuals
+  - Float effect with detached floating chunks
+  - Time-echo with ghost duplicates
+  - Scale-shift on building sections
+  - Invert for legendary/chaotic rarity
+
+### Fixed
+- Ghosting on regenerate (added clear() and buffer cleanup)
+- Moved city higher in canvas
+
+## [2.3.0] - 2026-02-01
+
+### Changed
+- Removed excessive margins - city now fills the canvas
+- Even more zoomed in: 4x4 grid with BLOCK_SIZE 350
+- Scale factor increased to 1.15x to fill canvas edge-to-edge
+- Adjusted buffer translation for better centering
+- Building heights increased to 120-450
+- PROP_SCALE increased to 5
+
+## [2.2.0] - 2026-02-01
+
+### Added
+- Building outlines with dark edge strokes for better definition
+- Roof variations for all architectural styles:
+  - Deco: stepped setbacks with central spire
+  - Gothic: pointed peaked roof
+  - Organic: dome top
+  - Brutalist: flat roof with mechanical rooftop structures
+  - Modernist: flat roof with antenna
+  - Retro: rounded cap top
+  - Geometric: pyramid roof
+
+### Changed
+- More zoomed-in view (GRID_SIZE 7→5, BLOCK_SIZE 200→280)
+- Increased PROP_SCALE to 4 for larger street details
+- Larger building render buffers (800x1000)
+
+## [2.1.0] - 2026-02-01
+
+### Changed
+- Scaled up city to fill canvas properly (BLOCK_SIZE 60→200, ROAD_WIDTH 12→40)
+- Building heights increased to 100-400 (was 30-120)
+- Building render buffers increased to 600x800 for larger buildings
+- Auto-calculate scale factor to fit city in canvas
+- Proportionally scaled all props (trees, lamps, benches, fountains, stalls, etc.)
+- Scaled windows, scaffolding, road markings, and block ground details
+
+### Fixed
+- City now fills the canvas instead of appearing tiny
+- Fixed stall color index out of bounds (0-4 → 0-3)
+- Fixed p5.js color+alpha errors with colorAlpha helper
+- Fixed canvas not being parented to container
+
 ## [2.0.0] - 2026-02-01
 
 ### Added
