@@ -439,11 +439,15 @@
 
       // Button handlers
       document.getElementById('btn-regenerate').addEventListener('click', () => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }));
+        if (window.corruptedTides) {
+          window.corruptedTides.regenerate();
+        }
       });
 
       document.getElementById('btn-save').addEventListener('click', () => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }));
+        if (window.corruptedTides) {
+          window.corruptedTides.save();
+        }
       });
 
       document.getElementById('btn-reset').addEventListener('click', () => {
@@ -451,16 +455,21 @@
           window.corruptedTides.resetToOriginal();
           updateFeaturesTable();
           updateOverrideIndicator();
-          renderFrame();
+          createSliders(); // Recreate sliders with reset values
+          window.corruptedTides.render();
         }
       });
 
       document.getElementById('btn-like').addEventListener('click', () => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }));
+        if (window.corruptedTides) {
+          window.corruptedTides.recordFeedback(true);
+        }
       });
 
       document.getElementById('btn-dislike').addEventListener('click', () => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
+        if (window.corruptedTides) {
+          window.corruptedTides.recordFeedback(false);
+        }
       });
 
       document.getElementById('btn-export').addEventListener('click', () => {
@@ -572,7 +581,7 @@
           if (window.corruptedTides) {
             window.corruptedTides.setParameter(config.key, val);
             updateOverrideIndicator();
-            renderFrame();
+            window.corruptedTides.render();
           }
         });
       });
@@ -600,7 +609,7 @@
           if (window.corruptedTides) {
             window.corruptedTides.setParameter(config.key, val);
             updateOverrideIndicator();
-            renderFrame();
+            window.corruptedTides.render();
           }
         });
       });

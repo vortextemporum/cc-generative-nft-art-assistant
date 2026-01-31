@@ -310,8 +310,8 @@ function generateFeatures() {
   // Block cluster count (replaces coral count)
   const clusterCount = rndInt(12, 36);
 
-  // Channel displacement amount
-  const channelDisplacement = rnd(2, 12) * corruptionIntensity;
+  // Channel displacement amount (reduced for clarity)
+  const channelDisplacement = rnd(1, 6) * corruptionIntensity;
 
   // Scanline density
   const scanlineDensity = rndChoice(['sparse', 'medium', 'dense']);
@@ -520,7 +520,7 @@ function drawCorruptedFlowField(pg, t) {
 
     // Trace flow line
     const steps = rndInt(10, 40);
-    pg.stroke(palette[rndInt(0, 4)] + "88"); // Semi-transparent
+    pg.stroke(palette[rndInt(0, 4)] + "dd"); // More opaque for crisp lines
     pg.noFill();
     pg.beginShape();
 
@@ -698,9 +698,10 @@ function setup() {
   const basePalette = SIGNAL_SOURCES[features.signalSource];
   palette = corruptPalette(basePalette, features.paletteCorruption, features.corruptionIntensity);
 
-  // Create canvas
+  // Create canvas and place in holder
   canvas = createCanvas(SIZE, SIZE);
   canvas.id('sketch-canvas');
+  canvas.parent('sketch-holder');
 
   // Create buffers
   blockBuffer = createGraphics(SIZE, SIZE);
@@ -720,8 +721,13 @@ function setup() {
     ));
   }
 
-  // Set pixel density
-  pixelDensity(1);
+  // Set pixel density for crisp rendering
+  pixelDensity(window.devicePixelRatio || 1);
+
+  // Disable image smoothing for crisp blocks
+  drawingContext.imageSmoothingEnabled = false;
+  blockBuffer.drawingContext.imageSmoothingEnabled = false;
+  flowBuffer.drawingContext.imageSmoothingEnabled = false;
 
   // Initial render
   renderFrame();
@@ -929,6 +935,40 @@ function getRarityCurves() {
 // EXPORTS FOR UI
 // =============================================================================
 
+function doRegenerate() {
+  // Regenerate with new hash
+  hash = "0x" + Array(64).fill(0).map(() =>
+    "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
+
+  generateFeatures();
+  palette = corruptPalette(
+    SIGNAL_SOURCES[features.signalSource],
+    features.paletteCorruption,
+    features.corruptionIntensity
+  );
+
+  // Regenerate clusters
+  R = initRandom(hash);
+  for (let i = 0; i < 50; i++) R();
+  clusters = [];
+  for (let i = 0; i < features.clusterCount; i++) {
+    clusters.push(new BlockCluster(
+      rnd(50, SIZE - 50),
+      rnd(50, SIZE - 50),
+      rnd(30, 100)
+    ));
+  }
+
+  renderFrame();
+
+  // Dispatch event for UI update
+  window.dispatchEvent(new CustomEvent('hashChanged', { detail: { hash, features } }));
+}
+
+function doSave() {
+  saveCanvas(`corrupted-tides-${hash.slice(2, 10)}`, 'png');
+}
+
 window.corruptedTides = {
   getFeatures: () => features,
   getHash: () => hash,
@@ -937,5 +977,8 @@ window.corruptedTides = {
   hasModifications,
   getRarityCurves,
   exportFeedback,
-  regenerate: () => keyPressed.call({ key: 'r' })
+  recordFeedback,
+  regenerate: doRegenerate,
+  save: doSave,
+  render: () => renderFrame()
 };
