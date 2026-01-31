@@ -2,6 +2,23 @@
 
 All notable changes to Feynman Strings will be documented in this file.
 
+## [1.4.0] - 2025-01-31
+
+### Added
+- **Advanced physics visualizations**:
+  - `drawPenroseDiagram()` - Spacetime causal structure (conformal diagram)
+  - `drawSpinFoam()` - 4D evolution of spin networks (quantum gravity)
+  - `drawPathIntegralSum()` - Sum over histories visualization
+  - `drawVacuumBubble()` - Closed loop vacuum diagrams
+  - `drawFeynmanHistory()` - Time-ordered interaction sequences
+
+### Changed
+- **QED mode** now includes path integrals and Feynman history graphs
+- **Vacuum mode** now includes vacuum bubbles and path integrals
+- **Spin Network mode** now includes spin foams and Penrose diagrams
+- All Phase 3 elements integrated into appropriate physics modes
+- Expanded element arrays in MODES configuration
+
 ## [1.3.0] - 2025-01-31
 
 ### Added
