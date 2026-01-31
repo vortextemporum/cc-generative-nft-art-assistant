@@ -397,7 +397,7 @@ function generateFeatures() {
 
   // Glitch type - expanded with more visual modes
   const glitchType = rndChoice([
-    'block', 'scanline', 'channel', 'mixed',
+    'block', 'scanline', 'mixed',
     'interlace', 'pixel-sort', 'dither-error', 'bit-crush'
   ]);
 
@@ -417,11 +417,20 @@ function generateFeatures() {
   // Data bend intensity
   const dataBendIntensity = rnd(0.2, 0.8) * corruptionIntensity;
 
-  // Block cluster count (replaces coral count)
-  const clusterCount = rndInt(12, 36);
+  // Density - controls overall visual complexity
+  const densityRarity = rollRarity(0.15, 0.55, 0.20, 0.10);
+  const densityLevels = {
+    'common': 'balanced',
+    'uncommon': 'balanced',
+    'rare': 'dense',
+    'legendary': 'sparse'  // Minimalist is rare/special
+  };
+  const density = densityLevels[densityRarity];
 
-  // Channel displacement amount (reduced for clarity)
-  const channelDisplacement = rnd(1, 6) * corruptionIntensity;
+  // Block cluster count - affected by density
+  const clusterMultiplier = density === 'sparse' ? 0.3 : density === 'dense' ? 1.5 : 1.0;
+  const clusterCount = Math.floor(rndInt(12, 36) * clusterMultiplier);
+
 
   // Scanline density
   const scanlineDensity = rndChoice(['sparse', 'medium', 'dense']);
@@ -441,16 +450,14 @@ function generateFeatures() {
     paletteCorruption,
     blockSize,
     glitchType,
-    driftSpeed,
+    density,
     pseudoMath,
     dataBendIntensity,
     clusterCount,
-    channelDisplacement,
     scanlineDensity,
     k1,
     k2,
-    fieldScale,
-    glitchEventFreq
+    fieldScale
   };
 
   originalFeatures = { ...features };
@@ -585,8 +592,9 @@ let clusters = [];
 // =============================================================================
 
 function drawCorruptedFlowField(pg, t) {
-  const { corruptionIntensity, blockSize } = features;
-  const particleCount = Math.floor(500 + corruptionIntensity * 500);
+  const { corruptionIntensity, blockSize, density } = features;
+  const densityMult = density === 'sparse' ? 0.25 : density === 'dense' ? 1.5 : 1.0;
+  const particleCount = Math.floor((300 + corruptionIntensity * 400) * densityMult);
 
   pg.strokeWeight(1);
 
@@ -641,8 +649,9 @@ function drawScanlines(pg, t) {
 }
 
 function drawBlockArtifacts(pg, t) {
-  const { blockSize, corruptionIntensity, glitchType } = features;
-  const artifactCount = Math.floor(20 + corruptionIntensity * 80);
+  const { blockSize, corruptionIntensity, glitchType, density } = features;
+  const densityMult = density === 'sparse' ? 0.2 : density === 'dense' ? 1.8 : 1.0;
+  const artifactCount = Math.floor((15 + corruptionIntensity * 60) * densityMult);
 
   for (let i = 0; i < artifactCount; i++) {
     const x = Math.floor(rnd(0, SIZE) / blockSize) * blockSize;
@@ -706,41 +715,6 @@ function drawBlockArtifacts(pg, t) {
       pg.rect(bx, by, blockSize * 2, blockSize * 2);
     }
   }
-}
-
-function drawChannelDisplacement(destPg, srcPg, t) {
-  const { channelDisplacement } = features;
-
-  // Load pixels
-  srcPg.loadPixels();
-  destPg.loadPixels();
-
-  const disp = channelDisplacement;
-
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      const i = (y * SIZE + x) * 4;
-
-      // Red channel - shifted left
-      const rX = Math.floor(x - disp);
-      const rI = (y * SIZE + Math.max(0, Math.min(SIZE - 1, rX))) * 4;
-
-      // Green channel - center (with slight vertical shift)
-      const gY = Math.floor(y + disp * 0.3);
-      const gI = (Math.max(0, Math.min(SIZE - 1, gY)) * SIZE + x) * 4;
-
-      // Blue channel - shifted right
-      const bX = Math.floor(x + disp);
-      const bI = (y * SIZE + Math.max(0, Math.min(SIZE - 1, bX))) * 4;
-
-      destPg.pixels[i] = srcPg.pixels[rI];         // R
-      destPg.pixels[i + 1] = srcPg.pixels[gI + 1]; // G
-      destPg.pixels[i + 2] = srcPg.pixels[bI + 2]; // B
-      destPg.pixels[i + 3] = 255;                   // A
-    }
-  }
-
-  destPg.updatePixels();
 }
 
 function drawCorruptedBorder(pg) {
@@ -876,37 +850,8 @@ function renderFrame() {
   // Draw scanlines
   drawScanlines(blockBuffer, time);
 
-  // Apply channel displacement to main canvas
+  // Draw final composite to main canvas
   image(blockBuffer, 0, 0);
-  loadPixels();
-  blockBuffer.loadPixels();
-
-  const disp = features.channelDisplacement;
-
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
-      const i = (y * SIZE + x) * 4;
-
-      // Red - shifted left
-      const rX = Math.floor(x - disp);
-      const rI = (y * SIZE + Math.max(0, Math.min(SIZE - 1, rX))) * 4;
-
-      // Green - slight vertical
-      const gY = Math.floor(y + disp * 0.2);
-      const gI = (Math.max(0, Math.min(SIZE - 1, gY)) * SIZE + x) * 4;
-
-      // Blue - shifted right
-      const bX = Math.floor(x + disp);
-      const bI = (y * SIZE + Math.max(0, Math.min(SIZE - 1, bX))) * 4;
-
-      pixels[i] = blockBuffer.pixels[rI];
-      pixels[i + 1] = blockBuffer.pixels[gI + 1];
-      pixels[i + 2] = blockBuffer.pixels[bI + 2];
-      pixels[i + 3] = 255;
-    }
-  }
-
-  updatePixels();
 
   // Draw border
   drawCorruptedBorder(this);
@@ -991,13 +936,17 @@ const RARITY_CURVES = {
     probabilities: [0.45, 0.30, 0.18, 0.07],
     labels: ['minimal', 'moderate', 'heavy', 'catastrophic']
   },
+  density: {
+    probabilities: [0.15, 0.55, 0.20, 0.10],
+    labels: ['sparse', 'balanced', 'balanced', 'dense']
+  },
   blockSize: {
     probabilities: [0.15, 0.40, 0.30, 0.15],
     labels: ['4', '8', '16', '32']
   },
   glitchType: {
-    probabilities: [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125],
-    labels: ['block', 'scanline', 'channel', 'mixed', 'interlace', 'pixel-sort', 'dither-error', 'bit-crush']
+    probabilities: [0.143, 0.143, 0.143, 0.143, 0.143, 0.143, 0.142],
+    labels: ['block', 'scanline', 'mixed', 'interlace', 'pixel-sort', 'dither-error', 'bit-crush']
   },
   paletteCorruption: {
     probabilities: [0.25, 0.25, 0.25, 0.25],
