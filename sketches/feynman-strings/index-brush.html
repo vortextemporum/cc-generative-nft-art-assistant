@@ -3,16 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feynman Strings - Brush Edition</title>
+  <title>Feynman Strings - Hand-drawn Edition</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5.brush@1.1/dist/p5.brush.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #0d0d14;
       color: #e0e0e0;
@@ -23,25 +17,14 @@
       align-items: center;
       padding: 20px;
     }
-
-    h1 {
-      font-size: 16px;
-      font-weight: 400;
-      margin-bottom: 15px;
-      color: #888;
-    }
-
-    h1 span {
-      color: #fd79a8;
-    }
-
+    h1 { font-size: 16px; font-weight: 400; margin-bottom: 15px; color: #888; }
+    h1 span { color: #fd79a8; }
     #sketch-holder {
       background: #1a1a24;
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
-
     .controls {
       display: flex;
       gap: 10px;
@@ -49,7 +32,6 @@
       flex-wrap: wrap;
       justify-content: center;
     }
-
     button {
       background: #2a2a3a;
       border: 1px solid #3a3a4a;
@@ -61,99 +43,81 @@
       font-size: 13px;
       transition: all 0.2s;
     }
-
-    button:hover {
-      background: #3a3a4a;
-      border-color: #5a5a6a;
-    }
-
-    button.primary {
-      background: #4a4a6a;
-      border-color: #6a6aaa;
-    }
-
-    button.toggle {
-      background: #6a4a6a;
-      border-color: #aa6aaa;
-    }
-
-    button.toggle.active {
-      background: #8a5a8a;
-      border-color: #cc7acc;
-    }
-
-    .info {
-      margin-top: 15px;
-      font-size: 12px;
-      color: #666;
-      text-align: center;
-    }
-
-    .timing {
-      margin-top: 10px;
-      font-size: 11px;
-      color: #888;
-      font-family: monospace;
-    }
-
-    .comparison {
+    button:hover { background: #3a3a4a; border-color: #5a5a6a; }
+    button.primary { background: #4a4a6a; border-color: #6a6aaa; }
+    button.toggle { background: #6a4a6a; border-color: #aa6aaa; }
+    button.toggle.active { background: #8a5a8a; border-color: #cc7acc; }
+    .info { margin-top: 15px; font-size: 12px; color: #666; text-align: center; }
+    .timing { margin-top: 10px; font-size: 11px; color: #888; font-family: monospace; }
+    .brush-options {
       display: flex;
-      gap: 20px;
-      margin-top: 20px;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
     }
-
-    .version-label {
-      text-align: center;
-      font-size: 11px;
-      color: #666;
-      margin-top: 8px;
+    .brush-options label { font-size: 11px; color: #888; }
+    .brush-options select {
+      background: #2a2a3a;
+      border: 1px solid #3a3a4a;
+      color: #e0e0e0;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: inherit;
     }
   </style>
 </head>
 <body>
-  <h1>Feynman Strings <span>p5.brush Edition</span></h1>
+  <h1>Feynman Strings <span>Hand-drawn Edition</span></h1>
 
   <div id="sketch-holder"></div>
 
   <div class="controls">
     <button class="primary" onclick="window.regenerate()">Regenerate (R)</button>
-    <button class="toggle active" id="brush-toggle" onclick="toggleBrushMode()">Brush: ON</button>
-    <button onclick="saveCanvas('feynman-brush-' + window.getHash().slice(2,10), 'png')">Save PNG (S)</button>
+    <button class="toggle active" id="brush-toggle" onclick="toggleBrushMode()">Sketch: ON</button>
+    <button onclick="saveCanvas('feynman-sketch-' + window.getHash().slice(2,10), 'png')">Save PNG (S)</button>
+  </div>
+
+  <div class="brush-options">
+    <label>Style:</label>
+    <select id="brush-style" onchange="changeBrushStyle()">
+      <option value="pencil">Pencil</option>
+      <option value="pen">Pen</option>
+      <option value="chalk">Chalk</option>
+      <option value="marker">Marker</option>
+    </select>
+    <label>Jitter:</label>
+    <select id="jitter-amount" onchange="changeJitter()">
+      <option value="0.5">Subtle</option>
+      <option value="1" selected>Normal</option>
+      <option value="2">Heavy</option>
+      <option value="3">Rough</option>
+    </select>
   </div>
 
   <div class="timing" id="timing">Render time: --</div>
 
   <div class="info">
-    Press <b>B</b> to toggle brush mode | <b>R</b> to regenerate
+    Press <b>B</b> to toggle sketch mode | <b>R</b> to regenerate
   </div>
 
-  <!-- Brush wrapper -->
   <script>
     // ============================================================
-    // BRUSH WRAPPER - Intercept p5 drawing calls
+    // LIGHTWEIGHT HAND-DRAWN BRUSH SIMULATION
+    // No external libraries - pure p5.js with jitter
     // ============================================================
 
-    let useBrush = true;
-    let brushReady = false;
+    let useSketchMode = true;
+    let brushStyle = "pencil";
+    let jitterAmount = 1;
     let renderStartTime = 0;
 
-    // Store original p5 functions (will be set after p5 loads)
+    // Store original p5 functions
     let originals = {};
     let shapeVertices = [];
     let inShape = false;
 
-    function initBrushWrapper() {
-      if (typeof brush === 'undefined') {
-        console.warn("p5.brush not loaded, falling back to standard p5");
-        useBrush = false;
-        return;
-      }
-
-      brush.load();
-      brushReady = true;
-      console.log("p5.brush initialized");
-
-      // Store original functions
+    function initSketchMode() {
+      // Store originals
       originals.line = window.line;
       originals.ellipse = window.ellipse;
       originals.circle = window.circle;
@@ -165,114 +129,180 @@
       originals.curveVertex = window.curveVertex;
       originals.rect = window.rect;
 
-      // Override with brush versions
-      window.line = brushLine;
-      window.ellipse = brushEllipse;
-      window.circle = brushCircle;
-      window.arc = brushArc;
-      window.beginShape = brushBeginShape;
-      window.vertex = brushVertex;
-      window.endShape = brushEndShape;
-      window.bezierVertex = brushBezierVertex;
-      window.curveVertex = brushCurveVertex;
-      window.rect = brushRect;
+      // Override with sketch versions
+      window.line = sketchLine;
+      window.ellipse = sketchEllipse;
+      window.circle = sketchCircle;
+      window.arc = sketchArc;
+      window.beginShape = sketchBeginShape;
+      window.vertex = sketchVertex;
+      window.endShape = sketchEndShape;
+      window.bezierVertex = sketchBezierVertex;
+      window.curveVertex = sketchCurveVertex;
+      window.rect = sketchRect;
+
+      console.log("Sketch mode initialized");
     }
 
-    function setBrushFromStroke() {
-      if (!brushReady) return;
-
-      const ctx = drawingContext;
-      const col = ctx.strokeStyle;
-      const w = Math.max(0.3, ctx.lineWidth * 0.7);
-
-      // Use marker for thicker lines, pen for thin
-      const brushType = w > 1.5 ? "marker" : "pen";
-      brush.set(brushType, col, w);
+    // Jitter helper
+    function jitter(amount = 1) {
+      return (Math.random() - 0.5) * amount * jitterAmount;
     }
 
-    function brushLine(x1, y1, x2, y2) {
-      if (!brushReady || !useBrush) {
+    // Draw a sketchy line with multiple strokes
+    function sketchLine(x1, y1, x2, y2) {
+      if (!useSketchMode) {
         return originals.line(x1, y1, x2, y2);
       }
-      setBrushFromStroke();
-      brush.line(x1, y1, x2, y2);
+
+      const ctx = drawingContext;
+      const baseWeight = ctx.lineWidth;
+      const col = ctx.strokeStyle;
+
+      // Skip if no stroke
+      if (ctx.globalAlpha < 0.01) return;
+
+      push();
+
+      switch (brushStyle) {
+        case "pencil":
+          // Multiple light strokes
+          for (let i = 0; i < 2; i++) {
+            strokeWeight(baseWeight * (0.6 + Math.random() * 0.4));
+            originals.line(
+              x1 + jitter(1.5), y1 + jitter(1.5),
+              x2 + jitter(1.5), y2 + jitter(1.5)
+            );
+          }
+          break;
+
+        case "pen":
+          // Single stroke with slight wobble
+          strokeWeight(baseWeight * (0.9 + Math.random() * 0.2));
+          const dist = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+          if (dist > 20) {
+            // Add midpoint wobble for longer lines
+            const mx = (x1 + x2) / 2 + jitter(2);
+            const my = (y1 + y2) / 2 + jitter(2);
+            originals.line(x1 + jitter(0.5), y1 + jitter(0.5), mx, my);
+            originals.line(mx, my, x2 + jitter(0.5), y2 + jitter(0.5));
+          } else {
+            originals.line(
+              x1 + jitter(0.5), y1 + jitter(0.5),
+              x2 + jitter(0.5), y2 + jitter(0.5)
+            );
+          }
+          break;
+
+        case "chalk":
+          // Multiple rough strokes with gaps
+          const steps = Math.max(3, Math.floor(Math.sqrt((x2-x1)**2 + (y2-y1)**2) / 8));
+          for (let s = 0; s < 3; s++) {
+            strokeWeight(baseWeight * (0.5 + Math.random() * 0.8));
+            for (let i = 0; i < steps; i++) {
+              if (Math.random() > 0.15) { // Random gaps
+                const t1 = i / steps;
+                const t2 = (i + 1) / steps;
+                originals.line(
+                  lerp(x1, x2, t1) + jitter(3),
+                  lerp(y1, y2, t1) + jitter(3),
+                  lerp(x1, x2, t2) + jitter(3),
+                  lerp(y1, y2, t2) + jitter(3)
+                );
+              }
+            }
+          }
+          break;
+
+        case "marker":
+          // Bold with slight edge variation
+          strokeWeight(baseWeight * 1.2);
+          originals.line(
+            x1 + jitter(0.3), y1 + jitter(0.3),
+            x2 + jitter(0.3), y2 + jitter(0.3)
+          );
+          // Edge highlight
+          strokeWeight(baseWeight * 0.3);
+          const alpha = ctx.globalAlpha;
+          drawingContext.globalAlpha = alpha * 0.3;
+          originals.line(
+            x1 + jitter(1) + 1, y1 + jitter(1) + 1,
+            x2 + jitter(1) + 1, y2 + jitter(1) + 1
+          );
+          drawingContext.globalAlpha = alpha;
+          break;
+      }
+
+      pop();
     }
 
-    function brushRect(x, y, w, h) {
-      if (!brushReady || !useBrush) {
+    function sketchRect(x, y, w, h) {
+      if (!useSketchMode) {
         return originals.rect(x, y, w, h);
       }
-      setBrushFromStroke();
       // Draw as 4 lines
-      brush.line(x, y, x + w, y);
-      brush.line(x + w, y, x + w, y + h);
-      brush.line(x + w, y + h, x, y + h);
-      brush.line(x, y + h, x, y);
+      sketchLine(x, y, x + w, y);
+      sketchLine(x + w, y, x + w, y + h);
+      sketchLine(x + w, y + h, x, y + h);
+      sketchLine(x, y + h, x, y);
     }
 
-    function brushEllipse(x, y, w, h) {
-      if (!brushReady || !useBrush) {
+    function sketchEllipse(x, y, w, h) {
+      if (!useSketchMode) {
         return originals.ellipse(x, y, w, h || w);
       }
-      setBrushFromStroke();
 
-      // Approximate ellipse with polygon
-      const segments = Math.max(16, Math.min(32, Math.floor((w + (h || w)) / 8)));
-      const points = [];
-      for (let i = 0; i < segments; i++) {
-        const angle = (TWO_PI / segments) * i;
-        points.push([
-          x + cos(angle) * w / 2,
-          y + sin(angle) * (h || w) / 2
-        ]);
-      }
-
-      // Draw as connected lines
-      for (let i = 0; i < points.length; i++) {
-        const next = (i + 1) % points.length;
-        brush.line(points[i][0], points[i][1], points[next][0], points[next][1]);
-      }
-    }
-
-    function brushCircle(x, y, d) {
-      brushEllipse(x, y, d, d);
-    }
-
-    function brushArc(x, y, w, h, start, stop, mode) {
-      if (!brushReady || !useBrush) {
-        return originals.arc(x, y, w, h, start, stop, mode);
-      }
-      setBrushFromStroke();
-
-      const arcLength = stop - start;
-      const segments = Math.max(6, Math.floor(arcLength * 8));
-      let prevX = x + cos(start) * w / 2;
-      let prevY = y + sin(start) * h / 2;
+      const segments = Math.max(12, Math.min(24, Math.floor((w + (h || w)) / 10)));
+      let prevX = x + (w/2);
+      let prevY = y;
 
       for (let i = 1; i <= segments; i++) {
-        const angle = start + arcLength * (i / segments);
-        const currX = x + cos(angle) * w / 2;
-        const currY = y + sin(angle) * h / 2;
-        brush.line(prevX, prevY, currX, currY);
+        const angle = (TWO_PI / segments) * i;
+        const currX = x + cos(angle) * (w/2) + jitter(1);
+        const currY = y + sin(angle) * ((h || w)/2) + jitter(1);
+        sketchLine(prevX, prevY, currX, currY);
         prevX = currX;
         prevY = currY;
       }
     }
 
-    function brushBeginShape() {
+    function sketchCircle(x, y, d) {
+      sketchEllipse(x, y, d, d);
+    }
+
+    function sketchArc(x, y, w, h, start, stop, mode) {
+      if (!useSketchMode) {
+        return originals.arc(x, y, w, h, start, stop, mode);
+      }
+
+      const arcLength = stop - start;
+      const segments = Math.max(6, Math.floor(arcLength * 6));
+      let prevX = x + cos(start) * (w/2);
+      let prevY = y + sin(start) * (h/2);
+
+      for (let i = 1; i <= segments; i++) {
+        const angle = start + arcLength * (i / segments);
+        const currX = x + cos(angle) * (w/2) + jitter(0.8);
+        const currY = y + sin(angle) * (h/2) + jitter(0.8);
+        sketchLine(prevX, prevY, currX, currY);
+        prevX = currX;
+        prevY = currY;
+      }
+    }
+
+    function sketchBeginShape() {
       shapeVertices = [];
       inShape = true;
     }
 
-    function brushVertex(x, y) {
+    function sketchVertex(x, y) {
       if (inShape) {
-        shapeVertices.push([x, y]);
+        shapeVertices.push([x + jitter(0.5), y + jitter(0.5)]);
       }
     }
 
-    function brushBezierVertex(cx1, cy1, cx2, cy2, x, y) {
+    function sketchBezierVertex(cx1, cy1, cx2, cy2, x, y) {
       if (!inShape || shapeVertices.length === 0) return;
-
       const last = shapeVertices[shapeVertices.length - 1];
       const steps = 6;
       for (let t = 1; t <= steps; t++) {
@@ -280,19 +310,19 @@
         const u = 1 - tt;
         const px = u*u*u*last[0] + 3*u*u*tt*cx1 + 3*u*tt*tt*cx2 + tt*tt*tt*x;
         const py = u*u*u*last[1] + 3*u*u*tt*cy1 + 3*u*tt*tt*cy2 + tt*tt*tt*y;
-        shapeVertices.push([px, py]);
+        shapeVertices.push([px + jitter(0.5), py + jitter(0.5)]);
       }
     }
 
-    function brushCurveVertex(x, y) {
+    function sketchCurveVertex(x, y) {
       if (inShape) {
-        shapeVertices.push([x, y]);
+        shapeVertices.push([x + jitter(0.5), y + jitter(0.5)]);
       }
     }
 
-    function brushEndShape(mode) {
-      if (!brushReady || !useBrush || shapeVertices.length < 2) {
-        if (!useBrush && originals.beginShape) {
+    function sketchEndShape(mode) {
+      if (!useSketchMode || shapeVertices.length < 2) {
+        if (!useSketchMode && originals.beginShape) {
           originals.beginShape();
           for (const v of shapeVertices) {
             originals.vertex(v[0], v[1]);
@@ -303,17 +333,15 @@
         return;
       }
 
-      setBrushFromStroke();
-
       for (let i = 0; i < shapeVertices.length - 1; i++) {
-        brush.line(
+        sketchLine(
           shapeVertices[i][0], shapeVertices[i][1],
           shapeVertices[i+1][0], shapeVertices[i+1][1]
         );
       }
 
       if (mode === CLOSE && shapeVertices.length > 2) {
-        brush.line(
+        sketchLine(
           shapeVertices[shapeVertices.length-1][0],
           shapeVertices[shapeVertices.length-1][1],
           shapeVertices[0][0],
@@ -325,10 +353,20 @@
     }
 
     function toggleBrushMode() {
-      useBrush = !useBrush;
+      useSketchMode = !useSketchMode;
       const btn = document.getElementById('brush-toggle');
-      btn.textContent = "Brush: " + (useBrush ? "ON" : "OFF");
-      btn.classList.toggle('active', useBrush);
+      btn.textContent = "Sketch: " + (useSketchMode ? "ON" : "OFF");
+      btn.classList.toggle('active', useSketchMode);
+      window.render();
+    }
+
+    function changeBrushStyle() {
+      brushStyle = document.getElementById('brush-style').value;
+      window.render();
+    }
+
+    function changeJitter() {
+      jitterAmount = parseFloat(document.getElementById('jitter-amount').value);
       window.render();
     }
 
@@ -339,45 +377,26 @@
       }
     });
 
-    // Hook into render to measure timing
-    const originalRender = window.render;
+    // Hook into render for timing
     window.addEventListener('load', () => {
       setTimeout(() => {
+        initSketchMode();
+
         const origRender = window.render;
         window.render = function() {
           renderStartTime = performance.now();
           origRender();
           const elapsed = performance.now() - renderStartTime;
           document.getElementById('timing').textContent =
-            `Render time: ${elapsed.toFixed(0)}ms (${useBrush ? 'brush' : 'standard'})`;
+            `Render time: ${elapsed.toFixed(0)}ms (${useSketchMode ? 'sketch' : 'standard'})`;
         };
+
+        // Initial render with sketch mode
+        window.render();
       }, 200);
     });
   </script>
 
-  <!-- Load main sketch with modified setup -->
-  <script>
-    // Patch setup to init brush
-    const originalSetup = window.setup;
-
-    // We need to intercept setup from sketch.js
-    let setupPatched = false;
-
-    const checkAndPatch = setInterval(() => {
-      if (window.setup && !setupPatched) {
-        setupPatched = true;
-        clearInterval(checkAndPatch);
-
-        const origSetup = window.setup;
-        window.setup = function() {
-          origSetup();
-          initBrushWrapper();
-          // Re-render with brush
-          setTimeout(() => window.render(), 100);
-        };
-      }
-    }, 10);
-  </script>
   <script src="sketch.js"></script>
 </body>
 </html>
