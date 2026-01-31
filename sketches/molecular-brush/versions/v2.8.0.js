@@ -1,4 +1,4 @@
-// Molecular Brush v2.8.1 - Performance optimization (pixelDensity, color caching)
+// Molecular Brush v2.8.0 - New Palettes (neon, retro, desert, arctic, midnight)
 // Variable aspect ratios, batch export, rarity distribution visualization
 // Art Blocks compatible with tokenData.hash
 
@@ -688,9 +688,7 @@ function setup() {
 
   // Create canvas with default size first
   let cnv = createCanvas(baseSize, baseSize, WEBGL);
-  // pixelDensity(1) for fast preview, pixelDensity(2) for high-quality export
-  // Using 1 reduces render time by ~75% (4x fewer pixels)
-  pixelDensity(1);
+  pixelDensity(2);
 
   if (holder) {
     cnv.parent('sketch-holder');
@@ -720,9 +718,6 @@ function setup() {
 
   brush.seed(parseInt(hash.slice(2, 10), 16));
   brush.load();
-
-  // Enable color caching for better WebGL shader performance
-  brush.colorCache(true);
 
   if (window.onFeaturesGenerated) {
     window.onFeaturesGenerated(features);
@@ -1080,28 +1075,6 @@ function keyPressed() {
   if (key === 'r' || key === 'R') {
     regenerate();
   }
-  // High-quality export with pixelDensity(2)
-  if (key === 'h' || key === 'H') {
-    exportHQ();
-  }
-}
-
-// High-quality export: temporarily render at pixelDensity(2) for crisp output
-async function exportHQ() {
-  if (isRendering) return;
-  console.log("Rendering high-quality export at 2x resolution...");
-  pixelDensity(2);
-  brush.load();
-  brush.colorCache(true);
-  renderArtwork();
-  await new Promise(resolve => setTimeout(resolve, 100));
-  saveCanvas('molecular-brush-HQ-' + hash.slice(2, 10), 'png');
-  console.log("High-quality export saved!");
-  // Restore fast preview mode
-  pixelDensity(1);
-  brush.load();
-  brush.colorCache(true);
-  renderArtwork();
 }
 
 function setHash(newHash) {
@@ -1225,4 +1198,3 @@ window.getRenderProgress = () => renderProgress;
 window.batchExport = batchExport;
 window.getBatchProgress = () => batchProgress;
 window.isBatchExporting = () => batchExporting;
-window.exportHQ = exportHQ;  // High-quality 2x export

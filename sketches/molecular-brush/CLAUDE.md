@@ -4,7 +4,7 @@
 
 A p5.brush-powered generative art piece featuring Fidenza-inspired flow fields combined with molecular physics simulation. Produces high-quality static renders using the p5.brush library for authentic brush strokes, watercolor bleed, and hatching effects.
 
-**Current Version:** v2.8.0
+**Current Version:** v2.8.1
 
 ## File Structure
 
@@ -192,8 +192,15 @@ Dropdown selector loads different versions via URL param.
 
 ## Performance Notes
 
-- Static rendering can take several seconds
-- Progress indicator shows simulation vs rendering phases
+- **Preview mode** (default): `pixelDensity(1)` - renders ~75% faster
+- **High-quality export**: Press `H` or call `exportHQ()` for 2x resolution export
+- `brush.colorCache(true)` enabled for WebGL shader optimization
 - WEBGL mode required for p5.brush
 - Coordinates centered (0,0 at canvas center)
 - Use v1.0.1-animated for real-time preview
+
+### p5.brush Performance Tips
+- `brush.bleed()` is computationally expensive - use sparingly
+- `brush.fillTexture()` adds texture calculations
+- `brush.reDraw()` forces buffer commit - call once at end
+- Reduce molecule count for faster iteration

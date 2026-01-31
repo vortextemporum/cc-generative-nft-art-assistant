@@ -141,7 +141,8 @@
 
     <div class="features-panel">
       <select id="version-select" class="version-select">
-        <option value="sketch.js">v2.8.0 - New Palettes (current)</option>
+        <option value="sketch.js">v2.8.1 - Performance Optimized (current)</option>
+        <option value="versions/v2.8.0.js">v2.8.0 - New Palettes</option>
         <option value="versions/v2.7.1-rarity.js">v2.7.1 - Rarity Curves</option>
         <option value="versions/v2.7.0-aspect.js">v2.7.0 - Variable Aspect Ratios</option>
         <option value="versions/v2.6.2-framed.js">v2.6.2 - Thin Frames</option>
@@ -175,7 +176,8 @@
       <div class="controls">
         <button id="btn-regenerate" class="primary">New Hash (R)</button>
         <button id="btn-save">Save PNG (S)</button>
-        <button id="btn-batch">Export 20 (B)</button>
+        <button id="btn-hq">HQ Export (H)</button>
+        <button id="btn-batch">Batch 20 (B)</button>
       </div>
 
       <div id="batch-progress" class="batch-progress" style="display: none;">
@@ -184,7 +186,7 @@
       </div>
 
       <div class="hash-display" id="hash-display">0x...</div>
-      <div class="shortcuts"><kbd>R</kbd> regenerate <kbd>S</kbd> save <kbd>B</kbd> batch export 20</div>
+      <div class="shortcuts"><kbd>R</kbd> regenerate <kbd>S</kbd> save <kbd>H</kbd> HQ export <kbd>B</kbd> batch 20</div>
     </div>
   </main>
 
@@ -321,6 +323,10 @@
       saveCanvas('molecular-brush-' + features.hash.slice(2, 10), 'png');
     });
 
+    document.getElementById('btn-hq').addEventListener('click', () => {
+      if (window.exportHQ) window.exportHQ();
+    });
+
     // Batch export button
     const batchBtn = document.getElementById('btn-batch');
     const batchProgressEl = document.getElementById('batch-progress');
@@ -370,6 +376,9 @@
         e.preventDefault();
         const features = window.getFeatures ? window.getFeatures() : { hash: 'unknown' };
         saveCanvas('molecular-brush-' + features.hash.slice(2, 10), 'png');
+      } else if (e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        if (window.exportHQ) window.exportHQ();
       } else if (e.key.toLowerCase() === 'b') {
         e.preventDefault();
         batchBtn.click();

@@ -2,6 +2,22 @@
 
 All notable changes to Molecular Brush will be documented in this file.
 
+## [2.8.1] - 2026-01-26
+
+### Changed
+- **Performance optimization**: Reduced `pixelDensity` from 2 to 1 for ~75% faster rendering
+- Preview mode now renders at 1x resolution (fast)
+- Added explicit `brush.colorCache(true)` for WebGL shader optimization
+
+### Added
+- **High-quality export** (`H` key or `exportHQ()` API): Temporarily renders at 2x resolution for crisp PNG export
+- New keyboard shortcut: `H` for high-quality export (renders at pixelDensity 2, then saves, then returns to fast mode)
+
+### Technical
+- Normal preview: pixelDensity(1) - fast, good for iteration
+- HQ export: pixelDensity(2) - slower, but 4x the pixels for print-quality output
+- Color caching enabled by default to boost WebGL performance
+
 ## [2.8.0] - 2026-01-24
 
 ### Added
