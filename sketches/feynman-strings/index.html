@@ -401,6 +401,47 @@
       letter-spacing: 1px;
       margin-bottom: 10px;
     }
+
+    /* Mode Checkboxes */
+    .mode-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .mode-checkbox {
+      cursor: pointer;
+    }
+
+    .mode-checkbox input {
+      display: none;
+    }
+
+    .mode-checkbox .mode-tag {
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+
+    .mode-checkbox input:checked + .mode-tag {
+      opacity: 1;
+    }
+
+    .mode-checkbox:hover .mode-tag {
+      opacity: 0.8;
+    }
+
+    .mode-buttons {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 15px;
+    }
+
+    .mode-buttons button {
+      flex: 1;
+      padding: 5px 10px;
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
@@ -445,34 +486,38 @@
         </div>
 
         <!-- MODE CONTROLS -->
-        <div class="section-title">Modes</div>
+        <div class="section-title">Modes (select one or more)</div>
 
-        <div class="slider-group">
-          <div class="slider-label">
-            <span>Primary Mode</span>
-          </div>
-          <select id="mode-select">
-            <option value="">Auto (hash-based)</option>
-            <option value="qed">QED (Quantum Electrodynamics)</option>
-            <option value="qcd">QCD (Quantum Chromodynamics)</option>
-            <option value="string">String Theory</option>
-            <option value="vacuum">Quantum Vacuum</option>
-            <option value="bubble">Bubble Chamber</option>
-            <option value="spinNetwork">Spin Network</option>
-          </select>
+        <div class="mode-checkboxes" id="mode-checkboxes">
+          <label class="mode-checkbox">
+            <input type="checkbox" value="qed" checked>
+            <span class="mode-tag qed">QED</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="qcd">
+            <span class="mode-tag qcd">QCD</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="string">
+            <span class="mode-tag string">STRING</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="vacuum">
+            <span class="mode-tag vacuum">VACUUM</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="bubble">
+            <span class="mode-tag bubble">BUBBLE</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="spinNetwork">
+            <span class="mode-tag spinNetwork">SPINNET</span>
+          </label>
         </div>
-
-        <div class="slider-group">
-          <div class="slider-label">
-            <span>Mode Blend</span>
-          </div>
-          <select id="modeBlend-select">
-            <option value="">Auto (hash-based)</option>
-            <option value="single">Single</option>
-            <option value="dual">Dual</option>
-            <option value="triple">Triple</option>
-            <option value="chaos">Chaos (all modes)</option>
-          </select>
+        <div class="mode-buttons">
+          <button onclick="selectAllModes()">All</button>
+          <button onclick="clearModes()">Clear</button>
+          <button onclick="resetModes()">Auto</button>
         </div>
 
         <div class="section-divider"></div>
@@ -489,9 +534,9 @@
         <div class="slider-group">
           <div class="slider-label">
             <span>Line Weight</span>
-            <span class="slider-value" id="lineWeight-value">2</span>
+            <span class="slider-value" id="lineWeight-value">1.25</span>
           </div>
-          <input type="range" id="lineWeight-slider" min="0.5" max="6" step="0.25" value="2">
+          <input type="range" id="lineWeight-slider" min="0.5" max="2.5" step="0.1" value="1.25">
         </div>
 
         <div class="slider-group">
@@ -654,6 +699,7 @@
         updateFeedbackStats();
         setupSliders();
         updateToggles();
+        syncModeCheckboxes();
       }, 100);
     });
 
@@ -662,6 +708,7 @@
       updateFeaturesDisplay();
       updateRarityCurves();
       updateToggles();
+      syncModeCheckboxes();
     };
 
     function updateFeaturesDisplay() {
@@ -888,50 +935,11 @@
     }
 
     function setupSliders() {
-      // Mode select
-      document.getElementById('mode-select').addEventListener('change', (e) => {
-        if (e.target.value) {
-          const features = window.getFeatures();
-          const modeBlend = features.modeBlend;
-          let modes = [e.target.value];
-
-          // If dual/triple/chaos, add more modes
-          if (modeBlend === 'dual') {
-            modes.push(getRandomMode(modes));
-          } else if (modeBlend === 'triple') {
-            modes.push(getRandomMode(modes));
-            modes.push(getRandomMode(modes));
-          } else if (modeBlend === 'chaos') {
-            modes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
-          }
-
-          window.setParameter('modes', modes);
-          window.render();
-          updateFeaturesDisplay();
-        }
-      });
-
-      // Mode blend select
-      document.getElementById('modeBlend-select').addEventListener('change', (e) => {
-        if (e.target.value) {
-          window.setParameter('modeBlend', e.target.value);
-          const features = window.getFeatures();
-          const primaryMode = features.modes[0];
-          let modes = [primaryMode];
-
-          if (e.target.value === 'dual') {
-            modes.push(getRandomMode(modes));
-          } else if (e.target.value === 'triple') {
-            modes.push(getRandomMode(modes));
-            modes.push(getRandomMode(modes));
-          } else if (e.target.value === 'chaos') {
-            modes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
-          }
-
-          window.setParameter('modes', modes);
-          window.render();
-          updateFeaturesDisplay();
-        }
+      // Mode checkboxes
+      document.querySelectorAll('#mode-checkboxes input').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          updateModesFromCheckboxes();
+        });
       });
 
       // Density slider
@@ -1013,16 +1021,59 @@
       return available[Math.floor(Math.random() * available.length)];
     }
 
+    // Mode checkbox helpers
+    function updateModesFromCheckboxes() {
+      const checkboxes = document.querySelectorAll('#mode-checkboxes input:checked');
+      const modes = Array.from(checkboxes).map(cb => cb.value);
+
+      if (modes.length === 0) {
+        // Don't allow empty - default to qed
+        document.querySelector('#mode-checkboxes input[value="qed"]').checked = true;
+        modes.push('qed');
+      }
+
+      window.setParameter('modes', modes);
+      window.setParameter('modeBlend', modes.length === 1 ? 'single' :
+                                       modes.length === 2 ? 'dual' :
+                                       modes.length === 3 ? 'triple' : 'chaos');
+      window.render();
+      updateFeaturesDisplay();
+    }
+
+    function selectAllModes() {
+      document.querySelectorAll('#mode-checkboxes input').forEach(cb => cb.checked = true);
+      updateModesFromCheckboxes();
+    }
+
+    function clearModes() {
+      document.querySelectorAll('#mode-checkboxes input').forEach(cb => cb.checked = false);
+      document.querySelector('#mode-checkboxes input[value="qed"]').checked = true;
+      updateModesFromCheckboxes();
+    }
+
+    function resetModes() {
+      window.resetToOriginal();
+      window.render();
+      updateFeaturesDisplay();
+      syncModeCheckboxes();
+    }
+
+    function syncModeCheckboxes() {
+      const features = window.getFeatures();
+      document.querySelectorAll('#mode-checkboxes input').forEach(cb => {
+        cb.checked = features.modes.includes(cb.value);
+      });
+    }
+
     function resetParameters() {
       devMode = false;
       document.getElementById('dev-banner').style.display = 'none';
-      document.getElementById('mode-select').value = '';
-      document.getElementById('modeBlend-select').value = '';
       window.resetToOriginal();
       window.render();
       updateFeaturesDisplay();
       updateRarityCurves();
       updateToggles();
+      syncModeCheckboxes();
     }
 
     // Dev Random - uniform distribution across all options
@@ -1065,7 +1116,7 @@
       window.setParameter('backgroundPattern', allPatterns[Math.floor(Math.random() * allPatterns.length)]);
       window.setParameter('symmetry', allSymmetries[Math.floor(Math.random() * allSymmetries.length)]);
       window.setParameter('density', 0.3 + Math.random() * 3.5);
-      window.setParameter('lineWeight', 0.5 + Math.random() * 5.5);
+      window.setParameter('lineWeight', 0.5 + Math.random() * 2.0);  // Lower range for cleaner look
       window.setParameter('loopProbability', Math.random() * 1.5);
       window.setParameter('connectionDensity', 0.1 + Math.random() * 0.9);
       window.setParameter('vertexCount', 3 + Math.floor(Math.random() * 47));
@@ -1082,6 +1133,7 @@
       window.render();
       updateFeaturesDisplay();
       updateToggles();
+      syncModeCheckboxes();
     }
 
     function like() {
