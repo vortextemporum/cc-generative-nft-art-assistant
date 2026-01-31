@@ -73,6 +73,15 @@
       border-color: #6a6aaa;
     }
 
+    button.random {
+      background: #6a4a6a;
+      border-color: #aa6aaa;
+    }
+
+    button.random:hover {
+      background: #8a5a8a;
+    }
+
     button.like {
       background: #2a4a2a;
       border-color: #4a8a4a;
@@ -101,10 +110,12 @@
     }
 
     .side-panel {
-      width: 320px;
+      width: 340px;
       display: flex;
       flex-direction: column;
       gap: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
     }
 
     .panel {
@@ -231,6 +242,68 @@
       font-size: 12px;
     }
 
+    select[multiple] {
+      height: auto;
+      min-height: 80px;
+    }
+
+    select[multiple] option {
+      padding: 4px 8px;
+    }
+
+    /* Toggle Switch */
+    .toggle-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .toggle-label {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background: #2a2a3a;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle.active {
+      background: #6a6aaa;
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #e0e0e0;
+      border-radius: 50%;
+      transition: left 0.2s;
+    }
+
+    .toggle.active::after {
+      left: 22px;
+    }
+
+    /* Dev Mode Banner */
+    .dev-banner {
+      background: linear-gradient(90deg, #6a4a6a33, transparent);
+      border-left: 3px solid #aa6aaa;
+      padding: 8px 12px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      color: #aa6aaa;
+    }
+
     /* Rarity Curves */
     .rarity-chart {
       margin-bottom: 15px;
@@ -313,6 +386,21 @@
       background: linear-gradient(90deg, #fa433320, transparent);
       border-left: 2px solid #fa4;
     }
+
+    /* Section divider */
+    .section-divider {
+      border-top: 1px solid #2a2a3a;
+      margin: 15px 0;
+      padding-top: 15px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -322,6 +410,7 @@
 
       <div class="controls">
         <button class="primary" onclick="window.regenerate()">Regenerate (R)</button>
+        <button class="random" onclick="devRandom()">Dev Random</button>
         <button onclick="saveCanvas('feynman-strings-' + hash.slice(2,10), 'png')">Save PNG (S)</button>
         <button class="like" onclick="like()">Like (L)</button>
         <button class="dislike" onclick="dislike()">Dislike (D)</button>
@@ -350,6 +439,44 @@
           Parameters
           <button onclick="resetParameters()">Reset</button>
         </h2>
+
+        <div id="dev-banner" class="dev-banner" style="display: none;">
+          DEV MODE: Uniform random distribution active
+        </div>
+
+        <!-- MODE CONTROLS -->
+        <div class="section-title">Modes</div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Primary Mode</span>
+          </div>
+          <select id="mode-select">
+            <option value="">Auto (hash-based)</option>
+            <option value="qed">QED (Quantum Electrodynamics)</option>
+            <option value="qcd">QCD (Quantum Chromodynamics)</option>
+            <option value="string">String Theory</option>
+            <option value="vacuum">Quantum Vacuum</option>
+            <option value="bubble">Bubble Chamber</option>
+            <option value="spinNetwork">Spin Network</option>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Mode Blend</span>
+          </div>
+          <select id="modeBlend-select">
+            <option value="">Auto (hash-based)</option>
+            <option value="single">Single</option>
+            <option value="dual">Dual</option>
+            <option value="triple">Triple</option>
+            <option value="chaos">Chaos (all modes)</option>
+          </select>
+        </div>
+
+        <div class="section-divider"></div>
+        <div class="section-title">Visual Parameters</div>
 
         <div class="slider-group">
           <div class="slider-label">
@@ -382,6 +509,17 @@
           </div>
           <input type="range" id="connDensity-slider" min="0.1" max="1.0" step="0.05" value="0.5">
         </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Vertex Count</span>
+            <span class="slider-value" id="vertexCount-value">12</span>
+          </div>
+          <input type="range" id="vertexCount-slider" min="3" max="50" step="1" value="12">
+        </div>
+
+        <div class="section-divider"></div>
+        <div class="section-title">Style</div>
 
         <div class="slider-group">
           <div class="slider-label">
@@ -452,10 +590,41 @@
             <option value="diagonal">Diagonal</option>
           </select>
         </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Symmetry</span>
+          </div>
+          <select id="symmetry-select">
+            <option value="none">None</option>
+            <option value="bilateral">Bilateral</option>
+            <option value="radial4">Radial 4</option>
+            <option value="radial6">Radial 6</option>
+            <option value="radial8">Radial 8</option>
+          </select>
+        </div>
+
+        <div class="section-divider"></div>
+        <div class="section-title">Toggles</div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Show Labels</span>
+          <div class="toggle" id="showLabels-toggle" onclick="toggleShowLabels()"></div>
+        </div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Background Diagrams</span>
+          <div class="toggle" id="bgDiagrams-toggle" onclick="toggleBgDiagrams()"></div>
+        </div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Overlapping Layers</span>
+          <div class="toggle" id="overlapping-toggle" onclick="toggleOverlapping()"></div>
+        </div>
       </div>
 
-      <!-- Rarity Curves Panel -->
-      <div class="panel">
+      <!-- Rarity Curves Panel (hidden in dev mode) -->
+      <div class="panel" id="rarity-panel">
         <h2>Rarity Curves</h2>
         <div id="rarity-curves"></div>
       </div>
@@ -469,12 +638,14 @@
         <button style="margin-top: 10px; width: 100%;" onclick="exportStats()">Export to Console</button>
       </div>
 
-      <div class="version">Feynman Strings v1.1.0</div>
+      <div class="version">Feynman Strings v1.4.0</div>
     </div>
   </div>
 
   <script src="sketch.js"></script>
   <script>
+    let devMode = false;
+
     // Update displays after sketch loads
     window.addEventListener('load', () => {
       setTimeout(() => {
@@ -482,6 +653,7 @@
         updateRarityCurves();
         updateFeedbackStats();
         setupSliders();
+        updateToggles();
       }, 100);
     });
 
@@ -489,6 +661,7 @@
     window.updateUI = function() {
       updateFeaturesDisplay();
       updateRarityCurves();
+      updateToggles();
     };
 
     function updateFeaturesDisplay() {
@@ -527,11 +700,13 @@
         <span class="feature-name">Density</span>
         <span class="feature-value">
           <span class="rarity-badge rarity-${densityRarity}">${features.densityName}</span>
+          <small>(${features.density.toFixed(2)})</small>
         </span>
       </div>`;
 
       // Style
-      const styleRarity = features.style === 'chaotic' ? 'rare' : 'common';
+      const styleRarity = features.style === 'chaotic' ? 'rare' :
+                         features.style === 'maximalist' ? 'rare' : 'common';
       html += `<div class="feature-row">
         <span class="feature-name">Style</span>
         <span class="feature-value">
@@ -616,13 +791,57 @@
       document.getElementById('loopProb-value').textContent = features.loopProbability.toFixed(2);
       document.getElementById('connDensity-slider').value = features.connectionDensity || 0.5;
       document.getElementById('connDensity-value').textContent = (features.connectionDensity || 0.5).toFixed(2);
+      document.getElementById('vertexCount-slider').value = features.vertexCount;
+      document.getElementById('vertexCount-value').textContent = features.vertexCount;
+
+      // Update selects
       document.getElementById('style-select').value = features.style;
       document.getElementById('palette-select').value = features.palette;
       document.getElementById('composition-select').value = features.composition;
       document.getElementById('bgPattern-select').value = features.backgroundPattern || 'none';
+      document.getElementById('symmetry-select').value = features.symmetry || 'none';
+    }
+
+    function updateToggles() {
+      const features = window.getFeatures();
+
+      const showLabelsToggle = document.getElementById('showLabels-toggle');
+      const bgDiagramsToggle = document.getElementById('bgDiagrams-toggle');
+      const overlappingToggle = document.getElementById('overlapping-toggle');
+
+      showLabelsToggle.classList.toggle('active', features.showLabels);
+      bgDiagramsToggle.classList.toggle('active', features.hasBackgroundDiagrams);
+      overlappingToggle.classList.toggle('active', features.hasOverlappingLayers);
+    }
+
+    function toggleShowLabels() {
+      const toggle = document.getElementById('showLabels-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('showLabels', isActive);
+      window.render();
+    }
+
+    function toggleBgDiagrams() {
+      const toggle = document.getElementById('bgDiagrams-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('hasBackgroundDiagrams', isActive);
+      window.render();
+    }
+
+    function toggleOverlapping() {
+      const toggle = document.getElementById('overlapping-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('hasOverlappingLayers', isActive);
+      window.render();
     }
 
     function updateRarityCurves() {
+      if (devMode) {
+        document.getElementById('rarity-panel').style.display = 'none';
+        return;
+      }
+      document.getElementById('rarity-panel').style.display = 'block';
+
       const curves = window.getRarityCurves();
       const features = window.getFeatures();
       const container = document.getElementById('rarity-curves');
@@ -669,6 +888,52 @@
     }
 
     function setupSliders() {
+      // Mode select
+      document.getElementById('mode-select').addEventListener('change', (e) => {
+        if (e.target.value) {
+          const features = window.getFeatures();
+          const modeBlend = features.modeBlend;
+          let modes = [e.target.value];
+
+          // If dual/triple/chaos, add more modes
+          if (modeBlend === 'dual') {
+            modes.push(getRandomMode(modes));
+          } else if (modeBlend === 'triple') {
+            modes.push(getRandomMode(modes));
+            modes.push(getRandomMode(modes));
+          } else if (modeBlend === 'chaos') {
+            modes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
+          }
+
+          window.setParameter('modes', modes);
+          window.render();
+          updateFeaturesDisplay();
+        }
+      });
+
+      // Mode blend select
+      document.getElementById('modeBlend-select').addEventListener('change', (e) => {
+        if (e.target.value) {
+          window.setParameter('modeBlend', e.target.value);
+          const features = window.getFeatures();
+          const primaryMode = features.modes[0];
+          let modes = [primaryMode];
+
+          if (e.target.value === 'dual') {
+            modes.push(getRandomMode(modes));
+          } else if (e.target.value === 'triple') {
+            modes.push(getRandomMode(modes));
+            modes.push(getRandomMode(modes));
+          } else if (e.target.value === 'chaos') {
+            modes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
+          }
+
+          window.setParameter('modes', modes);
+          window.render();
+          updateFeaturesDisplay();
+        }
+      });
+
       // Density slider
       document.getElementById('density-slider').addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
@@ -701,10 +966,19 @@
         window.render();
       });
 
+      // Vertex count slider
+      document.getElementById('vertexCount-slider').addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        document.getElementById('vertexCount-value').textContent = val;
+        window.setParameter('vertexCount', val);
+        window.render();
+      });
+
       // Style select
       document.getElementById('style-select').addEventListener('change', (e) => {
         window.setParameter('style', e.target.value);
         window.setParameter('showLabels', e.target.value === 'technical');
+        updateToggles();
         window.render();
       });
 
@@ -725,12 +999,89 @@
         window.setParameter('backgroundPattern', e.target.value);
         window.render();
       });
+
+      // Symmetry select
+      document.getElementById('symmetry-select').addEventListener('change', (e) => {
+        window.setParameter('symmetry', e.target.value);
+        window.render();
+      });
+    }
+
+    function getRandomMode(exclude = []) {
+      const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
+      const available = allModes.filter(m => !exclude.includes(m));
+      return available[Math.floor(Math.random() * available.length)];
     }
 
     function resetParameters() {
+      devMode = false;
+      document.getElementById('dev-banner').style.display = 'none';
+      document.getElementById('mode-select').value = '';
+      document.getElementById('modeBlend-select').value = '';
       window.resetToOriginal();
       window.render();
       updateFeaturesDisplay();
+      updateRarityCurves();
+      updateToggles();
+    }
+
+    // Dev Random - uniform distribution across all options
+    function devRandom() {
+      devMode = true;
+      document.getElementById('dev-banner').style.display = 'block';
+      document.getElementById('rarity-panel').style.display = 'none';
+
+      const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
+      const allStyles = ['technical', 'geometric', 'artistic', 'abstract', 'chaotic', 'maximalist'];
+      const allPalettes = ['blackboard', 'cosmic', 'void', 'midnight', 'matrix', 'paper', 'parchment', 'minimal', 'lewitt', 'lewittColor', 'blueprint', 'infrared', 'plasma', 'quantum'];
+      const allCompositions = ['centered', 'scattered', 'flowing', 'layered', 'grid', 'radial'];
+      const allPatterns = ['none', 'grid', 'lines', 'dots', 'arcs', 'diagonal'];
+      const allSymmetries = ['none', 'bilateral', 'radial4', 'radial6', 'radial8'];
+      const allBlends = ['single', 'dual', 'triple', 'chaos'];
+
+      // Random blend type
+      const modeBlend = allBlends[Math.floor(Math.random() * allBlends.length)];
+
+      // Random modes based on blend
+      let modes;
+      if (modeBlend === 'single') {
+        modes = [allModes[Math.floor(Math.random() * allModes.length)]];
+      } else if (modeBlend === 'dual') {
+        const shuffled = [...allModes].sort(() => Math.random() - 0.5);
+        modes = shuffled.slice(0, 2);
+      } else if (modeBlend === 'triple') {
+        const shuffled = [...allModes].sort(() => Math.random() - 0.5);
+        modes = shuffled.slice(0, 3);
+      } else {
+        modes = [...allModes];
+      }
+
+      // Set all random parameters
+      window.setParameter('modes', modes);
+      window.setParameter('modeBlend', modeBlend);
+      window.setParameter('style', allStyles[Math.floor(Math.random() * allStyles.length)]);
+      window.setParameter('palette', allPalettes[Math.floor(Math.random() * allPalettes.length)]);
+      window.setParameter('composition', allCompositions[Math.floor(Math.random() * allCompositions.length)]);
+      window.setParameter('backgroundPattern', allPatterns[Math.floor(Math.random() * allPatterns.length)]);
+      window.setParameter('symmetry', allSymmetries[Math.floor(Math.random() * allSymmetries.length)]);
+      window.setParameter('density', 0.3 + Math.random() * 3.5);
+      window.setParameter('lineWeight', 0.5 + Math.random() * 5.5);
+      window.setParameter('loopProbability', Math.random() * 1.5);
+      window.setParameter('connectionDensity', 0.1 + Math.random() * 0.9);
+      window.setParameter('vertexCount', 3 + Math.floor(Math.random() * 47));
+      window.setParameter('showLabels', Math.random() > 0.7);
+      window.setParameter('hasBackgroundDiagrams', Math.random() > 0.5);
+      window.setParameter('hasOverlappingLayers', Math.random() > 0.5);
+
+      // Random special features (higher probability in dev mode)
+      window.setParameter('hasHiggs', Math.random() > 0.7);
+      window.setParameter('hasCalabiYau', Math.random() > 0.7);
+      window.setParameter('hasGraviton', Math.random() > 0.8);
+      window.setParameter('hasSupersymmetry', Math.random() > 0.75);
+
+      window.render();
+      updateFeaturesDisplay();
+      updateToggles();
     }
 
     function like() {
