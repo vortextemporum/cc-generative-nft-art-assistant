@@ -483,6 +483,9 @@
         updateFeaturesTable();
         updateRarityCharts();
         updateOverrideIndicator();
+        // Recreate sliders with new randomized parameter values
+        document.getElementById('sliders-container').innerHTML = '';
+        createSliders();
       });
     }
 

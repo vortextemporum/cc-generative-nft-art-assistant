@@ -699,8 +699,10 @@ function setup() {
 }
 
 function renderFrame() {
-  // Clear buffers
+  // Clear everything first
   const bgCol = getBgColor();
+  clear();
+  background(bgCol);
   blockBuffer.background(bgCol);
   flowBuffer.background(0, 0);
 
@@ -772,33 +774,7 @@ function keyPressed() {
   }
 
   if (key === 'r' || key === 'R') {
-    // Regenerate with new hash
-    hash = "0x" + Array(64).fill(0).map(() =>
-      "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
-
-    generateFeatures();
-    palette = corruptPalette(
-      SIGNAL_SOURCES[features.signalSource],
-      features.paletteCorruption,
-      features.corruptionIntensity
-    );
-
-    // Regenerate clusters
-    R = initRandom(hash);
-    for (let i = 0; i < 50; i++) R();
-    clusters = [];
-    for (let i = 0; i < features.clusterCount; i++) {
-      clusters.push(new BlockCluster(
-        rnd(50, SIZE - 50),
-        rnd(50, SIZE - 50),
-        rnd(30, 100)
-      ));
-    }
-
-    renderFrame();
-
-    // Dispatch event for UI update
-    window.dispatchEvent(new CustomEvent('hashChanged', { detail: { hash, features } }));
+    doRegenerate();
   }
 
   if (key === 'l' || key === 'L') {
