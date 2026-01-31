@@ -619,11 +619,27 @@ function drawScene() {
 // ============================================================
 
 function drawBackgroundPattern() {
-  const gridCol = color(pal.grid || pal.dim);
-  gridCol.setAlpha(80);
+  // Determine if background is light or dark for contrast
+  const bg = color(pal.background);
+  const bgBrightness = brightness(bg);
+
+  let gridCol;
+  if (bgBrightness < 30) {
+    // Dark background - use lighter color
+    gridCol = color(255, 255, 255);
+    gridCol.setAlpha(40);
+  } else if (bgBrightness > 70) {
+    // Light background - use darker color
+    gridCol = color(0, 0, 0);
+    gridCol.setAlpha(30);
+  } else {
+    // Medium - use dim color
+    gridCol = color(pal.dim);
+    gridCol.setAlpha(100);
+  }
 
   stroke(gridCol);
-  strokeWeight(0.5);
+  strokeWeight(0.75);
   noFill();
 
   const spacing = map(features.patternDensity, 0.3, 1.0, 50, 15);
