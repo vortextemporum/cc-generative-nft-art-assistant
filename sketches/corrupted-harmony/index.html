@@ -17,17 +17,17 @@
       color: #e0e0e0;
       font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
     header {
       text-align: center;
-      margin-bottom: 20px;
-      width: 100%;
-      max-width: 900px;
+      margin-bottom: 30px;
     }
 
     h1 {
@@ -45,29 +45,37 @@
       letter-spacing: 0.1em;
     }
 
-    .main-container {
+    .main-layout {
       display: flex;
       gap: 30px;
+      justify-content: center;
       align-items: flex-start;
       flex-wrap: wrap;
-      justify-content: center;
     }
 
     #sketch-container {
       background: #111;
       border: 1px solid #222;
       padding: 10px;
+      flex-shrink: 0;
     }
 
     #sketch-container canvas {
       display: block;
+      width: 700px !important;
+      height: 700px !important;
+    }
+
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
     }
 
     .panel {
       background: #111;
       border: 1px solid #222;
       padding: 20px;
-      width: 280px;
+      margin-bottom: 20px;
     }
 
     .panel h2 {
@@ -90,6 +98,10 @@
       font-size: 0.75rem;
     }
 
+    .feature-row:last-child {
+      border-bottom: none;
+    }
+
     .feature-name {
       color: #666;
       text-transform: capitalize;
@@ -98,6 +110,10 @@
     .feature-value {
       color: #aaa;
       font-weight: 500;
+      text-align: right;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .feature-value.legendary {
@@ -137,7 +153,6 @@
     }
 
     .controls {
-      margin-top: 20px;
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
@@ -147,13 +162,15 @@
       background: #1a1a1a;
       border: 1px solid #333;
       color: #888;
-      padding: 8px 16px;
+      padding: 10px 16px;
       font-family: inherit;
       font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       cursor: pointer;
       transition: all 0.2s ease;
+      flex: 1;
+      min-width: 100px;
     }
 
     button:hover {
@@ -163,7 +180,7 @@
     }
 
     .shortcuts {
-      margin-top: 20px;
+      margin-top: 15px;
       padding-top: 15px;
       border-top: 1px solid #222;
     }
@@ -173,20 +190,21 @@
       justify-content: space-between;
       font-size: 0.65rem;
       color: #444;
-      padding: 3px 0;
+      padding: 4px 0;
     }
 
     .shortcut-key {
       background: #1a1a1a;
-      padding: 2px 6px;
-      border-radius: 2px;
+      padding: 2px 8px;
+      border-radius: 3px;
       color: #666;
+      font-weight: 500;
     }
 
     .version {
       font-size: 0.6rem;
       color: #333;
-      margin-top: 20px;
+      margin-top: 15px;
       text-align: center;
     }
 
@@ -196,60 +214,97 @@
       font-size: 0.65rem;
       color: #333;
     }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #555;
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 1100px) {
+      .main-layout {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .sidebar {
+        width: 100%;
+        max-width: 700px;
+      }
+
+      #sketch-container canvas {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 1;
+      }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Corrupted Harmony</h1>
-    <p class="subtitle">An isometric dreamscape of coexisting realities</p>
-  </header>
+  <div class="container">
+    <header>
+      <h1>Corrupted Harmony</h1>
+      <p class="subtitle">A fully populated isometric city where different visual realities coexist</p>
+    </header>
 
-  <div class="main-container">
-    <div id="sketch-container"></div>
-
-    <div class="panel">
-      <h2>Features</h2>
-      <div id="features-list">
-        <!-- Populated by JS -->
+    <div class="main-layout">
+      <div id="sketch-container">
+        <div class="loading">Generating city...</div>
       </div>
 
-      <div class="hash-display">
-        Hash: <span id="hash-display">loading...</span>
-      </div>
-
-      <div class="controls">
-        <button onclick="window.sketchAPI?.regenerate()">Regenerate (R)</button>
-        <button onclick="saveSketch()">Save PNG (S)</button>
-      </div>
-
-      <div class="shortcuts">
-        <div class="shortcut-row">
-          <span>Regenerate</span>
-          <span class="shortcut-key">R</span>
+      <div class="sidebar">
+        <div class="panel">
+          <h2>Features</h2>
+          <div id="features-list"></div>
+          <div class="hash-display">
+            Hash: <span id="hash-display">loading...</span>
+          </div>
         </div>
-        <div class="shortcut-row">
-          <span>Save image</span>
-          <span class="shortcut-key">S</span>
-        </div>
-      </div>
 
-      <div class="version">v1.0.0</div>
+        <div class="panel">
+          <h2>Controls</h2>
+          <div class="controls">
+            <button id="btn-regenerate">Regenerate</button>
+            <button id="btn-save">Save PNG</button>
+          </div>
+          <div class="shortcuts">
+            <div class="shortcut-row">
+              <span>Regenerate</span>
+              <span class="shortcut-key">R</span>
+            </div>
+            <div class="shortcut-row">
+              <span>Save image</span>
+              <span class="shortcut-key">S</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="version">v2.0.0 - Full City Edition</div>
+      </div>
     </div>
-  </div>
 
-  <footer>
-    Corrupted Harmony &mdash; Generative Architecture in Dissonance
-  </footer>
+    <footer>
+      Corrupted Harmony &mdash; Generative Architecture in Dissonance
+    </footer>
+  </div>
 
   <script src="sketch.js"></script>
   <script>
-    // Initialize features display after p5 setup
+    // Wait for p5 to initialize
+    function waitForSketch() {
+      if (window.sketchAPI && window.sketchAPI.getFeatures()) {
+        updateDisplay();
+        document.querySelector('.loading')?.remove();
+      } else {
+        setTimeout(waitForSketch, 100);
+      }
+    }
+
     window.addEventListener('load', () => {
-      setTimeout(() => {
-        if (window.sketchAPI) {
-          updateDisplay();
-        }
-      }, 500);
+      setTimeout(waitForSketch, 500);
     });
 
     function updateDisplay() {
@@ -257,35 +312,65 @@
       const hash = window.sketchAPI.getHash();
 
       const container = document.getElementById('features-list');
-      container.innerHTML = Object.entries(features)
-        .filter(([k]) => k !== 'seed')
-        .map(([k, v]) => {
-          const displayName = k.replace(/([A-Z])/g, ' $1').trim();
+      if (!container) return;
+
+      const displayOrder = ['rarity', 'palette', 'weirdnessLevel', 'dominantEffect', 'density', 'timeOfDay', 'hasRiver'];
+
+      container.innerHTML = displayOrder
+        .filter(key => features[key] !== undefined)
+        .map(key => {
+          const value = features[key];
+          const displayName = key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, s => s.toUpperCase())
+            .trim();
+
           let valueClass = '';
-          if (typeof v === 'string') {
-            valueClass = v.toLowerCase().replace(/\s+/g, '-');
+          let displayValue = value;
+
+          if (typeof value === 'boolean') {
+            displayValue = value ? 'Yes' : 'No';
+          } else if (typeof value === 'string') {
+            valueClass = value.toLowerCase().replace(/[\s-]+/g, '-');
           }
+
           return `<div class="feature-row">
             <span class="feature-name">${displayName}</span>
-            <span class="feature-value ${valueClass}">${v}</span>
+            <span class="feature-value ${valueClass}">${displayValue}</span>
           </div>`;
         })
         .join('');
 
-      document.getElementById('hash-display').textContent = hash.slice(0, 18) + '...';
+      const hashEl = document.getElementById('hash-display');
+      if (hashEl) {
+        hashEl.textContent = hash.slice(0, 18) + '...';
+      }
     }
 
-    function saveSketch() {
+    // Button handlers
+    document.getElementById('btn-regenerate')?.addEventListener('click', () => {
+      if (window.sketchAPI) {
+        window.sketchAPI.regenerate();
+        setTimeout(updateDisplay, 500);
+      }
+    });
+
+    document.getElementById('btn-save')?.addEventListener('click', () => {
       const hash = window.sketchAPI?.getHash() || 'sketch';
-      saveCanvas('corrupted-harmony-' + hash.slice(0, 8), 'png');
-    }
+      saveCanvas('corrupted-harmony-' + hash.slice(2, 10), 'png');
+    });
 
-    // Update display on regenerate
-    const originalKeyPressed = window.keyPressed;
-    window.keyPressed = function() {
-      if (originalKeyPressed) originalKeyPressed();
-      setTimeout(updateDisplay, 100);
-    };
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key.toLowerCase() === 'r') {
+        if (window.sketchAPI) {
+          window.sketchAPI.regenerate();
+          setTimeout(updateDisplay, 500);
+        }
+      }
+    });
   </script>
 </body>
 </html>

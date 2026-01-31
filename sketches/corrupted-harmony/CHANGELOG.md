@@ -2,6 +2,35 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [2.0.0] - 2026-02-01
+
+### Added
+- Full city grid system with 7x7 blocks
+- Road network with crosswalks and markings
+- Block types: buildings, parks, plazas, markets, construction sites, water/rivers
+- Parks with trees, benches, paths, ponds, gazebos
+- Plazas with fountains, statues, obelisks, lamp posts
+- Markets with colorful stalls
+- Construction sites with cranes, scaffolding, debris
+- Rivers with bridges and boats
+- Street furniture: lamps, trash cans, fire hydrants, mailboxes, street trees
+- Time of day feature: day, dusk, night, dawn (affects window lighting)
+- Density feature: sparse, normal, dense, packed
+- River feature (20% chance)
+- 2000x2000 resolution output (displayed at 700x700)
+
+### Changed
+- Complete rewrite of city generation system
+- Buildings now fill city blocks properly with subdivided plots
+- Canvas increased from 700x700 to 2000x2000
+- Improved UI with proper layout and loading state
+- Effects now applied per-building with individual buffers
+
+### Fixed
+- Buildings no longer float in empty space
+- Proper depth sorting for all city elements
+- UI layout issues resolved
+
 ## [1.0.0] - 2026-02-01
 
 ### Added
