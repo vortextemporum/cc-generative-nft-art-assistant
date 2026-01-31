@@ -446,7 +446,11 @@ function generateFeatures() {
   const hasSupersymmetry = rndBool(0.04);
 
   // Background pattern (Sol LeWitt influence)
-  const backgroundPattern = rndChoice(["none", "grid", "lines", "dots", "arcs", "diagonal"]);
+  const backgroundPattern = rndChoice([
+    "none", "grid", "lines", "dots", "arcs", "diagonal",
+    "crosshatch", "concentric", "concentricSquares", "radialLines",
+    "wavyLines", "bands", "isometric", "randomArcs", "nestedArcs", "allFour"
+  ]);
   const patternDensity = rnd(0.3, 1.0);
 
   // Vertex count - DRAMATICALLY INCREASED
@@ -463,7 +467,7 @@ function generateFeatures() {
   const connectionDensity = rnd(0.3, 0.8) * density;
 
   // Labels (only for technical)
-  const showLabels = style === "technical";
+  const showLabels = false; // Labels disabled
 
   // Arrow style
   const arrowStyle = style === "technical" ? "standard" : rndChoice(["standard", "bold", "subtle", "none"]);
@@ -695,9 +699,144 @@ function drawBackgroundPattern() {
       break;
 
     case "diagonal":
-      // Diagonal lines
+      // Diagonal lines (one direction)
       for (let i = -height; i < width + height; i += spacing) {
         line(i, 0, i + height, height);
+      }
+      break;
+
+    case "crosshatch":
+      // Sol LeWitt - two directions of diagonal lines
+      for (let i = -height; i < width + height; i += spacing) {
+        line(i, 0, i + height, height);
+        line(i, height, i + height, 0);
+      }
+      break;
+
+    case "concentric":
+      // Concentric circles from center
+      noFill();
+      for (let r = spacing; r < max(width, height); r += spacing) {
+        ellipse(width/2, height/2, r * 2, r * 2);
+      }
+      break;
+
+    case "concentricSquares":
+      // Sol LeWitt - nested squares from center
+      noFill();
+      rectMode(CENTER);
+      for (let s = spacing; s < max(width, height); s += spacing) {
+        rect(width/2, height/2, s * 2, s * 2);
+      }
+      rectMode(CORNER);
+      break;
+
+    case "radialLines":
+      // Lines radiating from center (Sol LeWitt Wall Drawing 51)
+      const numRays = Math.floor(map(features.patternDensity, 0.3, 1.0, 12, 36));
+      for (let i = 0; i < numRays; i++) {
+        const angle = (TWO_PI / numRays) * i;
+        const length = max(width, height);
+        line(width/2, height/2,
+             width/2 + cos(angle) * length,
+             height/2 + sin(angle) * length);
+      }
+      break;
+
+    case "wavyLines":
+      // Wavy horizontal lines
+      noFill();
+      const waveAmp = spacing * 0.4;
+      const waveFreq = 0.02;
+      for (let y = spacing; y < height; y += spacing) {
+        beginShape();
+        for (let x = 0; x <= width; x += 5) {
+          const yOff = sin(x * waveFreq + y * 0.01) * waveAmp;
+          vertex(x, y + yOff);
+        }
+        endShape();
+      }
+      break;
+
+    case "bands":
+      // Alternating bands (Sol LeWitt style)
+      noStroke();
+      fill(gridCol);
+      const bandWidth = spacing * 1.5;
+      for (let y = 0; y < height; y += bandWidth * 2) {
+        rect(0, y, width, bandWidth);
+      }
+      break;
+
+    case "isometric":
+      // Isometric grid (three directions at 60 degrees)
+      // Direction 1: vertical
+      for (let x = spacing; x < width; x += spacing) {
+        line(x, 0, x, height);
+      }
+      // Direction 2: 60 degrees
+      for (let i = -height * 2; i < width + height * 2; i += spacing) {
+        const x1 = i;
+        const y1 = 0;
+        const x2 = i + height * tan(PI/6);
+        const y2 = height;
+        line(x1, y1, x2, y2);
+      }
+      // Direction 3: -60 degrees
+      for (let i = -height * 2; i < width + height * 2; i += spacing) {
+        const x1 = i;
+        const y1 = 0;
+        const x2 = i - height * tan(PI/6);
+        const y2 = height;
+        line(x1, y1, x2, y2);
+      }
+      break;
+
+    case "randomArcs":
+      // Sol LeWitt Wall Drawing 260 style - random arcs
+      noFill();
+      const arcCount = Math.floor(map(features.patternDensity, 0.3, 1.0, 15, 50));
+      for (let i = 0; i < arcCount; i++) {
+        const cx = rnd(0, width);
+        const cy = rnd(0, height);
+        const r = rnd(spacing, spacing * 4);
+        const startAngle = rnd(0, TWO_PI);
+        const arcLength = rnd(QUARTER_PI, PI);
+        arc(cx, cy, r, r, startAngle, startAngle + arcLength);
+      }
+      break;
+
+    case "nestedArcs":
+      // Sol LeWitt - arcs from corners
+      noFill();
+      // From each corner
+      const corners = [[0, 0], [width, 0], [width, height], [0, height]];
+      for (const [cx, cy] of corners) {
+        for (let r = spacing; r < max(width, height) * 1.5; r += spacing * 2) {
+          const startAngle = atan2(height/2 - cy, width/2 - cx);
+          arc(cx, cy, r * 2, r * 2, startAngle - QUARTER_PI, startAngle + QUARTER_PI);
+        }
+      }
+      break;
+
+    case "allFour":
+      // Sol LeWitt Wall Drawing 422 - all four directions superimposed
+      strokeWeight(0.5);
+      // Vertical
+      for (let x = spacing * 2; x < width; x += spacing * 2) {
+        line(x, 0, x, height);
+      }
+      // Horizontal
+      for (let y = spacing * 2; y < height; y += spacing * 2) {
+        line(0, y, width, y);
+      }
+      // Diagonal right
+      for (let i = -height; i < width + height; i += spacing * 2) {
+        line(i, 0, i + height, height);
+      }
+      // Diagonal left
+      for (let i = -height; i < width + height; i += spacing * 2) {
+        line(i, height, i + height, 0);
       }
       break;
   }

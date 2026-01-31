@@ -648,11 +648,27 @@
           </div>
           <select id="bgPattern-select">
             <option value="none">None</option>
-            <option value="grid">Grid</option>
-            <option value="lines">Lines</option>
-            <option value="dots">Dots</option>
-            <option value="arcs">Arcs (LeWitt)</option>
-            <option value="diagonal">Diagonal</option>
+            <optgroup label="Basic">
+              <option value="grid">Grid</option>
+              <option value="lines">Lines</option>
+              <option value="dots">Dots</option>
+              <option value="diagonal">Diagonal</option>
+            </optgroup>
+            <optgroup label="Sol LeWitt">
+              <option value="arcs">Arcs</option>
+              <option value="crosshatch">Crosshatch</option>
+              <option value="concentric">Concentric Circles</option>
+              <option value="concentricSquares">Concentric Squares</option>
+              <option value="radialLines">Radial Lines</option>
+              <option value="nestedArcs">Nested Arcs</option>
+              <option value="allFour">All Four Directions</option>
+            </optgroup>
+            <optgroup label="Textural">
+              <option value="wavyLines">Wavy Lines</option>
+              <option value="bands">Bands</option>
+              <option value="isometric">Isometric</option>
+              <option value="randomArcs">Random Arcs</option>
+            </optgroup>
           </select>
         </div>
 
@@ -671,11 +687,6 @@
 
         <div class="section-divider"></div>
         <div class="section-title">Toggles</div>
-
-        <div class="toggle-group">
-          <span class="toggle-label">Show Labels</span>
-          <div class="toggle" id="showLabels-toggle" onclick="toggleShowLabels()"></div>
-        </div>
 
         <div class="toggle-group">
           <span class="toggle-label">Background Diagrams</span>
@@ -872,20 +883,11 @@
     function updateToggles() {
       const features = window.getFeatures();
 
-      const showLabelsToggle = document.getElementById('showLabels-toggle');
       const bgDiagramsToggle = document.getElementById('bgDiagrams-toggle');
       const overlappingToggle = document.getElementById('overlapping-toggle');
 
-      showLabelsToggle.classList.toggle('active', features.showLabels);
       bgDiagramsToggle.classList.toggle('active', features.hasBackgroundDiagrams);
       overlappingToggle.classList.toggle('active', features.hasOverlappingLayers);
-    }
-
-    function toggleShowLabels() {
-      const toggle = document.getElementById('showLabels-toggle');
-      const isActive = toggle.classList.toggle('active');
-      window.setParameter('showLabels', isActive);
-      window.render();
     }
 
     function toggleBgDiagrams() {
@@ -1005,8 +1007,6 @@
       // Style select
       document.getElementById('style-select').addEventListener('change', (e) => {
         window.setParameter('style', e.target.value);
-        window.setParameter('showLabels', e.target.value === 'technical');
-        updateToggles();
         window.render();
       });
 
@@ -1106,7 +1106,7 @@
       const allStyles = ['technical', 'geometric', 'artistic', 'abstract', 'chaotic', 'maximalist'];
       const allPalettes = ['blackboard', 'cosmic', 'void', 'midnight', 'matrix', 'paper', 'parchment', 'minimal', 'lewitt', 'lewittColor', 'blueprint', 'infrared', 'plasma', 'quantum'];
       const allCompositions = ['centered', 'scattered', 'flowing', 'layered', 'grid', 'radial'];
-      const allPatterns = ['none', 'grid', 'lines', 'dots', 'arcs', 'diagonal'];
+      const allPatterns = ['none', 'grid', 'lines', 'dots', 'arcs', 'diagonal', 'crosshatch', 'concentric', 'concentricSquares', 'radialLines', 'wavyLines', 'bands', 'isometric', 'randomArcs', 'nestedArcs', 'allFour'];
       const allSymmetries = ['none', 'bilateral', 'radial4', 'radial6', 'radial8'];
       const allBlends = ['single', 'dual', 'triple', 'chaos'];
 
@@ -1140,7 +1140,6 @@
       window.setParameter('loopProbability', Math.random() * 1.5);
       window.setParameter('connectionDensity', 0.1 + Math.random() * 0.9);
       window.setParameter('vertexCount', 3 + Math.floor(Math.random() * 47));
-      window.setParameter('showLabels', Math.random() > 0.7);
       window.setParameter('hasBackgroundDiagrams', Math.random() > 0.5);
       window.setParameter('hasOverlappingLayers', Math.random() > 0.5);
 
