@@ -2,6 +2,41 @@
 
 All notable changes to Feynman Strings will be documented in this file.
 
+## [1.6.0] - 2025-01-31
+
+### Added
+- **4 new physics modes** (total of 10):
+  - **Electroweak**: Unified electroweak interaction visualizations
+    - W/Z boson propagators (dashed wavy lines)
+    - Neutrino lines (dashed fermion lines)
+    - Higgs vertex coupling
+    - Weak decay diagrams (beta decay, etc.)
+    - Electroweak mixing patterns
+  - **Cosmic**: Cosmic ray and particle shower physics
+    - Cosmic ray showers (extensive air shower cascades)
+    - Cosmic tracks (high-energy particle trajectories)
+    - Hadronic cascades (nuclear interaction showers)
+    - EM showers (electromagnetic cascades)
+    - Cherenkov rings (faster-than-light-in-medium radiation)
+  - **Nuclear**: Nuclear physics reactions and decays
+    - Decay chains (radioactive decay sequences)
+    - Nuclear shells (energy level structures)
+    - Alpha decay (helium nucleus emission)
+    - Beta decay (electron/positron emission)
+    - Fission events (heavy nucleus splitting)
+    - Fusion reactions (light nuclei combining)
+  - **Topological**: Topological quantum phenomena
+    - Braid patterns (worldline braiding)
+    - Anyon exchange (anyonic particle statistics)
+    - Knot diagrams (topological invariants)
+    - Linking patterns (chain links, Hopf links)
+    - Topological defects (vortices, monopoles)
+
+### Changed
+- Mode weights redistributed across 10 modes
+- UI updated with checkboxes for all 10 modes
+- Dev Random mode now includes all 10 physics modes
+
 ## [1.5.0] - 2025-01-31
 
 ### Added

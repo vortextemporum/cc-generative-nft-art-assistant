@@ -195,6 +195,10 @@
     .mode-tag.vacuum { background: #63696733; color: #b2bec3; }
     .mode-tag.bubble { background: #00cec933; color: #00cec9; }
     .mode-tag.spinNetwork { background: #a29bfe33; color: #a29bfe; }
+    .mode-tag.electroweak { background: #e1705533; color: #e17055; }
+    .mode-tag.cosmic { background: #fd79a833; color: #fd79a8; }
+    .mode-tag.nuclear { background: #00b89433; color: #00b894; }
+    .mode-tag.topological { background: #6c5ce733; color: #6c5ce7; }
 
     /* Sliders Panel */
     .slider-group {
@@ -513,6 +517,22 @@
             <input type="checkbox" value="spinNetwork">
             <span class="mode-tag spinNetwork">SPINNET</span>
           </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="electroweak">
+            <span class="mode-tag electroweak">EWEAK</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="cosmic">
+            <span class="mode-tag cosmic">COSMIC</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="nuclear">
+            <span class="mode-tag nuclear">NUCLEAR</span>
+          </label>
+          <label class="mode-checkbox">
+            <input type="checkbox" value="topological">
+            <span class="mode-tag topological">TOPO</span>
+          </label>
         </div>
         <div class="mode-buttons">
           <button onclick="selectAllModes()">All</button>
@@ -683,7 +703,7 @@
         <button style="margin-top: 10px; width: 100%;" onclick="exportStats()">Export to Console</button>
       </div>
 
-      <div class="version">Feynman Strings v1.4.0</div>
+      <div class="version">Feynman Strings v1.6.0</div>
     </div>
   </div>
 
@@ -1016,7 +1036,7 @@
     }
 
     function getRandomMode(exclude = []) {
-      const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
+      const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork', 'electroweak', 'cosmic', 'nuclear', 'topological'];
       const available = allModes.filter(m => !exclude.includes(m));
       return available[Math.floor(Math.random() * available.length)];
     }
@@ -1082,7 +1102,7 @@
       document.getElementById('dev-banner').style.display = 'block';
       document.getElementById('rarity-panel').style.display = 'none';
 
-      const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork'];
+      const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork', 'electroweak', 'cosmic', 'nuclear', 'topological'];
       const allStyles = ['technical', 'geometric', 'artistic', 'abstract', 'chaotic', 'maximalist'];
       const allPalettes = ['blackboard', 'cosmic', 'void', 'midnight', 'matrix', 'paper', 'parchment', 'minimal', 'lewitt', 'lewittColor', 'blueprint', 'infrared', 'plasma', 'quantum'];
       const allCompositions = ['centered', 'scattered', 'flowing', 'layered', 'grid', 'radial'];
