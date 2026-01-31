@@ -2,6 +2,22 @@
 
 All notable changes to Feynman Strings will be documented in this file.
 
+## [1.3.0] - 2025-01-31
+
+### Added
+- **String theory interaction topologies**:
+  - `drawPantsDiagram()` - String splitting/joining "pants" topology
+  - `drawStringSplitting()` - One string dividing into two
+  - `drawStringJoining()` - Two strings merging into one
+  - `drawTorusWorldsheet()` - Detailed torus with meridians
+  - `drawDBraneAttachment()` - Open strings ending on D-branes
+
+### Changed
+- **String mode** now uses expanded element vocabulary
+- String composition randomly selects from 6 worldsheet/interaction types
+- Added D-brane attachment rendering with multiple attached strings
+- Pants diagrams added at higher densities
+
 ## [1.2.0] - 2025-01-31
 
 ### Added
