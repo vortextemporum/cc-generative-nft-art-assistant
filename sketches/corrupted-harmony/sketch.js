@@ -1,9 +1,9 @@
 /**
- * CORRUPTED HARMONY v4.5.0
+ * CORRUPTED HARMONY v4.6.0
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
  * Screen-space noise: voronoi cells, perlin bleeding, worley cracks, ridged veins
- * Building stats display showing effect/noise type per building
+ * Equal distribution mode - all palettes/effects/styles have equal chance
  */
 
 // =============================================================================
@@ -121,36 +121,47 @@ const PALETTES = {
 // FEATURE GENERATION
 // =============================================================================
 
+// Store original rarity system for reference (not used in generation)
+const RARITY_WEIGHTS = {
+  legendary: 0.05,  // 5%
+  rare: 0.10,       // 10%
+  uncommon: 0.25,   // 25%
+  common: 0.60      // 60%
+};
+
 function generateFeatures() {
   R = initRandom(hash);
 
-  const rarity = rollRarity();
-  let paletteKey = rarity === 'legendary' ? rndChoice(['neonBleed', 'inverted']) :
-                   rarity === 'rare' ? rndChoice(['twilight', 'cool', 'cyber']) :
-                   rarity === 'uncommon' ? rndChoice(['cyber', 'cool', 'fog']) :
-                   rndChoice(['muted', 'fog', 'warm']);
+  // Calculate what rarity WOULD be (stored for reference, not used)
+  const rarityRoll = rollRarity();
 
-  const weirdnessLevel = rarity === 'legendary' ? 'reality-collapse' :
-                         rarity === 'rare' ? 'chaotic' :
-                         rarity === 'uncommon' ? 'moderate' : 'subtle';
+  // EQUAL DISTRIBUTION - all options have equal chance
+  const allPalettes = Object.keys(PALETTES);
+  const paletteKey = rndChoice(allPalettes);
 
-  const dominantEffect = rarity === 'legendary' ? rndChoice(['corrupt', 'liquify', 'glitch']) :
-                         rarity === 'rare' ? rndChoice(['glitch', 'dither', 'liquify']) :
-                         rarity === 'uncommon' ? rndChoice(['dither', 'stencil']) :
-                         rndChoice(['clean', 'dither']);
+  const allWeirdnessLevels = ['subtle', 'moderate', 'chaotic', 'reality-collapse'];
+  const weirdnessLevel = rndChoice(allWeirdnessLevels);
+
+  const dominantEffect = rndChoice(EFFECT_TYPES);
 
   const density = rndChoice(['sparse', 'normal', 'dense', 'packed']);
   const hasRiver = rndBool(0.2);
   const timeOfDay = rndChoice(['day', 'dusk', 'night', 'dawn']);
   const skyMood = rndChoice(['gradient', 'flat', 'textured', 'void']);
   const groundStyle = rndChoice(['solid', 'reflection', 'fade']);
-  const special = rarity === 'legendary' ? 'the-anomaly' :
-                  rarity === 'rare' ? rndChoice(['portal', 'floating-chunk']) :
-                  rarity === 'uncommon' ? rndChoice(['time-echo', 'none']) : 'none';
+  const special = rndChoice(['none', 'none', 'time-echo', 'floating-chunk', 'portal', 'the-anomaly']);
 
   features = {
-    rarity, palette: paletteKey, weirdnessLevel, dominantEffect,
-    density, hasRiver, timeOfDay, skyMood, groundStyle, special,
+    rarity: rarityRoll,  // Stored but not used for generation
+    palette: paletteKey,
+    weirdnessLevel,
+    dominantEffect,
+    density,
+    hasRiver,
+    timeOfDay,
+    skyMood,
+    groundStyle,
+    special,
     seed: hash.slice(0, 10)
   };
 
@@ -493,16 +504,15 @@ function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0, noiseType
         } else if (noiseType == 3) {
           // VALUE: Posterized color bands
           float bands = floor(n * 6.0) / 6.0;
-          vec3 palette[4];
-          palette[0] = vec3(0.1, 0.1, 0.2);
-          palette[1] = vec3(0.8, 0.2, 0.3);
-          palette[2] = vec3(0.2, 0.7, 0.8);
-          palette[3] = vec3(0.95, 0.9, 0.8);
+          vec3 pal0 = vec3(0.1, 0.1, 0.2);
+          vec3 pal1 = vec3(0.8, 0.2, 0.3);
+          vec3 pal2 = vec3(0.2, 0.7, 0.8);
+          vec3 pal3 = vec3(0.95, 0.9, 0.8);
           int idx = int(bands * 4.0);
-          if (idx == 0) color = mix(color, palette[0], intensity);
-          else if (idx == 1) color = mix(color, palette[1], intensity * 0.7);
-          else if (idx == 2) color = mix(color, palette[2], intensity * 0.7);
-          else color = mix(color, palette[3], intensity * 0.5);
+          if (idx == 0) color = mix(color, pal0, intensity);
+          else if (idx == 1) color = mix(color, pal1, intensity * 0.7);
+          else if (idx == 2) color = mix(color, pal2, intensity * 0.7);
+          else color = mix(color, pal3, intensity * 0.5);
         } else if (noiseType == 4) {
           // RIDGED: Glowing veins/circuits
           if (n > 0.6) {

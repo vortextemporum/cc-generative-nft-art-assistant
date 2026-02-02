@@ -2,6 +2,22 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.6.0] - 2026-02-02
+
+### Added
+- **Demo page** (demo.html) showcasing all effects, noise types, styles, and palettes
+- RARITY_WEIGHTS constant storing original rarity probabilities for reference
+
+### Changed
+- **Equal distribution mode** - all options now have equal probability:
+  - All 8 palettes equally likely (was weighted by rarity)
+  - All 6 effects equally likely (was weighted by rarity)
+  - All 4 weirdness levels equally likely
+  - Rarity still calculated and stored but doesn't affect generation
+
+### Fixed
+- GLSL shader error - replaced array syntax with individual variables
+
 ## [4.5.0] - 2026-02-02
 
 ### Added
