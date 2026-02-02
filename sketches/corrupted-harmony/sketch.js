@@ -1320,7 +1320,7 @@ function addWindows(group, b, pal) {
   const isDusk = features.timeOfDay === 'dusk';
 
   // Window style for this building (consistent per building)
-  const windowStyle = rndChoice(['grid', 'horizontal', 'vertical', 'scattered', 'floorToCeiling', 'arched', 'cityLights', 'cityLights', 'cityLights']);
+  const windowStyle = rndChoice(['grid', 'horizontal', 'vertical', 'scattered', 'floorToCeiling', 'arched']);
 
   // Base dimensions vary by style
   let winW, winH, spacingH, spacingW;
@@ -1354,13 +1354,6 @@ function addWindows(group, b, pal) {
       winH = rnd(0.4, 0.7);
       spacingH = rnd(1.2, 2.0);
       spacingW = rnd(0.8, 1.3);
-      break;
-    case 'cityLights':
-      // Tiny glowing points like distant city at night
-      winW = rnd(0.08, 0.18);
-      winH = rnd(0.08, 0.18);
-      spacingH = rnd(0.4, 0.8);
-      spacingW = rnd(0.35, 0.7);
       break;
     default: // grid
       winW = rnd(0.32, 0.45);
@@ -1405,38 +1398,7 @@ function addWindows(group, b, pal) {
     let winGeo;
 
     // Create window geometry based on style
-    if (windowStyle === 'cityLights') {
-      // Tiny glowing spheres like distant city lights at night
-      const glowSize = rnd(0.04, 0.12);
-      const glowIntensity = isLit ? rnd(0.8, 1.2) : rnd(0.2, 0.4);
-
-      // Emissive sphere for glow effect
-      const sphereGeo = new THREE.SphereGeometry(glowSize, 6, 4);
-      const glowMat = new THREE.MeshBasicMaterial({
-        color: isLit ? lightColor : 0x333344,
-        transparent: true,
-        opacity: glowIntensity
-      });
-      const sphere = new THREE.Mesh(sphereGeo, glowMat);
-      windowGroup.add(sphere);
-
-      // Add subtle outer glow for lit windows
-      if (isLit && rndBool(0.6)) {
-        const outerGeo = new THREE.SphereGeometry(glowSize * 2.2, 6, 4);
-        const outerMat = new THREE.MeshBasicMaterial({
-          color: lightColor,
-          transparent: true,
-          opacity: 0.15
-        });
-        const outer = new THREE.Mesh(outerGeo, outerMat);
-        windowGroup.add(outer);
-      }
-
-      windowGroup.position.set(x, y, z);
-      windowGroup.rotation.y = rotY;
-      return windowGroup;
-
-    } else if (windowStyle === 'arched') {
+    if (windowStyle === 'arched') {
       // Arched window: rectangle with semicircle top
       const rectGeo = new THREE.PlaneGeometry(winW, winH * 0.7);
       const rect = new THREE.Mesh(rectGeo, winMat);
@@ -1531,24 +1493,6 @@ function addWindows(group, b, pal) {
   const endY = b.h - margin;
 
   // Scattered style places windows more randomly
-  // City lights: many tiny scattered points like night skyline
-  if (windowStyle === 'cityLights') {
-    const density = rnd(0.6, 1.2);
-    const totalLights = Math.floor(rndInt(25, 60) * density * (b.w * b.h * b.d) / 50);
-    for (let i = 0; i < totalLights; i++) {
-      const face = rndInt(0, 3);
-      const x = rnd(-b.w/2 + 0.1, b.w/2 - 0.1);
-      const y = rnd(0.3, b.h - 0.2);
-      const z = rnd(-b.d/2 + 0.1, b.d/2 - 0.1);
-
-      if (face === 0) group.add(createWindow(x, y, b.d/2 + 0.02, 0));
-      else if (face === 1) group.add(createWindow(x, y, -b.d/2 - 0.02, Math.PI));
-      else if (face === 2) group.add(createWindow(b.w/2 + 0.02, y, z, Math.PI/2));
-      else group.add(createWindow(-b.w/2 - 0.02, y, z, -Math.PI/2));
-    }
-    return;
-  }
-
   if (windowStyle === 'scattered') {
     const totalWindows = rndInt(8, 20);
     for (let i = 0; i < totalWindows; i++) {
