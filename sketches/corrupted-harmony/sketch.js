@@ -1,7 +1,7 @@
 /**
- * CORRUPTED HARMONY v4.0.1
- * Artsy 3D isometric city with per-building shader effects
- * Three.js rendering with dither/glitch/corrupt/liquify effects per building
+ * CORRUPTED HARMONY v4.0.2
+ * 3D isometric city with per-building shader effects
+ * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
  */
 
 // =============================================================================
@@ -51,12 +51,6 @@ function rollRarity() {
   return 'common';
 }
 
-// Simple noise function for effects
-function noise2D(x, y) {
-  const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-  return n - Math.floor(n);
-}
-
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
@@ -69,7 +63,6 @@ const BUILDING_MARGIN = 0.3; // Gap between buildings and plot edges
 
 const ARCH_STYLES = ['brutalist', 'deco', 'modernist', 'gothic', 'retro', 'geometric', 'organic'];
 const EFFECT_TYPES = ['clean', 'dither', 'glitch', 'corrupt', 'liquify', 'stencil'];
-const DITHER_MODES = ['floyd-steinberg', 'bayer', 'stipple', 'halftone'];
 
 const PALETTES = {
   muted: {
@@ -425,8 +418,6 @@ function createEffectMaterial(effect, baseColor, seed, rarity) {
 let scene, camera, renderer, controls;
 let cityGroup;
 let clock;
-let postProcessCanvas, postProcessCtx;
-let needsPostProcess = true;
 let shaderMaterials = [];
 
 function init() {
@@ -454,21 +445,9 @@ function init() {
   // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(1);
   container.innerHTML = '';
   container.appendChild(renderer.domElement);
-
-  // Post-processing canvas overlay
-  postProcessCanvas = document.createElement('canvas');
-  postProcessCanvas.width = width;
-  postProcessCanvas.height = height;
-  postProcessCanvas.style.position = 'absolute';
-  postProcessCanvas.style.top = '0';
-  postProcessCanvas.style.left = '0';
-  postProcessCanvas.style.pointerEvents = 'none';
-  container.style.position = 'relative';
-  container.appendChild(postProcessCanvas);
-  postProcessCtx = postProcessCanvas.getContext('2d');
 
   // Orbit controls
   controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -502,373 +481,6 @@ function init() {
 
   // Keyboard controls
   document.addEventListener('keydown', onKeyDown);
-}
-
-// =============================================================================
-// PIXEL-BASED POST-PROCESSING EFFECTS (from v1.0.0)
-// =============================================================================
-
-function applyDitherEffect(imageData, mode, intensity = 1.0) {
-  const data = imageData.data;
-  const w = imageData.width;
-  const h = imageData.height;
-
-  if (mode === 'bayer') {
-    const bayer = [
-      [0, 8, 2, 10],
-      [12, 4, 14, 6],
-      [3, 11, 1, 9],
-      [15, 7, 13, 5]
-    ];
-
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        const gray = (data[i] + data[i+1] + data[i+2]) / 3;
-        const threshold = (bayer[y % 4][x % 4] / 16) * 255;
-        const val = gray > threshold * intensity ? 255 : 0;
-
-        // Keep some color tint
-        const tintStrength = 0.3;
-        data[i] = Math.floor(val * (1 - tintStrength) + data[i] * tintStrength);
-        data[i+1] = Math.floor(val * (1 - tintStrength) + data[i+1] * tintStrength);
-        data[i+2] = Math.floor(val * (1 - tintStrength) + data[i+2] * tintStrength);
-      }
-    }
-  } else if (mode === 'floyd-steinberg') {
-    const errors = new Float32Array(w * h);
-
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        const idx = y * w + x;
-        let gray = (data[i] + data[i+1] + data[i+2]) / 3 + errors[idx];
-        const newVal = gray > 127 ? 255 : 0;
-        const error = (gray - newVal) * intensity;
-
-        if (x + 1 < w) errors[idx + 1] += error * 7/16;
-        if (y + 1 < h) {
-          if (x > 0) errors[idx + w - 1] += error * 3/16;
-          errors[idx + w] += error * 5/16;
-          if (x + 1 < w) errors[idx + w + 1] += error * 1/16;
-        }
-
-        const tintStrength = 0.25;
-        data[i] = Math.floor(newVal * (1 - tintStrength) + data[i] * tintStrength);
-        data[i+1] = Math.floor(newVal * (1 - tintStrength) + data[i+1] * tintStrength);
-        data[i+2] = Math.floor(newVal * (1 - tintStrength) + data[i+2] * tintStrength);
-      }
-    }
-  } else if (mode === 'stipple') {
-    R = initRandom(hash + 'stipple');
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        const gray = (data[i] + data[i+1] + data[i+2]) / 3;
-        const threshold = R() * 255 * intensity;
-        const val = gray > threshold ? 255 : 0;
-
-        const tintStrength = 0.35;
-        data[i] = Math.floor(val * (1 - tintStrength) + data[i] * tintStrength);
-        data[i+1] = Math.floor(val * (1 - tintStrength) + data[i+1] * tintStrength);
-        data[i+2] = Math.floor(val * (1 - tintStrength) + data[i+2] * tintStrength);
-      }
-    }
-  } else { // halftone
-    const dotSize = 3;
-    for (let y = 0; y < h; y += dotSize) {
-      for (let x = 0; x < w; x += dotSize) {
-        let sum = 0;
-        let count = 0;
-        for (let dy = 0; dy < dotSize && y + dy < h; dy++) {
-          for (let dx = 0; dx < dotSize && x + dx < w; dx++) {
-            const i = ((y + dy) * w + (x + dx)) * 4;
-            sum += (data[i] + data[i+1] + data[i+2]) / 3;
-            count++;
-          }
-        }
-        const avg = sum / count;
-        const val = avg > 127 * intensity ? 255 : 0;
-        for (let dy = 0; dy < dotSize && y + dy < h; dy++) {
-          for (let dx = 0; dx < dotSize && x + dx < w; dx++) {
-            const i = ((y + dy) * w + (x + dx)) * 4;
-            const tintStrength = 0.3;
-            data[i] = Math.floor(val * (1 - tintStrength) + data[i] * tintStrength);
-            data[i+1] = Math.floor(val * (1 - tintStrength) + data[i+1] * tintStrength);
-            data[i+2] = Math.floor(val * (1 - tintStrength) + data[i+2] * tintStrength);
-          }
-        }
-      }
-    }
-  }
-}
-
-function applyLiquifyEffect(imageData, intensity = 0.5) {
-  const w = imageData.width;
-  const h = imageData.height;
-  const original = new Uint8ClampedArray(imageData.data);
-  const data = imageData.data;
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const noiseVal = noise2D(x * 0.02, y * 0.02) * 2 - 1;
-      let displaceX = Math.floor(noiseVal * intensity * 25);
-      let displaceY = Math.floor(Math.sin(y * 0.05) * intensity * 15 + noiseVal * intensity * 10);
-
-      // Add dripping effect at bottom
-      if (y > h * 0.7) {
-        const drip = Math.sin(x * 0.08) * (y - h * 0.7) * intensity * 0.4;
-        displaceY -= Math.floor(drip);
-      }
-
-      let srcX = Math.max(0, Math.min(w - 1, x + displaceX));
-      let srcY = Math.max(0, Math.min(h - 1, y + displaceY));
-
-      const srcI = (srcY * w + srcX) * 4;
-      const dstI = (y * w + x) * 4;
-
-      data[dstI] = original[srcI];
-      data[dstI + 1] = original[srcI + 1];
-      data[dstI + 2] = original[srcI + 2];
-      data[dstI + 3] = original[srcI + 3];
-    }
-  }
-}
-
-function applyGlitchEffect(imageData, intensity = 0.5) {
-  const w = imageData.width;
-  const h = imageData.height;
-  const original = new Uint8ClampedArray(imageData.data);
-  const data = imageData.data;
-
-  // RGB shift
-  const shiftR = Math.floor(intensity * 8);
-  const shiftB = -Math.floor(intensity * 6);
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-
-      const srcXR = Math.max(0, Math.min(w - 1, x + shiftR));
-      const srcIR = (y * w + srcXR) * 4;
-      data[i] = original[srcIR];
-
-      data[i + 1] = original[i + 1];
-
-      const srcXB = Math.max(0, Math.min(w - 1, x + shiftB));
-      const srcIB = (y * w + srcXB) * 4;
-      data[i + 2] = original[srcIB + 2];
-    }
-  }
-
-  // Scanlines
-  R = initRandom(hash + 'glitch');
-  for (let y = 0; y < h; y += 2) {
-    if (R() < intensity * 0.4) {
-      for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        data[i] = Math.floor(data[i] * 0.6);
-        data[i + 1] = Math.floor(data[i + 1] * 0.6);
-        data[i + 2] = Math.floor(data[i + 2] * 0.6);
-      }
-    }
-  }
-
-  // Random horizontal displacement lines
-  for (let n = 0; n < intensity * 12; n++) {
-    const y = Math.floor(R() * h);
-    const shift = Math.floor((R() - 0.5) * intensity * 35);
-    const lineHeight = Math.floor(R() * 4) + 1;
-
-    for (let dy = 0; dy < lineHeight && y + dy < h; dy++) {
-      for (let x = 0; x < w; x++) {
-        const srcX = Math.max(0, Math.min(w - 1, x + shift));
-        const srcI = ((y + dy) * w + srcX) * 4;
-        const dstI = ((y + dy) * w + x) * 4;
-
-        data[dstI] = original[srcI];
-        data[dstI + 1] = original[srcI + 1];
-        data[dstI + 2] = original[srcI + 2];
-      }
-    }
-  }
-}
-
-function applyCorruptEffect(imageData, intensity = 0.5) {
-  const w = imageData.width;
-  const h = imageData.height;
-  const data = imageData.data;
-
-  R = initRandom(hash + 'corrupt');
-
-  // Block corruption
-  const blockSize = 6;
-  for (let by = 0; by < h; by += blockSize) {
-    for (let bx = 0; bx < w; bx += blockSize) {
-      if (R() < intensity * 0.35) {
-        const mode = Math.floor(R() * 4);
-
-        for (let y = by; y < by + blockSize && y < h; y++) {
-          for (let x = bx; x < bx + blockSize && x < w; x++) {
-            const i = (y * w + x) * 4;
-
-            if (mode === 0) {
-              // Color shift
-              data[i] = (data[i] + 128) % 256;
-            } else if (mode === 1) {
-              // Invert
-              data[i] = 255 - data[i];
-              data[i + 1] = 255 - data[i + 1];
-              data[i + 2] = 255 - data[i + 2];
-            } else if (mode === 2) {
-              // Solid
-              const v = R() > 0.5 ? 255 : 0;
-              data[i] = data[i + 1] = data[i + 2] = v;
-            } else {
-              // Channel swap
-              const temp = data[i];
-              data[i] = data[i + 2];
-              data[i + 2] = temp;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Data moshing streaks
-  for (let n = 0; n < intensity * 6; n++) {
-    const startY = Math.floor(R() * h);
-    const length = Math.floor(R() * h * 0.25);
-    const x = Math.floor(R() * w);
-
-    let lastColor = [0, 0, 0];
-    for (let y = startY; y < startY + length && y < h; y++) {
-      const idx = (y * w + x) * 4;
-      if (R() < 0.1) {
-        lastColor = [data[idx], data[idx + 1], data[idx + 2]];
-      }
-      data[idx] = lastColor[0];
-      data[idx + 1] = lastColor[1];
-      data[idx + 2] = lastColor[2];
-    }
-  }
-}
-
-function applyStencilEffect(imageData, levels = 4) {
-  const data = imageData.data;
-
-  for (let i = 0; i < data.length; i += 4) {
-    for (let c = 0; c < 3; c++) {
-      const val = data[i + c];
-      const step = 255 / (levels - 1);
-      data[i + c] = Math.round(val / step) * step;
-    }
-  }
-}
-
-function applyFilmGrain(imageData, intensity = 0.15) {
-  const data = imageData.data;
-  R = initRandom(hash + 'grain' + Date.now());
-
-  for (let i = 0; i < data.length; i += 4) {
-    const noise = (R() - 0.5) * 255 * intensity;
-    data[i] = Math.max(0, Math.min(255, data[i] + noise));
-    data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
-    data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
-  }
-}
-
-function applyVignette(imageData, intensity = 0.4) {
-  const data = imageData.data;
-  const w = imageData.width;
-  const h = imageData.height;
-  const cx = w / 2;
-  const cy = h / 2;
-  const maxDist = Math.sqrt(cx * cx + cy * cy);
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-      const vignette = 1 - (dist / maxDist) * intensity;
-
-      data[i] = Math.floor(data[i] * vignette);
-      data[i + 1] = Math.floor(data[i + 1] * vignette);
-      data[i + 2] = Math.floor(data[i + 2] * vignette);
-    }
-  }
-}
-
-function applyPostProcessing() {
-  // Get the rendered image from three.js
-  const w = postProcessCanvas.width;
-  const h = postProcessCanvas.height;
-
-  postProcessCtx.drawImage(renderer.domElement, 0, 0);
-  const imageData = postProcessCtx.getImageData(0, 0, w, h);
-
-  // Only subtle effects - per-building effects are done via shaders
-  applyFilmGrain(imageData, 0.04);
-  applyVignette(imageData, 0.25);
-
-  postProcessCtx.putImageData(imageData, 0, 0);
-  drawSpecialFeatures();
-}
-
-function drawSpecialFeatures() {
-  const pal = PALETTES[features.palette];
-  const w = postProcessCanvas.width;
-  const h = postProcessCanvas.height;
-
-  if (features.special === 'the-anomaly') {
-    // Strange void/portal in the center
-    postProcessCtx.save();
-    postProcessCtx.translate(w/2, h/2 - 50);
-    for (let i = 20; i > 0; i--) {
-      postProcessCtx.strokeStyle = `rgba(${(pal.accent >> 16) & 0xff}, ${(pal.accent >> 8) & 0xff}, ${pal.accent & 0xff}, ${0.4 - i * 0.015})`;
-      postProcessCtx.lineWidth = 2;
-      postProcessCtx.beginPath();
-      postProcessCtx.ellipse(0, 0, 25 + i * 4, (25 + i * 4) * 0.6, 0, 0, Math.PI * 2);
-      postProcessCtx.stroke();
-    }
-    // Dark center
-    const gradient = postProcessCtx.createRadialGradient(0, 0, 0, 0, 0, 30);
-    gradient.addColorStop(0, 'rgba(0,0,0,0.9)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0)');
-    postProcessCtx.fillStyle = gradient;
-    postProcessCtx.beginPath();
-    postProcessCtx.ellipse(0, 0, 35, 35 * 0.6, 0, 0, Math.PI * 2);
-    postProcessCtx.fill();
-    postProcessCtx.restore();
-  } else if (features.special === 'portal') {
-    // Glowing portal
-    const px = w * 0.25;
-    const py = h * 0.35;
-    for (let i = 12; i > 0; i--) {
-      const alpha = i / 12 * 0.5;
-      postProcessCtx.fillStyle = `rgba(${(pal.accent >> 16) & 0xff}, ${(pal.accent >> 8) & 0xff}, ${pal.accent & 0xff}, ${alpha})`;
-      postProcessCtx.beginPath();
-      postProcessCtx.ellipse(px, py, i * 6, i * 9, 0, 0, Math.PI * 2);
-      postProcessCtx.fill();
-    }
-  } else if (features.special === 'floating-chunk') {
-    // Random floating debris
-    R = initRandom(hash + 'chunk');
-    postProcessCtx.fillStyle = `rgb(${(pal.building[2] >> 16) & 0xff}, ${(pal.building[2] >> 8) & 0xff}, ${pal.building[2] & 0xff})`;
-    for (let i = 0; i < 5; i++) {
-      const cx = w * 0.65 + (R() - 0.5) * 80;
-      const cy = h * 0.2 + (R() - 0.5) * 60;
-      const cw = 15 + R() * 20;
-      const ch = 15 + R() * 25;
-      postProcessCtx.fillRect(cx, cy, cw, ch);
-    }
-  } else if (features.special === 'time-echo') {
-    // Ghostly duplicate offset
-    postProcessCtx.globalAlpha = 0.15;
-    postProcessCtx.drawImage(postProcessCanvas, 8, -5);
-    postProcessCtx.globalAlpha = 1;
-  }
 }
 
 // =============================================================================
@@ -925,8 +537,6 @@ function buildCity() {
 
   cityGroup.position.set(-groundSize/2 + ROAD_WIDTH, 0, -groundSize/2 + ROAD_WIDTH);
   scene.add(cityGroup);
-
-  needsPostProcess = true;
 }
 
 function buildRoads(pal, groundSize) {
@@ -1541,9 +1151,6 @@ function buildWater(block, pal) {
 // ANIMATION
 // =============================================================================
 
-let lastPostProcessTime = 0;
-const POST_PROCESS_INTERVAL = 200; // ms between post-process updates
-
 function animate() {
   requestAnimationFrame(animate);
 
@@ -1558,14 +1165,6 @@ function animate() {
 
   controls.update();
   renderer.render(scene, camera);
-
-  // Apply post-processing at intervals (not every frame for performance)
-  const now = Date.now();
-  if (needsPostProcess || now - lastPostProcessTime > POST_PROCESS_INTERVAL) {
-    applyPostProcessing();
-    lastPostProcessTime = now;
-    needsPostProcess = false;
-  }
 }
 
 // =============================================================================
@@ -1574,13 +1173,10 @@ function animate() {
 
 function onKeyDown(e) {
   if (e.key === 's' || e.key === 'S') {
-    // Render final frame and save
     renderer.render(scene, camera);
-    applyPostProcessing();
-
     const link = document.createElement('a');
     link.download = 'corrupted-harmony-' + hash.slice(2, 10) + '.png';
-    link.href = postProcessCanvas.toDataURL('image/png');
+    link.href = renderer.domElement.toDataURL('image/png');
     link.click();
   }
   if (e.key === 'r' || e.key === 'R') {

@@ -2,6 +2,19 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.0.2] - 2026-02-02
+
+### Fixed
+- Removed duplicate canvas rendering (was showing two canvases)
+- Removed all post-processing canvas overlay code
+- Fixed canvas sizing issues (was showing only quarter of canvas)
+- Save now uses renderer canvas directly
+
+### Removed
+- All pixel-based post-processing (grain, vignette, etc.)
+- Post-processing canvas overlay
+- Unused noise2D and DITHER_MODES
+
 ## [4.0.1] - 2026-02-02
 
 ### Fixed
