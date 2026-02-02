@@ -1,5 +1,5 @@
 /**
- * CORRUPTED HARMONY v4.1.0
+ * CORRUPTED HARMONY v4.2.0
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
  */
@@ -1080,83 +1080,164 @@ function buildBuildingGeometry(group, b, mainMat, darkerMat, accentMat, pal) {
       break;
 
     case 'voronoi':
-      // Voronoi-paneled facade building
+      // Voronoi-paneled facade building with varied panel types
       const vBaseGeo = new THREE.BoxGeometry(b.w, b.h, b.d);
       const vBase = new THREE.Mesh(vBaseGeo, mainMat);
       vBase.position.y = b.h / 2;
       group.add(vBase);
 
-      // Generate voronoi-like panel pattern on each face
-      const panelDepth = 0.12;
-      const cellCount = rndInt(8, 18);
+      // Panel style for this building (consistent per building)
+      const panelStyle = rndChoice(['hexGrid', 'diamonds', 'triangles', 'circles', 'mixed', 'fins', 'louvers']);
+      const panelDepth = rnd(0.08, 0.25);
 
-      // Generate cell centers
-      const cells = [];
-      for (let i = 0; i < cellCount; i++) {
-        cells.push({
-          x: rnd(-0.45, 0.45),
-          y: rnd(0.05, 0.95)
-        });
-      }
+      // Create facade panels based on style
+      const createFacadePanel = (x, y, z, rotY, faceW, faceH) => {
+        const panelMat = rndBool(0.25) ? accentMat : darkerMat;
+        let panel;
 
-      // Create panels for front and back faces
-      for (const face of ['front', 'back']) {
-        const faceZ = face === 'front' ? b.d / 2 + panelDepth / 2 : -b.d / 2 - panelDepth / 2;
-        const normalZ = face === 'front' ? 1 : -1;
+        switch (panelStyle) {
+          case 'hexGrid':
+            // Hexagonal panels in honeycomb pattern
+            const hexRadius = rnd(0.3, 0.6);
+            const hexGeo = new THREE.CylinderGeometry(hexRadius, hexRadius, panelDepth, 6);
+            panel = new THREE.Mesh(hexGeo, panelMat);
+            panel.rotation.x = Math.PI / 2;
+            panel.rotation.z = Math.PI / 6;
+            break;
 
-        for (const cell of cells) {
-          // Random panel size based on "voronoi" approximation
-          const panelW = rnd(0.4, 1.2);
-          const panelH = rnd(0.6, 2.0);
+          case 'diamonds':
+            // Diamond/rhombus shaped panels
+            const dSize = rnd(0.4, 0.8);
+            const diamondGeo = new THREE.BoxGeometry(dSize, dSize, panelDepth);
+            panel = new THREE.Mesh(diamondGeo, panelMat);
+            panel.rotation.z = Math.PI / 4;
+            break;
 
-          const panelGeo = new THREE.BoxGeometry(panelW, panelH, panelDepth);
-          const panelMat = rndBool(0.3) ? accentMat : darkerMat;
-          const panel = new THREE.Mesh(panelGeo, panelMat);
+          case 'triangles':
+            // Triangular panels pointing various directions
+            const triSize = rnd(0.5, 1.0);
+            const triGeo = new THREE.ConeGeometry(triSize * 0.6, triSize, 3);
+            panel = new THREE.Mesh(triGeo, panelMat);
+            panel.rotation.x = Math.PI / 2;
+            panel.rotation.z = rndChoice([0, Math.PI / 3, Math.PI * 2/3, Math.PI]);
+            break;
 
-          panel.position.set(
-            cell.x * b.w,
-            cell.y * b.h,
-            faceZ
-          );
+          case 'circles':
+            // Circular/disc panels with varying sizes
+            const circRadius = rnd(0.25, 0.55);
+            const circGeo = new THREE.CylinderGeometry(circRadius, circRadius, panelDepth, 16);
+            panel = new THREE.Mesh(circGeo, panelMat);
+            panel.rotation.x = Math.PI / 2;
+            break;
 
-          // Slight rotation for organic feel
-          panel.rotation.z = rnd(-0.1, 0.1);
-          group.add(panel);
+          case 'fins':
+            // Vertical fin elements
+            const finH = rnd(0.8, 2.0);
+            const finGeo = new THREE.BoxGeometry(0.06, finH, rnd(0.3, 0.6));
+            panel = new THREE.Mesh(finGeo, panelMat);
+            panel.rotation.y = rnd(-0.3, 0.3);
+            break;
+
+          case 'louvers':
+            // Horizontal louver slats
+            const louverW = rnd(0.6, 1.2);
+            const louverGeo = new THREE.BoxGeometry(louverW, 0.05, rnd(0.2, 0.4));
+            panel = new THREE.Mesh(louverGeo, panelMat);
+            panel.rotation.x = rnd(0.2, 0.6);
+            break;
+
+          case 'mixed':
+          default:
+            // Mix of shapes
+            const shapeType = rndInt(0, 4);
+            if (shapeType === 0) {
+              const mHexGeo = new THREE.CylinderGeometry(rnd(0.2, 0.45), rnd(0.2, 0.45), panelDepth, 6);
+              panel = new THREE.Mesh(mHexGeo, panelMat);
+              panel.rotation.x = Math.PI / 2;
+            } else if (shapeType === 1) {
+              const mTriGeo = new THREE.ConeGeometry(rnd(0.3, 0.5), rnd(0.4, 0.7), 3);
+              panel = new THREE.Mesh(mTriGeo, panelMat);
+              panel.rotation.x = Math.PI / 2;
+              panel.rotation.z = rnd(0, Math.PI);
+            } else if (shapeType === 2) {
+              const mCircGeo = new THREE.TorusGeometry(rnd(0.2, 0.4), 0.05, 8, 16);
+              panel = new THREE.Mesh(mCircGeo, panelMat);
+            } else if (shapeType === 3) {
+              const mOctGeo = new THREE.CylinderGeometry(rnd(0.25, 0.4), rnd(0.25, 0.4), panelDepth, 8);
+              panel = new THREE.Mesh(mOctGeo, panelMat);
+              panel.rotation.x = Math.PI / 2;
+            } else {
+              const starGeo = new THREE.ConeGeometry(rnd(0.2, 0.35), rnd(0.3, 0.5), 5);
+              panel = new THREE.Mesh(starGeo, panelMat);
+              panel.rotation.x = Math.PI / 2;
+            }
+            break;
+        }
+
+        panel.position.set(x, y, z);
+        panel.rotation.y += rotY;
+        return panel;
+      };
+
+      // Generate panels on front and back faces
+      const vCellCount = rndInt(12, 28);
+      for (let i = 0; i < vCellCount; i++) {
+        const cellX = rnd(-0.42, 0.42) * b.w;
+        const cellY = rnd(0.08, 0.92) * b.h;
+
+        // Front face
+        const frontPanel = createFacadePanel(cellX, cellY, b.d / 2 + panelDepth / 2, 0, b.w, b.h);
+        group.add(frontPanel);
+
+        // Back face (fewer panels)
+        if (rndBool(0.6)) {
+          const backPanel = createFacadePanel(cellX * rnd(0.8, 1.2), cellY * rnd(0.9, 1.1), -b.d / 2 - panelDepth / 2, Math.PI, b.w, b.h);
+          group.add(backPanel);
         }
       }
 
-      // Create panels for side faces
-      for (const face of ['left', 'right']) {
-        const faceX = face === 'right' ? b.w / 2 + panelDepth / 2 : -b.w / 2 - panelDepth / 2;
+      // Side faces
+      for (let i = 0; i < vCellCount / 2; i++) {
+        const cellZ = rnd(-0.4, 0.4) * b.d;
+        const cellY = rnd(0.1, 0.9) * b.h;
 
-        for (let i = 0; i < cellCount / 2; i++) {
-          const panelW = rnd(0.4, 1.0);
-          const panelH = rnd(0.6, 1.8);
+        // Right face
+        const rightPanel = createFacadePanel(b.w / 2 + panelDepth / 2, cellY, cellZ, Math.PI / 2, b.d, b.h);
+        group.add(rightPanel);
 
-          const panelGeo = new THREE.BoxGeometry(panelDepth, panelH, panelW);
-          const panelMat = rndBool(0.3) ? accentMat : darkerMat;
-          const panel = new THREE.Mesh(panelGeo, panelMat);
-
-          panel.position.set(
-            faceX,
-            rnd(0.1, 0.9) * b.h,
-            rnd(-0.4, 0.4) * b.d
-          );
-          panel.rotation.x = rnd(-0.1, 0.1);
-          group.add(panel);
+        // Left face
+        if (rndBool(0.7)) {
+          const leftPanel = createFacadePanel(-b.w / 2 - panelDepth / 2, cellY * rnd(0.9, 1.1), cellZ * rnd(0.8, 1.2), -Math.PI / 2, b.d, b.h);
+          group.add(leftPanel);
         }
       }
 
-      // Structural frame elements
-      const framePositions = [
+      // Diagonal bracing/structural lines
+      const braceCount = rndInt(2, 5);
+      const braceMat = new THREE.LineBasicMaterial({ color: darkerMat.color || 0x333333 });
+      for (let i = 0; i < braceCount; i++) {
+        const points = [];
+        const startY = rnd(0.1, 0.4) * b.h;
+        const endY = rnd(0.6, 0.95) * b.h;
+        const startX = rnd(-0.4, 0.4) * b.w;
+        const endX = rnd(-0.4, 0.4) * b.w;
+        points.push(new THREE.Vector3(startX, startY, b.d / 2 + 0.02));
+        points.push(new THREE.Vector3(endX, endY, b.d / 2 + 0.02));
+        const braceGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const brace = new THREE.Line(braceGeo, braceMat);
+        group.add(brace);
+      }
+
+      // Corner mullions
+      const mullionPositions = [
         [-b.w/2, 0, -b.d/2], [b.w/2, 0, -b.d/2],
         [-b.w/2, 0, b.d/2], [b.w/2, 0, b.d/2]
       ];
-      for (const [fx, fy, fz] of framePositions) {
-        const frameGeo = new THREE.BoxGeometry(0.2, b.h, 0.2);
-        const frame = new THREE.Mesh(frameGeo, darkerMat);
-        frame.position.set(fx, b.h / 2, fz);
-        group.add(frame);
+      for (const [mx, my, mz] of mullionPositions) {
+        const mullionGeo = new THREE.CylinderGeometry(0.08, 0.1, b.h, 8);
+        const mullion = new THREE.Mesh(mullionGeo, darkerMat);
+        mullion.position.set(mx, b.h / 2, mz);
+        group.add(mullion);
       }
 
       // Cantilevered top
@@ -1236,35 +1317,196 @@ function addWindows(group, b, pal) {
   if (['retro', 'organic', 'parametric', 'twisted', 'voronoi'].includes(b.style)) return;
 
   const isNight = features.timeOfDay === 'night';
-  const windowColor = isNight ? pal.accent : pal.window;
-  const litColor = pal.windowLit;
+  const isDusk = features.timeOfDay === 'dusk';
 
-  const winW = 0.38;
-  const winH = 0.6;
-  const spacingH = 1.9;
-  const spacingW = 1.25;
+  // Window style for this building (consistent per building)
+  const windowStyle = rndChoice(['grid', 'horizontal', 'vertical', 'scattered', 'floorToCeiling', 'arched']);
+
+  // Base dimensions vary by style
+  let winW, winH, spacingH, spacingW;
+  switch (windowStyle) {
+    case 'floorToCeiling':
+      winW = rnd(0.6, 1.0);
+      winH = rnd(1.4, 2.2);
+      spacingH = winH + 0.3;
+      spacingW = winW + 0.15;
+      break;
+    case 'horizontal':
+      winW = rnd(0.8, 1.5);
+      winH = rnd(0.35, 0.5);
+      spacingH = rnd(1.0, 1.4);
+      spacingW = winW + 0.1;
+      break;
+    case 'vertical':
+      winW = rnd(0.25, 0.4);
+      winH = rnd(1.0, 1.6);
+      spacingH = winH + 0.4;
+      spacingW = rnd(0.6, 0.9);
+      break;
+    case 'arched':
+      winW = rnd(0.35, 0.55);
+      winH = rnd(0.7, 1.1);
+      spacingH = rnd(1.6, 2.2);
+      spacingW = rnd(1.0, 1.4);
+      break;
+    case 'scattered':
+      winW = rnd(0.3, 0.5);
+      winH = rnd(0.4, 0.7);
+      spacingH = rnd(1.2, 2.0);
+      spacingW = rnd(0.8, 1.3);
+      break;
+    default: // grid
+      winW = rnd(0.32, 0.45);
+      winH = rnd(0.5, 0.7);
+      spacingH = rnd(1.6, 2.2);
+      spacingW = rnd(1.0, 1.4);
+  }
+
   const margin = 0.45;
-
   const rows = Math.max(1, Math.floor((b.h - margin * 2) / spacingH));
   const colsW = Math.max(1, Math.floor((b.w - margin * 2) / spacingW));
   const colsD = Math.max(1, Math.floor((b.d - margin * 2) / spacingW));
 
+  // Light color variations
+  const lightColors = [
+    0xfffaf0, // warm white
+    0xfff8dc, // cornsilk
+    0xffe4b5, // moccasin (warm)
+    0xe6e6fa, // lavender (cool)
+    0xb0e0e6, // powder blue
+    0xffefd5, // papaya whip
+    0xffb347, // pastel orange
+    0x87ceeb, // sky blue
+  ];
+
   const createWindow = (x, y, z, rotY) => {
-    const isLit = isNight ? rndBool(0.75) : rndBool(0.12);
+    const windowGroup = new THREE.Group();
+
+    // Determine if window is lit
+    const litChance = isNight ? 0.72 : isDusk ? 0.4 : 0.08;
+    const isLit = rndBool(litChance);
+
+    // Pick light color
+    const lightColor = isLit ? rndChoice(lightColors) : pal.window;
+
     const winMat = new THREE.MeshBasicMaterial({
-      color: isLit ? litColor : windowColor,
+      color: isLit ? lightColor : pal.window,
       transparent: !isLit,
-      opacity: isLit ? 1 : 0.75
+      opacity: isLit ? 1 : 0.6
     });
-    const winGeo = new THREE.PlaneGeometry(winW, winH);
-    const win = new THREE.Mesh(winGeo, winMat);
-    win.position.set(x, y, z);
-    win.rotation.y = rotY;
-    return win;
+
+    let winGeo;
+
+    // Create window geometry based on style
+    if (windowStyle === 'arched') {
+      // Arched window: rectangle with semicircle top
+      const rectGeo = new THREE.PlaneGeometry(winW, winH * 0.7);
+      const rect = new THREE.Mesh(rectGeo, winMat);
+      rect.position.y = -winH * 0.15;
+      windowGroup.add(rect);
+
+      // Arch top
+      const archGeo = new THREE.CircleGeometry(winW / 2, 12, 0, Math.PI);
+      const arch = new THREE.Mesh(archGeo, winMat);
+      arch.position.y = winH * 0.2;
+      windowGroup.add(arch);
+
+    } else if (windowStyle === 'floorToCeiling' && rndBool(0.4)) {
+      // Some floor-to-ceiling have mullions
+      winGeo = new THREE.PlaneGeometry(winW, winH);
+      const win = new THREE.Mesh(winGeo, winMat);
+      windowGroup.add(win);
+
+      // Add frame/mullion
+      const frameMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
+      const hFrame = new THREE.PlaneGeometry(winW + 0.04, 0.03);
+      const vFrame = new THREE.PlaneGeometry(0.03, winH + 0.04);
+
+      const topFrame = new THREE.Mesh(hFrame, frameMat);
+      topFrame.position.y = winH / 2;
+      topFrame.position.z = 0.001;
+      windowGroup.add(topFrame);
+
+      const botFrame = new THREE.Mesh(hFrame, frameMat);
+      botFrame.position.y = -winH / 2;
+      botFrame.position.z = 0.001;
+      windowGroup.add(botFrame);
+
+      // Vertical mullion
+      if (rndBool(0.5)) {
+        const midFrame = new THREE.Mesh(vFrame, frameMat);
+        midFrame.position.z = 0.001;
+        windowGroup.add(midFrame);
+      }
+
+    } else if (windowStyle === 'horizontal' && rndBool(0.3)) {
+      // Horizontal bands sometimes have dividers
+      winGeo = new THREE.PlaneGeometry(winW, winH);
+      const win = new THREE.Mesh(winGeo, winMat);
+      windowGroup.add(win);
+
+      const divMat = new THREE.MeshBasicMaterial({ color: 0x444444 });
+      const divCount = rndInt(2, 4);
+      for (let d = 1; d < divCount; d++) {
+        const divGeo = new THREE.PlaneGeometry(0.02, winH);
+        const div = new THREE.Mesh(divGeo, divMat);
+        div.position.x = -winW/2 + (winW / divCount) * d;
+        div.position.z = 0.001;
+        windowGroup.add(div);
+      }
+
+    } else {
+      // Standard rectangular window
+      winGeo = new THREE.PlaneGeometry(winW, winH);
+      const win = new THREE.Mesh(winGeo, winMat);
+      windowGroup.add(win);
+
+      // Occasionally add small details
+      if (rndBool(0.15) && isLit) {
+        // Curtain/blind effect - partially covered
+        const blindH = winH * rnd(0.2, 0.5);
+        const blindGeo = new THREE.PlaneGeometry(winW * 0.95, blindH);
+        const blindMat = new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.7 });
+        const blind = new THREE.Mesh(blindGeo, blindMat);
+        blind.position.y = winH/2 - blindH/2;
+        blind.position.z = 0.002;
+        windowGroup.add(blind);
+      }
+    }
+
+    // Add small AC unit occasionally (for residential feel)
+    if (rndBool(0.06) && b.style !== 'modernist' && b.style !== 'deco') {
+      const acGeo = new THREE.BoxGeometry(0.4, 0.25, 0.2);
+      const acMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+      const ac = new THREE.Mesh(acGeo, acMat);
+      ac.position.y = -winH/2 - 0.15;
+      ac.position.z = 0.1;
+      windowGroup.add(ac);
+    }
+
+    windowGroup.position.set(x, y, z);
+    windowGroup.rotation.y = rotY;
+    return windowGroup;
   };
 
   const startY = margin + winH / 2;
   const endY = b.h - margin;
+
+  // Scattered style places windows more randomly
+  if (windowStyle === 'scattered') {
+    const totalWindows = rndInt(8, 20);
+    for (let i = 0; i < totalWindows; i++) {
+      const x = rnd(-b.w/2 + margin, b.w/2 - margin);
+      const y = rnd(startY, endY);
+      const face = rndInt(0, 3);
+
+      if (face === 0) group.add(createWindow(x, y, b.d/2 + 0.01, 0));
+      else if (face === 1) group.add(createWindow(x, y, -b.d/2 - 0.01, Math.PI));
+      else if (face === 2) group.add(createWindow(b.w/2 + 0.01, y, rnd(-b.d/2 + margin, b.d/2 - margin), Math.PI/2));
+      else group.add(createWindow(-b.w/2 - 0.01, y, rnd(-b.d/2 + margin, b.d/2 - margin), -Math.PI/2));
+    }
+    return;
+  }
 
   for (let row = 0; row < rows; row++) {
     const y = startY + row * spacingH;
@@ -1272,7 +1514,7 @@ function addWindows(group, b, pal) {
 
     // Front
     for (let col = 0; col < colsW; col++) {
-      if (rndBool(0.18)) continue;
+      if (rndBool(0.15)) continue;
       const x = -b.w/2 + margin + col * spacingW + spacingW/2;
       if (Math.abs(x) > b.w/2 - margin) continue;
       group.add(createWindow(x, y, b.d/2 + 0.01, 0));
@@ -1280,7 +1522,7 @@ function addWindows(group, b, pal) {
 
     // Back
     for (let col = 0; col < colsW; col++) {
-      if (rndBool(0.18)) continue;
+      if (rndBool(0.15)) continue;
       const x = -b.w/2 + margin + col * spacingW + spacingW/2;
       if (Math.abs(x) > b.w/2 - margin) continue;
       group.add(createWindow(x, y, -b.d/2 - 0.01, Math.PI));
@@ -1288,7 +1530,7 @@ function addWindows(group, b, pal) {
 
     // Right
     for (let col = 0; col < colsD; col++) {
-      if (rndBool(0.18)) continue;
+      if (rndBool(0.15)) continue;
       const z = -b.d/2 + margin + col * spacingW + spacingW/2;
       if (Math.abs(z) > b.d/2 - margin) continue;
       group.add(createWindow(b.w/2 + 0.01, y, z, Math.PI/2));

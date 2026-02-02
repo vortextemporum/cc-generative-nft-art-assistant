@@ -958,6 +958,7 @@ function setup() {
   generateFeatures();
 
   canvas = createCanvas(700, 700);
+  canvas.parent('sketch-container');
   pixelDensity(1);
   noLoop();
 

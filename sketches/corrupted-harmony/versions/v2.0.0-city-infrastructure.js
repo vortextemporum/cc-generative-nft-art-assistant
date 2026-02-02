@@ -940,7 +940,8 @@ function drawBoat(pg, b, pal) {
 let mainBuffer;
 
 function setup() {
-  createCanvas(2000, 2000);
+  const canvas = createCanvas(2000, 2000);
+  canvas.parent('sketch-container');
   pixelDensity(1);
   noLoop();
 
