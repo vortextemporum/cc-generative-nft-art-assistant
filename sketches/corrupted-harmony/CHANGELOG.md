@@ -2,6 +2,20 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.0.1] - 2026-02-02
+
+### Fixed
+- Buildings now properly fit within their plot parcels
+- Removed heavy global post-processing that caused slowdown and ugly appearance
+- Restored per-building shader effects (dither, glitch, corrupt, liquify, stencil)
+- Re-enabled antialiasing for cleaner 3D look
+- Increased block size for better spacing
+
+### Changed
+- Post-processing now only applies subtle film grain and vignette
+- Effects are applied per-building via shaders (much faster)
+- Post-process interval increased to 200ms for performance
+
 ## [4.0.0] - 2026-02-02
 
 ### Added

@@ -1,7 +1,7 @@
 /**
- * CORRUPTED HARMONY v4.0.0
- * Artsy 3D isometric city with pixel-based post-processing effects
- * Combines three.js 3D rendering with v1.0.0's handcrafted pixel aesthetics
+ * CORRUPTED HARMONY v4.0.1
+ * Artsy 3D isometric city with per-building shader effects
+ * Three.js rendering with dither/glitch/corrupt/liquify effects per building
  */
 
 // =============================================================================
@@ -63,9 +63,9 @@ function noise2D(x, y) {
 
 let features = {};
 const GRID_SIZE = 4;
-const BLOCK_SIZE = 10;
+const BLOCK_SIZE = 12;
 const ROAD_WIDTH = 2;
-const BUILDING_SCALE = 0.8;
+const BUILDING_MARGIN = 0.3; // Gap between buildings and plot edges
 
 const ARCH_STYLES = ['brutalist', 'deco', 'modernist', 'gothic', 'retro', 'geometric', 'organic'];
 const EFFECT_TYPES = ['clean', 'dither', 'glitch', 'corrupt', 'liquify', 'stencil'];
@@ -163,6 +163,262 @@ function generateFeatures() {
 }
 
 // =============================================================================
+// PER-BUILDING SHADER EFFECTS
+// =============================================================================
+
+function createDitherMaterial(baseColor, intensity = 0.6) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      baseColor: { value: new THREE.Color(baseColor) },
+      intensity: { value: intensity }
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 baseColor;
+      uniform float intensity;
+      varying vec3 vNormal;
+
+      float bayer(vec2 coord) {
+        vec2 c = floor(mod(coord, 4.0));
+        int i = int(c.x) + int(c.y) * 4;
+        float m[16];
+        m[0]=0.0; m[1]=8.0; m[2]=2.0; m[3]=10.0;
+        m[4]=12.0; m[5]=4.0; m[6]=14.0; m[7]=6.0;
+        m[8]=3.0; m[9]=11.0; m[10]=1.0; m[11]=9.0;
+        m[12]=15.0; m[13]=7.0; m[14]=13.0; m[15]=5.0;
+        for(int j=0; j<16; j++) { if(j==i) return m[j] / 16.0; }
+        return 0.0;
+      }
+
+      void main() {
+        vec3 light = normalize(vec3(1.0, 1.0, 0.5));
+        float diff = max(dot(vNormal, light), 0.3);
+        vec3 color = baseColor * diff;
+        float threshold = bayer(gl_FragCoord.xy);
+        float lum = dot(color, vec3(0.299, 0.587, 0.114));
+        vec3 dithered = vec3(step(threshold * intensity, lum));
+        gl_FragColor = vec4(mix(color, dithered * baseColor * 1.3, intensity * 0.6), 1.0);
+      }
+    `
+  });
+}
+
+function createGlitchMaterial(baseColor, intensity = 0.5, seed = 0.0) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      baseColor: { value: new THREE.Color(baseColor) },
+      intensity: { value: intensity },
+      seed: { value: seed },
+      time: { value: 0 }
+    },
+    vertexShader: `
+      uniform float intensity;
+      uniform float seed;
+      uniform float time;
+      varying vec3 vNormal;
+      varying vec3 vPos;
+
+      float rand(vec2 co) {
+        return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453);
+      }
+
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vPos = position;
+        vec3 pos = position;
+        float glitchY = floor(pos.y * 3.0 + seed);
+        if (rand(vec2(glitchY, seed + floor(time * 2.0))) > 0.93) {
+          pos.x += (rand(vec2(glitchY + 1.0, seed)) - 0.5) * intensity * 1.5;
+        }
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 baseColor;
+      uniform float intensity;
+      uniform float seed;
+      uniform float time;
+      varying vec3 vNormal;
+      varying vec3 vPos;
+
+      float rand(vec2 co) {
+        return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453);
+      }
+
+      void main() {
+        vec3 light = normalize(vec3(1.0, 1.0, 0.5));
+        float diff = max(dot(vNormal, light), 0.3);
+        vec3 color = baseColor * diff;
+
+        float shift = intensity * 0.12;
+        float r = color.r * (1.0 + shift * sin(vPos.y * 8.0 + seed));
+        float b = color.b * (1.0 - shift * sin(vPos.y * 8.0 + seed + 1.0));
+        float scanline = sin(gl_FragCoord.y * 2.0) * 0.04 * intensity;
+
+        vec2 block = floor(gl_FragCoord.xy / 6.0);
+        if (rand(block + seed + floor(time)) > 0.97) {
+          r = 1.0 - r; color.g = 1.0 - color.g; b = 1.0 - b;
+        }
+        gl_FragColor = vec4(r - scanline, color.g - scanline, b - scanline, 1.0);
+      }
+    `
+  });
+}
+
+function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      baseColor: { value: new THREE.Color(baseColor) },
+      intensity: { value: intensity },
+      seed: { value: seed }
+    },
+    vertexShader: `
+      uniform float intensity;
+      uniform float seed;
+      varying vec3 vNormal;
+
+      float rand(vec2 co) {
+        return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453);
+      }
+
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec3 pos = position;
+        float blockY = floor(pos.y * 2.0 + seed);
+        if (rand(vec2(blockY, seed)) > 0.88) {
+          pos.xz += (vec2(rand(vec2(blockY, seed + 1.0)), rand(vec2(blockY, seed + 2.0))) - 0.5) * intensity * 0.4;
+        }
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 baseColor;
+      uniform float intensity;
+      uniform float seed;
+      varying vec3 vNormal;
+
+      float rand(vec2 co) {
+        return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453);
+      }
+
+      void main() {
+        vec3 light = normalize(vec3(1.0, 1.0, 0.5));
+        float diff = max(dot(vNormal, light), 0.3);
+        vec3 color = baseColor * diff;
+
+        vec2 block = floor(gl_FragCoord.xy / 6.0);
+        float blockRnd = rand(block + seed);
+        if (blockRnd > 1.0 - intensity * 0.35) {
+          float mode = floor(rand(block + seed + 1.0) * 4.0);
+          if (mode < 1.0) color.r = fract(color.r + 0.5);
+          else if (mode < 2.0) color = 1.0 - color;
+          else if (mode < 3.0) color = vec3(step(0.5, rand(block + seed + 2.0)));
+          else color = color.bgr;
+        }
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `
+  });
+}
+
+function createLiquifyMaterial(baseColor, intensity = 0.5, seed = 0.0) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      baseColor: { value: new THREE.Color(baseColor) },
+      intensity: { value: intensity },
+      seed: { value: seed },
+      time: { value: 0 }
+    },
+    vertexShader: `
+      uniform float intensity;
+      uniform float seed;
+      uniform float time;
+      varying vec3 vNormal;
+      varying float vDrip;
+
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec3 pos = position;
+        float wave = sin(pos.y * 2.0 + seed * 10.0 + time * 0.5) * intensity * 0.25;
+        pos.x += wave;
+        pos.z += cos(pos.y * 1.5 + seed * 10.0) * intensity * 0.15;
+        vDrip = 0.0;
+        if (pos.y < 1.0) {
+          vDrip = (1.0 - pos.y) * intensity * 0.4;
+          pos.y -= vDrip * abs(sin(pos.x * 3.0 + seed));
+        }
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 baseColor;
+      uniform float intensity;
+      varying vec3 vNormal;
+      varying float vDrip;
+
+      void main() {
+        vec3 light = normalize(vec3(1.0, 1.0, 0.5));
+        float diff = max(dot(vNormal, light), 0.3);
+        vec3 color = baseColor * diff;
+        color = mix(color, color * 0.75, vDrip);
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `
+  });
+}
+
+function createStencilMaterial(baseColor, levels = 4) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      baseColor: { value: new THREE.Color(baseColor) },
+      levels: { value: levels }
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 baseColor;
+      uniform float levels;
+      varying vec3 vNormal;
+
+      void main() {
+        vec3 light = normalize(vec3(1.0, 1.0, 0.5));
+        float diff = max(dot(vNormal, light), 0.3);
+        vec3 color = baseColor * diff;
+        float step = 1.0 / (levels - 1.0);
+        color = floor(color / step + 0.5) * step;
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `
+  });
+}
+
+function createEffectMaterial(effect, baseColor, seed, rarity) {
+  const intensity = rarity === 'legendary' ? 0.8 :
+                    rarity === 'rare' ? 0.6 :
+                    rarity === 'uncommon' ? 0.4 : 0.25;
+
+  switch (effect) {
+    case 'dither': return createDitherMaterial(baseColor, intensity);
+    case 'glitch': return createGlitchMaterial(baseColor, intensity, seed);
+    case 'corrupt': return createCorruptMaterial(baseColor, intensity, seed);
+    case 'liquify': return createLiquifyMaterial(baseColor, intensity, seed);
+    case 'stencil': return createStencilMaterial(baseColor, rndInt(3, 5));
+    default: return new THREE.MeshLambertMaterial({ color: baseColor });
+  }
+}
+
+// =============================================================================
 // THREE.JS SETUP
 // =============================================================================
 
@@ -171,6 +427,7 @@ let cityGroup;
 let clock;
 let postProcessCanvas, postProcessCtx;
 let needsPostProcess = true;
+let shaderMaterials = [];
 
 function init() {
   const container = document.getElementById('sketch-container');
@@ -195,9 +452,9 @@ function init() {
   camera.lookAt(0, 0, 0);
 
   // Renderer
-  renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(width, height);
-  renderer.setPixelRatio(1); // Keep at 1 for pixel effects
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   container.innerHTML = '';
   container.appendChild(renderer.domElement);
 
@@ -551,45 +808,10 @@ function applyPostProcessing() {
   postProcessCtx.drawImage(renderer.domElement, 0, 0);
   const imageData = postProcessCtx.getImageData(0, 0, w, h);
 
-  R = initRandom(hash);
-  // Skip some random calls to sync
-  for (let i = 0; i < 30; i++) R();
+  // Only subtle effects - per-building effects are done via shaders
+  applyFilmGrain(imageData, 0.04);
+  applyVignette(imageData, 0.25);
 
-  const effectIntensity = features.rarity === 'legendary' ? 0.85 :
-                          features.rarity === 'rare' ? 0.65 :
-                          features.rarity === 'uncommon' ? 0.45 : 0.3;
-
-  // Apply main effect
-  switch (features.dominantEffect) {
-    case 'dither':
-      const ditherMode = rndChoice(DITHER_MODES);
-      applyDitherEffect(imageData, ditherMode, effectIntensity);
-      break;
-    case 'liquify':
-      applyLiquifyEffect(imageData, effectIntensity);
-      break;
-    case 'glitch':
-      applyGlitchEffect(imageData, effectIntensity);
-      break;
-    case 'corrupt':
-      applyCorruptEffect(imageData, effectIntensity);
-      break;
-    case 'stencil':
-      applyStencilEffect(imageData, rndInt(3, 5));
-      break;
-    case 'clean':
-    default:
-      // No effect, but add subtle enhancement
-      break;
-  }
-
-  // Always add film grain for artsy feel
-  applyFilmGrain(imageData, 0.08);
-
-  // Add vignette
-  applyVignette(imageData, 0.35);
-
-  // Draw special features
   postProcessCtx.putImageData(imageData, 0, 0);
   drawSpecialFeatures();
 }
@@ -671,6 +893,7 @@ function buildCity() {
     scene.remove(cityGroup);
   }
 
+  shaderMaterials = [];
   cityGroup = new THREE.Group();
 
   // Sky gradient background
@@ -773,13 +996,21 @@ function generateCityData() {
           const weirdness = generateWeirdness();
           const seed = rnd(0, 1000);
 
+          // Building fits within plot with margin on all sides
+          const bw = Math.max(1, sub.w - BUILDING_MARGIN * 2);
+          const bd = Math.max(1, sub.d - BUILDING_MARGIN * 2);
+
+          // Assign effect: 60% dominant, 40% random
+          const effect = rndBool(0.6) ? features.dominantEffect : rndChoice(EFFECT_TYPES);
+
           block.buildings.push({
-            x: blockX + sub.x + sub.w/2,
-            z: blockZ + sub.z + sub.d/2,
-            w: (sub.w - 0.5) * BUILDING_SCALE,
-            d: (sub.d - 0.5) * BUILDING_SCALE,
+            x: blockX + sub.x + sub.w / 2,
+            z: blockZ + sub.z + sub.d / 2,
+            w: bw,
+            d: bd,
             h: height,
             style,
+            effect,
             weirdness,
             seed
           });
@@ -875,11 +1106,16 @@ function buildBuilding(b, pal) {
   const colorIndex = rndInt(0, 4);
   const mainColor = pal.building[colorIndex];
   const darkerColor = pal.building[Math.max(0, colorIndex - 1)];
-  const lighterColor = pal.building[Math.min(4, colorIndex + 1)];
 
-  const mainMat = new THREE.MeshLambertMaterial({ color: mainColor });
-  const darkerMat = new THREE.MeshLambertMaterial({ color: darkerColor });
-  const accentMat = new THREE.MeshLambertMaterial({ color: pal.accent });
+  // Use effect material for this building
+  const mainMat = createEffectMaterial(b.effect, mainColor, b.seed, features.rarity);
+  const darkerMat = createEffectMaterial(b.effect, darkerColor, b.seed + 10, features.rarity);
+  const accentMat = createEffectMaterial(b.effect, pal.accent, b.seed + 20, features.rarity);
+
+  // Track shader materials for time updates
+  if (mainMat.uniforms) shaderMaterials.push(mainMat);
+  if (darkerMat.uniforms) shaderMaterials.push(darkerMat);
+  if (accentMat.uniforms) shaderMaterials.push(accentMat);
 
   // Check for echo weirdness first
   for (const w of b.weirdness) {
@@ -1306,10 +1542,19 @@ function buildWater(block, pal) {
 // =============================================================================
 
 let lastPostProcessTime = 0;
-const POST_PROCESS_INTERVAL = 100; // ms between post-process updates
+const POST_PROCESS_INTERVAL = 200; // ms between post-process updates
 
 function animate() {
   requestAnimationFrame(animate);
+
+  const elapsed = clock.getElapsedTime();
+
+  // Update shader time uniforms
+  for (const mat of shaderMaterials) {
+    if (mat.uniforms && mat.uniforms.time) {
+      mat.uniforms.time.value = elapsed;
+    }
+  }
 
   controls.update();
   renderer.render(scene, camera);
