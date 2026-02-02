@@ -468,18 +468,37 @@
         rotationShortcut.style.display = version.framework === 'three.js' ? 'flex' : 'none';
       }
 
-      // Load libraries
-      try {
-        await loadScripts(version.libs);
-      } catch (e) {
-        console.error('Failed to load libraries:', e);
-        return;
+      // For p5.js: load sketch FIRST (defines setup/draw), THEN p5.js (auto-runs them)
+      // For three.js: load libraries first, then sketch
+      if (version.framework === 'p5.js') {
+        // Load sketch first to define setup() and draw()
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = version.file;
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
+        // Then load p5.js which will find and auto-run setup()
+        try {
+          await loadScripts(version.libs);
+        } catch (e) {
+          console.error('Failed to load p5.js:', e);
+          return;
+        }
+      } else {
+        // three.js: load libraries first
+        try {
+          await loadScripts(version.libs);
+        } catch (e) {
+          console.error('Failed to load libraries:', e);
+          return;
+        }
+        // Then load sketch
+        const script = document.createElement('script');
+        script.src = version.file;
+        document.body.appendChild(script);
       }
-
-      // Load sketch
-      const script = document.createElement('script');
-      script.src = version.file;
-      document.body.appendChild(script);
 
       // Wait for sketch to initialize
       waitForSketch();
