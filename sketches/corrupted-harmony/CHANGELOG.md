@@ -2,6 +2,33 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.3.0] - 2026-02-02
+
+### Changed
+- **Complete rewrite of corrupt shader** with 6 noise algorithms replacing the old blocky pixel effect:
+  - **voronoi**: Cellular patterns with colored cell edges and inverted centers
+  - **perlin**: Smooth gradient noise with organic color shifts
+  - **worley**: Crack-like patterns along cell boundaries (F2-F1 distance)
+  - **value**: Smooth interpolated noise with stepped color bands
+  - **ridged**: Sharp glowing veins using absolute value of noise
+  - **turbulence**: Layered FBM noise for chaotic distortion
+- Noise patterns now use world-space coordinates (consistent across geometry, moves with camera)
+- Larger scale patterns instead of tiny 6x6 pixel blocks
+- Each building randomly assigned a noise type for variety
+
+### Added
+- NOISE_TYPES constant for corrupt shader selection
+- Scale uniform for controlling pattern size (0.008-0.025)
+- Height-based noise coordinate variation for vertical interest
+
+## [4.2.0] - 2026-02-02
+
+### Added
+- Enhanced voronoi building style with 7 distinct panel types:
+  - hexGrid, diamonds, triangles, circles, fins, louvers, mixed
+- Diagonal structural bracing lines on voronoi facades
+- Corner mullions on voronoi buildings
+
 ## [4.1.0] - 2026-02-02
 
 ### Added

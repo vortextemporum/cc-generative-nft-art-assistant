@@ -319,7 +319,8 @@
           <div class="version-selector">
             <select id="version-select">
               <optgroup label="3D Versions (three.js)">
-                <option value="current">v4.1.0 - Parametric Design (Current)</option>
+                <option value="current">v4.3.0 - Noise Algorithms (Current)</option>
+                <option value="v4.2.0">v4.2.0 - Voronoi Panels</option>
                 <option value="v4.1.0">v4.1.0 - Parametric Design</option>
                 <option value="v3.2.0">v3.2.0 - Per-Building Shaders</option>
               </optgroup>
@@ -385,7 +386,16 @@
           'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
           'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
         ],
-        description: 'v4.1.0 - Parametric Design + Alignment Fix'
+        description: 'v4.3.0 - Enhanced Noise Algorithms'
+      },
+      'v4.2.0': {
+        framework: 'three.js',
+        file: 'versions/v4.2.0-voronoi-panels.js',
+        libs: [
+          'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+          'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
+        ],
+        description: 'v4.2.0 - Voronoi Panels & Window Styles'
       },
       'v4.1.0': {
         framework: 'three.js',

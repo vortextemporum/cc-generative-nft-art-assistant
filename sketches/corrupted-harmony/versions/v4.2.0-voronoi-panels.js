@@ -1,8 +1,7 @@
 /**
- * CORRUPTED HARMONY v4.3.0
+ * CORRUPTED HARMONY v4.2.0
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
- * Enhanced noise algorithms: voronoi, perlin, worley, value noise
  */
 
 // =============================================================================
@@ -265,28 +264,17 @@ function createGlitchMaterial(baseColor, intensity = 0.5, seed = 0.0) {
   });
 }
 
-// Noise types for corrupt shader
-const NOISE_TYPES = ['voronoi', 'perlin', 'worley', 'value', 'ridged', 'turbulence'];
-
-function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0, noiseType = null) {
-  // Pick a noise type if not specified
-  const noise = noiseType || rndChoice(NOISE_TYPES);
-
+function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0) {
   return new THREE.ShaderMaterial({
     uniforms: {
       baseColor: { value: new THREE.Color(baseColor) },
       intensity: { value: intensity },
-      seed: { value: seed },
-      noiseType: { value: NOISE_TYPES.indexOf(noise) },
-      time: { value: 0 },
-      scale: { value: rnd(0.008, 0.025) } // Noise scale - larger = bigger patterns
+      seed: { value: seed }
     },
     vertexShader: `
       uniform float intensity;
       uniform float seed;
       varying vec3 vNormal;
-      varying vec2 vUv;
-      varying vec3 vWorldPos;
 
       float rand(vec2 co) {
         return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453);
@@ -294,9 +282,6 @@ function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0, noiseType
 
       void main() {
         vNormal = normalize(normalMatrix * normal);
-        vUv = uv;
-        vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
-
         vec3 pos = position;
         float blockY = floor(pos.y * 2.0 + seed);
         if (rand(vec2(blockY, seed)) > 0.88) {
@@ -309,140 +294,10 @@ function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0, noiseType
       uniform vec3 baseColor;
       uniform float intensity;
       uniform float seed;
-      uniform int noiseType;
-      uniform float time;
-      uniform float scale;
       varying vec3 vNormal;
-      varying vec2 vUv;
-      varying vec3 vWorldPos;
 
-      // Basic hash functions
-      float hash(vec2 p) {
-        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-      }
-
-      vec2 hash2(vec2 p) {
-        return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)))) * 43758.5453);
-      }
-
-      vec3 hash3(vec2 p) {
-        vec3 q = vec3(dot(p, vec2(127.1, 311.7)),
-                      dot(p, vec2(269.5, 183.3)),
-                      dot(p, vec2(419.2, 371.9)));
-        return fract(sin(q) * 43758.5453);
-      }
-
-      // Value noise - smooth interpolated random
-      float valueNoise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f); // Smoothstep
-
-        float a = hash(i);
-        float b = hash(i + vec2(1.0, 0.0));
-        float c = hash(i + vec2(0.0, 1.0));
-        float d = hash(i + vec2(1.0, 1.0));
-
-        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-      }
-
-      // Perlin-style gradient noise
-      vec2 grad(vec2 p) {
-        float a = hash(p) * 6.2831853;
-        return vec2(cos(a), sin(a));
-      }
-
-      float perlinNoise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        vec2 u = f * f * (3.0 - 2.0 * f);
-
-        float a = dot(grad(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0));
-        float b = dot(grad(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0));
-        float c = dot(grad(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0));
-        float d = dot(grad(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0));
-
-        return mix(mix(a, b, u.x), mix(c, d, u.x), u.y) * 0.5 + 0.5;
-      }
-
-      // Voronoi noise - cellular pattern with smooth cells
-      float voronoiNoise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-
-        float minDist = 1.0;
-
-        for (int y = -1; y <= 1; y++) {
-          for (int x = -1; x <= 1; x++) {
-            vec2 neighbor = vec2(float(x), float(y));
-            vec2 point = hash2(i + neighbor);
-            vec2 diff = neighbor + point - f;
-            float dist = length(diff);
-            minDist = min(minDist, dist);
-          }
-        }
-
-        return minDist;
-      }
-
-      // Worley noise - returns distance to second closest point for cracks
-      float worleyNoise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-
-        float minDist1 = 1.0;
-        float minDist2 = 1.0;
-
-        for (int y = -1; y <= 1; y++) {
-          for (int x = -1; x <= 1; x++) {
-            vec2 neighbor = vec2(float(x), float(y));
-            vec2 point = hash2(i + neighbor);
-            vec2 diff = neighbor + point - f;
-            float dist = length(diff);
-
-            if (dist < minDist1) {
-              minDist2 = minDist1;
-              minDist1 = dist;
-            } else if (dist < minDist2) {
-              minDist2 = dist;
-            }
-          }
-        }
-
-        return minDist2 - minDist1; // Edge detection
-      }
-
-      // Ridged noise - sharp peaks
-      float ridgedNoise(vec2 p) {
-        float n = perlinNoise(p);
-        n = abs(n * 2.0 - 1.0);
-        return 1.0 - n;
-      }
-
-      // Turbulence - layered noise
-      float turbulenceNoise(vec2 p) {
-        float value = 0.0;
-        float amplitude = 0.5;
-        float frequency = 1.0;
-
-        for (int i = 0; i < 4; i++) {
-          value += amplitude * abs(perlinNoise(p * frequency) * 2.0 - 1.0);
-          frequency *= 2.0;
-          amplitude *= 0.5;
-        }
-
-        return value;
-      }
-
-      // Get noise value based on type
-      float getNoise(vec2 p, int type) {
-        if (type == 0) return voronoiNoise(p);
-        if (type == 1) return perlinNoise(p);
-        if (type == 2) return worleyNoise(p);
-        if (type == 3) return valueNoise(p);
-        if (type == 4) return ridgedNoise(p);
-        if (type == 5) return turbulenceNoise(p);
-        return valueNoise(p);
+      float rand(vec2 co) {
+        return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453);
       }
 
       void main() {
@@ -450,69 +305,16 @@ function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0, noiseType
         float diff = max(dot(vNormal, light), 0.3);
         vec3 color = baseColor * diff;
 
-        // Use world position for consistent noise across geometry
-        vec2 noiseCoord = vWorldPos.xz * scale + vec2(seed * 0.1);
-
-        // Add some variation based on height
-        noiseCoord += vWorldPos.y * 0.02;
-
-        float n = getNoise(noiseCoord * 8.0, noiseType);
-
-        // Different corruption behaviors based on noise type
-        float threshold = 0.5 - intensity * 0.3;
-
-        if (noiseType == 0) {
-          // Voronoi: cell-based color shifts
-          if (n < 0.15) {
-            // Cell edges get accent color
-            color = mix(color, vec3(0.9, 0.2, 0.3), intensity * 0.8);
-          } else if (n > 0.6) {
-            // Cell centers get inverted
-            color = mix(color, 1.0 - color, intensity * 0.5);
-          }
-        } else if (noiseType == 1) {
-          // Perlin: smooth gradient corruption
-          if (n > 0.6) {
-            color = mix(color, color.brg, intensity * n);
-          }
-          if (n < 0.3) {
-            color *= 1.0 + (0.3 - n) * intensity * 2.0;
-          }
-        } else if (noiseType == 2) {
-          // Worley: crack-like corruption along edges
-          float edge = smoothstep(0.0, 0.1, n);
-          if (n < 0.08) {
-            color = mix(vec3(0.1), color, edge);
-          }
-          if (n > 0.2 && n < 0.25) {
-            color = mix(color, vec3(0.95, 0.9, 0.85), intensity);
-          }
-        } else if (noiseType == 3) {
-          // Value: blocky organic patches
-          float stepped = floor(n * 4.0) / 4.0;
-          if (stepped > 0.5) {
-            color = mix(color, color.gbr * 1.2, intensity * stepped);
-          }
-        } else if (noiseType == 4) {
-          // Ridged: sharp glowing veins
-          if (n > 0.7) {
-            vec3 glow = vec3(0.9, 0.4, 0.2);
-            color = mix(color, glow, (n - 0.7) * intensity * 3.0);
-          }
-        } else if (noiseType == 5) {
-          // Turbulence: chaotic distortion
-          color.r += (n - 0.5) * intensity * 0.5;
-          color.b -= (n - 0.5) * intensity * 0.3;
-          if (n > 0.65) {
-            color = 1.0 - color;
-          }
+        vec2 block = floor(gl_FragCoord.xy / 6.0);
+        float blockRnd = rand(block + seed);
+        if (blockRnd > 1.0 - intensity * 0.35) {
+          float mode = floor(rand(block + seed + 1.0) * 4.0);
+          if (mode < 1.0) color.r = fract(color.r + 0.5);
+          else if (mode < 2.0) color = 1.0 - color;
+          else if (mode < 3.0) color = vec3(step(0.5, rand(block + seed + 2.0)));
+          else color = color.bgr;
         }
-
-        // Subtle scanline effect for all types
-        float scanline = sin(gl_FragCoord.y * 1.5) * 0.03 * intensity;
-        color -= scanline;
-
-        gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+        gl_FragColor = vec4(color, 1.0);
       }
     `
   });
