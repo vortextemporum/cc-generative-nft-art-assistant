@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Corrupted Harmony</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     * {
       margin: 0;
@@ -261,7 +262,7 @@
   <div class="container">
     <header>
       <h1>Corrupted Harmony</h1>
-      <p class="subtitle">A fully populated isometric city where different visual realities coexist</p>
+      <p class="subtitle">An artsy 3D isometric city with handcrafted pixel aesthetics</p>
     </header>
 
     <div class="main-layout">
@@ -293,10 +294,14 @@
               <span>Save image</span>
               <span class="shortcut-key">S</span>
             </div>
+            <div class="shortcut-row">
+              <span>Toggle rotation</span>
+              <span class="shortcut-key">Space</span>
+            </div>
           </div>
         </div>
 
-        <div class="version">v2.7.0 - Better Shading</div>
+        <div class="version">v4.0.0 - Artsy 3D with Pixel Effects</div>
       </div>
     </div>
 
@@ -307,7 +312,7 @@
 
   <script src="sketch.js"></script>
   <script>
-    // Wait for p5 to initialize
+    // Wait for three.js to initialize
     function waitForSketch() {
       if (window.sketchAPI && window.sketchAPI.getFeatures()) {
         updateDisplay();
@@ -365,25 +370,13 @@
     document.getElementById('btn-regenerate')?.addEventListener('click', () => {
       if (window.sketchAPI) {
         window.sketchAPI.regenerate();
-        setTimeout(updateDisplay, 500);
+        setTimeout(updateDisplay, 100);
       }
     });
 
     document.getElementById('btn-save')?.addEventListener('click', () => {
-      const hash = window.sketchAPI?.getHash() || 'sketch';
-      saveCanvas('corrupted-harmony-' + hash.slice(2, 10), 'png');
-    });
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      if (e.key.toLowerCase() === 'r') {
-        if (window.sketchAPI) {
-          window.sketchAPI.regenerate();
-          setTimeout(updateDisplay, 500);
-        }
-      }
+      // Trigger S key for three.js save
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }));
     });
   </script>
 </body>

@@ -2,6 +2,72 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.0.0] - 2026-02-02
+
+### Added
+- Pixel-based post-processing effects applied to 3D render:
+  - Floyd-Steinberg dithering with error diffusion
+  - Bayer matrix dithering (4x4 ordered)
+  - Stipple (random threshold) dithering
+  - Halftone pattern dithering
+  - Liquify effect with displacement and dripping
+  - Glitch effect with RGB shift, scanlines, displacement lines
+  - Corrupt effect with block artifacts and data mosh streaks
+  - Stencil/posterization effect
+- Film grain overlay for artsy texture (always applied)
+- Vignette effect for depth
+- Special features restored: the-anomaly, portal, floating-chunk, time-echo
+- Road markings (dashed center lines)
+- Enhanced building details: ledges, spires, pinnacles, mullions, domes
+- Sky and ground style features (gradient, flat, textured, void)
+- Inverted palette option for legendary rarity
+
+### Changed
+- Effects now applied via pixel manipulation to rendered canvas (like v1.0.0)
+- Post-processing happens at intervals for performance (100ms)
+- Disabled antialiasing for crispier pixel effects
+- Pixel ratio forced to 1 for authentic pixel aesthetic
+- Slower auto-rotation (0.3 speed) for contemplative viewing
+- Added post-processing canvas overlay
+
+### Fixed
+- Visual output now has handcrafted, artsy feel from v1.0.0
+- Combined the best of 3D rotation with 2D pixel effects
+
+## [3.2.0] - 2026-02-01
+
+### Added
+- Per-building shader effects (restored from v1.0.0 approach):
+  - Dither: Bayer matrix dithering applied per-building
+  - Glitch: RGB shift, scanlines, block corruption with unique seed per building
+  - Corrupt: Block artifacts, color shifts, data mosh streaks per building
+  - Liquify: Wave distortion and drip effects in vertex shader per building
+  - Stencil: Posterization to limited color levels per building
+  - Noise: Film grain and static lines per building
+- Each building gets its own effect material with unique seed
+- Animated shader effects (time-based glitch, noise updates)
+
+### Changed
+- Removed global post-processing pipeline
+- Effects now applied at material level, not screen-space
+- Ground positioning fixed to align with buildings and roads
+
+### Fixed
+- Ground and building alignment issues
+- Parks and water now properly positioned within city grid
+
+## [3.1.0] - 2026-02-01
+
+### Added
+- Post-processing shader pipeline (global effects - superseded by v3.2.0)
+- Weirdness system in 3D (float, tilt, scale, melt, echo, fragment, invert)
+
+## [3.0.0] - 2026-02-01
+
+### Changed
+- Complete rewrite from p5.js to three.js for true 3D rotation
+- Orthographic camera with orbit controls for isometric-style viewing
+
 ## [2.4.0] - 2026-02-01
 
 ### Added
