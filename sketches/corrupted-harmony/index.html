@@ -69,6 +69,80 @@
       height: 700px !important;
       max-width: 700px !important;
       max-height: 700px !important;
+      cursor: pointer;
+    }
+
+    /* Building info popup */
+    #building-popup {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(17, 17, 17, 0.95);
+      border: 1px solid #333;
+      padding: 15px;
+      border-radius: 6px;
+      min-width: 200px;
+      display: none;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    #building-popup.visible {
+      display: block;
+    }
+
+    #building-popup h3 {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    #building-popup .popup-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      padding: 4px 0;
+    }
+
+    #building-popup .popup-label {
+      color: #666;
+    }
+
+    #building-popup .popup-value {
+      color: #aaa;
+      font-weight: 500;
+    }
+
+    #building-popup .popup-value.effect-corrupt { color: #ffd93d; }
+    #building-popup .popup-value.effect-glitch { color: #ff6b6b; }
+    #building-popup .popup-value.effect-liquify { color: #6bcb77; }
+    #building-popup .popup-value.effect-dither { color: #aaa; }
+    #building-popup .popup-value.effect-stencil { color: #4d96ff; }
+
+    #building-popup .weirdness-tags {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #333;
+    }
+
+    #building-popup .weirdness-tag {
+      display: inline-block;
+      font-size: 0.6rem;
+      background: #1a1a2a;
+      color: #8888cc;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    #building-popup .click-hint {
+      font-size: 0.6rem;
+      color: #444;
+      margin-top: 10px;
+      text-align: center;
     }
 
     .sidebar {
@@ -403,6 +477,31 @@
     <div class="main-layout">
       <div id="sketch-container">
         <div class="loading">Generating city...</div>
+        <div id="building-popup">
+          <h3>Building #<span id="popup-id">1</span></h3>
+          <div class="popup-row">
+            <span class="popup-label">Style</span>
+            <span class="popup-value" id="popup-style">brutalist</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Effect</span>
+            <span class="popup-value" id="popup-effect">clean</span>
+          </div>
+          <div class="popup-row" id="popup-noise-row" style="display:none">
+            <span class="popup-label">Noise</span>
+            <span class="popup-value" id="popup-noise">voronoi</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Height</span>
+            <span class="popup-value" id="popup-height">10</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Size</span>
+            <span class="popup-value" id="popup-size">5 x 5</span>
+          </div>
+          <div class="weirdness-tags" id="popup-weirdness"></div>
+          <div class="click-hint">Click elsewhere to close</div>
+        </div>
       </div>
 
       <div class="sidebar">
@@ -411,7 +510,7 @@
           <div class="version-selector">
             <select id="version-select">
               <optgroup label="3D Versions (three.js)">
-                <option value="current">v4.6.0 - Equal Distribution (Current)</option>
+                <option value="current">v4.7.0 - Click to Inspect (Current)</option>
                 <option value="v4.2.0">v4.2.0 - Voronoi Panels</option>
                 <option value="v4.1.0">v4.1.0 - Parametric Design</option>
                 <option value="v3.2.0">v3.2.0 - Per-Building Shaders</option>
@@ -488,7 +587,7 @@
           'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
           'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
         ],
-        description: 'v4.6.0 - Equal Distribution + Demo Page'
+        description: 'v4.7.0 - Click Buildings to Inspect'
       },
       'v4.2.0': {
         framework: 'three.js',
@@ -725,6 +824,48 @@
     window.updateFeaturesDisplay = function() {
       updateDisplay();
     };
+
+    // Building click popup handler
+    window.addEventListener('buildingSelected', (e) => {
+      const popup = document.getElementById('building-popup');
+      const info = e.detail;
+
+      if (!info) {
+        popup.classList.remove('visible');
+        return;
+      }
+
+      // Update popup content
+      document.getElementById('popup-id').textContent = info.id;
+      document.getElementById('popup-style').textContent = info.style;
+
+      const effectEl = document.getElementById('popup-effect');
+      effectEl.textContent = info.effect;
+      effectEl.className = 'popup-value effect-' + info.effect;
+
+      const noiseRow = document.getElementById('popup-noise-row');
+      if (info.noiseType) {
+        noiseRow.style.display = 'flex';
+        document.getElementById('popup-noise').textContent = info.noiseType;
+      } else {
+        noiseRow.style.display = 'none';
+      }
+
+      document.getElementById('popup-height').textContent = info.height;
+      document.getElementById('popup-size').textContent = info.width + ' x ' + info.depth;
+
+      // Weirdness tags
+      const weirdnessEl = document.getElementById('popup-weirdness');
+      if (info.weirdness && info.weirdness.length > 0) {
+        weirdnessEl.innerHTML = '<span class="popup-label">Weirdness:</span> ' +
+          info.weirdness.map(w => `<span class="weirdness-tag">${w}</span>`).join('');
+        weirdnessEl.style.display = 'block';
+      } else {
+        weirdnessEl.style.display = 'none';
+      }
+
+      popup.classList.add('visible');
+    });
 
     // Version selector handler
     document.getElementById('version-select')?.addEventListener('change', (e) => {

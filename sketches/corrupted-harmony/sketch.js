@@ -1,9 +1,8 @@
 /**
- * CORRUPTED HARMONY v4.6.0
+ * CORRUPTED HARMONY v4.7.0
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
- * Screen-space noise: voronoi cells, perlin bleeding, worley cracks, ridged veins
- * Equal distribution mode - all palettes/effects/styles have equal chance
+ * Click any building to inspect its properties
  */
 
 // =============================================================================
@@ -650,6 +649,8 @@ let cityGroup;
 let clock;
 let shaderMaterials = [];
 let buildingStats = []; // Track building styles and effects for display
+let raycaster, mouse; // For click detection
+let selectedBuilding = null; // Currently selected building
 
 function init() {
   const container = document.getElementById('sketch-container');
@@ -702,6 +703,13 @@ function init() {
   const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
   backLight.position.set(-30, 50, -30);
   scene.add(backLight);
+
+  // Raycaster for click detection
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  // Click handler for building inspection
+  renderer.domElement.addEventListener('click', onCanvasClick);
 
   // Generate city
   generateFeatures();
@@ -962,14 +970,24 @@ function buildBuilding(b, pal) {
   const darkerMat = createEffectMaterial(b.effect, darkerColor, b.seed + 10, features.rarity, noiseType);
   const accentMat = createEffectMaterial(b.effect, pal.accent, b.seed + 20, features.rarity, noiseType);
 
-  // Track building stats for display
-  buildingStats.push({
-    id: buildingStats.length + 1,
+  // Building info for click detection
+  const buildingId = buildingStats.length + 1;
+  const buildingInfo = {
+    id: buildingId,
     style: b.style,
     effect: b.effect,
     noiseType: noiseType,
-    height: Math.round(b.h * 10) / 10
-  });
+    height: Math.round(b.h * 10) / 10,
+    width: Math.round(b.w * 10) / 10,
+    depth: Math.round(b.d * 10) / 10,
+    weirdness: b.weirdness.map(w => w.type)
+  };
+
+  // Store info on group for raycasting
+  group.userData = { isBuilding: true, buildingInfo };
+
+  // Track building stats for display
+  buildingStats.push(buildingInfo);
 
   // Track shader materials for time updates
   if (mainMat.uniforms) shaderMaterials.push(mainMat);
@@ -1885,6 +1903,43 @@ function animate() {
 // CONTROLS
 // =============================================================================
 
+function onCanvasClick(event) {
+  // Calculate mouse position in normalized device coordinates (-1 to +1)
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  // Update raycaster
+  raycaster.setFromCamera(mouse, camera);
+
+  // Find intersections with city objects
+  const intersects = raycaster.intersectObjects(cityGroup.children, true);
+
+  // Find the first building (traverse up to find group with buildingInfo)
+  for (const intersect of intersects) {
+    let obj = intersect.object;
+    // Traverse up to find the building group
+    while (obj && obj.parent) {
+      if (obj.userData && obj.userData.isBuilding) {
+        const info = obj.userData.buildingInfo;
+        selectedBuilding = info;
+
+        // Dispatch custom event for UI to handle
+        window.dispatchEvent(new CustomEvent('buildingSelected', { detail: info }));
+
+        // Also log to console for debugging
+        console.log('Building selected:', info);
+        return;
+      }
+      obj = obj.parent;
+    }
+  }
+
+  // Clicked on nothing - deselect
+  selectedBuilding = null;
+  window.dispatchEvent(new CustomEvent('buildingSelected', { detail: null }));
+}
+
 function onKeyDown(e) {
   if (e.key === 's' || e.key === 'S') {
     renderer.render(scene, camera);
@@ -1913,6 +1968,7 @@ window.sketchAPI = {
   getFeatures: () => features,
   getHash: () => hash,
   getBuildingStats: () => buildingStats,
+  getSelectedBuilding: () => selectedBuilding,
   regenerate: () => {
     hash = "0x" + Array(64).fill(0).map(() =>
       "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");

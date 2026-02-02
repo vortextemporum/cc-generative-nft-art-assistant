@@ -2,6 +2,17 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.7.0] - 2026-02-02
+
+### Added
+- **Click-to-inspect** - click any building to see its properties in a popup:
+  - Building ID, style, shader effect
+  - Noise type (for corrupt effect)
+  - Dimensions (height, width, depth)
+  - Weirdness effects applied
+- Raycaster for 3D click detection
+- Custom buildingSelected event for UI integration
+
 ## [4.6.0] - 2026-02-02
 
 ### Added
