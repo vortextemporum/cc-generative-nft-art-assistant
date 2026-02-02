@@ -1,8 +1,8 @@
 /**
- * CORRUPTED HARMONY v4.3.1
+ * CORRUPTED HARMONY v4.4.0
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
- * Enhanced noise algorithms: voronoi, perlin, worley, value noise
+ * Screen-space noise: voronoi cells, perlin bleeding, worley cracks, ridged veins
  */
 
 // =============================================================================
@@ -279,7 +279,7 @@ function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0, noiseType
       seed: { value: seed },
       noiseType: { value: NOISE_TYPES.indexOf(noise) },
       time: { value: 0 },
-      scale: { value: rnd(0.008, 0.025) } // Noise scale - larger = bigger patterns
+      scale: { value: rnd(0.02, 0.06) } // Noise scale - screen pixels to noise coords
     },
     vertexShader: `
       uniform float intensity;
@@ -450,66 +450,87 @@ function createCorruptMaterial(baseColor, intensity = 0.5, seed = 0.0, noiseType
         float diff = max(dot(vNormal, light), 0.3);
         vec3 color = baseColor * diff;
 
-        // Use world position for consistent noise across geometry
-        vec2 noiseCoord = vWorldPos.xz * scale + vec2(seed * 0.1);
+        // SCREEN-SPACE coordinates - patterns stay fixed as camera moves
+        vec2 screenCoord = gl_FragCoord.xy * scale + vec2(seed * 10.0);
 
-        // Add some variation based on height
-        noiseCoord += vWorldPos.y * 0.02;
-
-        float n = getNoise(noiseCoord * 8.0, noiseType);
-
-        // Different corruption behaviors based on noise type
-        float threshold = 0.5 - intensity * 0.3;
+        float n = getNoise(screenCoord, noiseType);
 
         if (noiseType == 0) {
-          // Voronoi: cell-based color shifts
-          if (n < 0.15) {
-            // Cell edges get accent color
-            color = mix(color, vec3(0.9, 0.2, 0.3), intensity * 0.8);
-          } else if (n > 0.6) {
-            // Cell centers get inverted
-            color = mix(color, 1.0 - color, intensity * 0.5);
+          // VORONOI: Large cellular regions with distinct colors
+          float cellId = hash(floor(screenCoord / 3.0));
+          if (n < 0.12) {
+            // Sharp cell edges - bright accent
+            color = mix(color, vec3(1.0, 0.2, 0.3), intensity);
+          } else if (cellId > 0.7) {
+            // Some cells fully inverted
+            color = 1.0 - color;
+          } else if (cellId > 0.4) {
+            // Some cells tinted
+            color = mix(color, color.bgr * 1.5, intensity * 0.8);
           }
         } else if (noiseType == 1) {
-          // Perlin: smooth gradient corruption
-          if (n > 0.6) {
-            color = mix(color, color.brg, intensity * n);
+          // PERLIN: Smooth organic color bleeding
+          vec3 tint1 = vec3(0.2, 0.8, 0.9); // cyan
+          vec3 tint2 = vec3(0.9, 0.3, 0.5); // magenta
+          if (n > 0.55) {
+            color = mix(color, tint1, (n - 0.55) * intensity * 2.0);
           }
-          if (n < 0.3) {
-            color *= 1.0 + (0.3 - n) * intensity * 2.0;
+          if (n < 0.45) {
+            color = mix(color, tint2, (0.45 - n) * intensity * 2.0);
           }
+          // Smooth channel shift
+          color.rgb = mix(color.rgb, color.brg, n * intensity * 0.5);
         } else if (noiseType == 2) {
-          // Worley: crack-like corruption along edges
-          float edge = smoothstep(0.0, 0.1, n);
-          if (n < 0.08) {
-            color = mix(vec3(0.1), color, edge);
-          }
-          if (n > 0.2 && n < 0.25) {
-            color = mix(color, vec3(0.95, 0.9, 0.85), intensity);
+          // WORLEY: Cracked/shattered glass effect
+          if (n < 0.05) {
+            // Crack lines - very dark or bright
+            color = hash(screenCoord) > 0.5 ? vec3(0.05) : vec3(0.95);
+          } else if (n < 0.15) {
+            // Near-crack glow
+            color = mix(color, vec3(1.0, 0.8, 0.6), intensity * (0.15 - n) * 10.0);
           }
         } else if (noiseType == 3) {
-          // Value: blocky organic patches
-          float stepped = floor(n * 4.0) / 4.0;
-          if (stepped > 0.5) {
-            color = mix(color, color.gbr * 1.2, intensity * stepped);
-          }
+          // VALUE: Posterized color bands
+          float bands = floor(n * 6.0) / 6.0;
+          vec3 palette[4];
+          palette[0] = vec3(0.1, 0.1, 0.2);
+          palette[1] = vec3(0.8, 0.2, 0.3);
+          palette[2] = vec3(0.2, 0.7, 0.8);
+          palette[3] = vec3(0.95, 0.9, 0.8);
+          int idx = int(bands * 4.0);
+          if (idx == 0) color = mix(color, palette[0], intensity);
+          else if (idx == 1) color = mix(color, palette[1], intensity * 0.7);
+          else if (idx == 2) color = mix(color, palette[2], intensity * 0.7);
+          else color = mix(color, palette[3], intensity * 0.5);
         } else if (noiseType == 4) {
-          // Ridged: sharp glowing veins
-          if (n > 0.7) {
-            vec3 glow = vec3(0.9, 0.4, 0.2);
-            color = mix(color, glow, (n - 0.7) * intensity * 3.0);
+          // RIDGED: Glowing veins/circuits
+          if (n > 0.6) {
+            float veinStrength = (n - 0.6) * 2.5;
+            vec3 veinColor = mix(vec3(1.0, 0.4, 0.1), vec3(1.0, 0.9, 0.3), veinStrength);
+            color = mix(color, veinColor, veinStrength * intensity);
+          }
+          // Dark between veins
+          if (n < 0.3) {
+            color *= 0.6 + n;
           }
         } else if (noiseType == 5) {
-          // Turbulence: chaotic distortion
-          color.r += (n - 0.5) * intensity * 0.5;
-          color.b -= (n - 0.5) * intensity * 0.3;
-          if (n > 0.65) {
+          // TURBULENCE: Chaotic data corruption
+          float chaos = turbulenceNoise(screenCoord * 0.5);
+          // RGB channel splitting
+          color.r = mix(color.r, hash(screenCoord + 0.1), chaos * intensity * 0.6);
+          color.b = mix(color.b, hash(screenCoord + 0.2), chaos * intensity * 0.4);
+          // Random inversions
+          if (chaos > 0.6 && hash(floor(screenCoord / 8.0)) > 0.5) {
             color = 1.0 - color;
+          }
+          // Blocky artifacts
+          if (hash(floor(screenCoord / 4.0) + seed) > 0.92) {
+            color = vec3(hash(floor(screenCoord / 4.0)));
           }
         }
 
-        // Subtle scanline effect for all types
-        float scanline = sin(gl_FragCoord.y * 1.5) * 0.03 * intensity;
+        // Scanlines for CRT feel
+        float scanline = sin(gl_FragCoord.y * 2.0) * 0.04 * intensity;
         color -= scanline;
 
         gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);

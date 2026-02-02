@@ -2,6 +2,21 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.4.0] - 2026-02-02
+
+### Changed
+- **Corrupt shader now uses SCREEN-SPACE** - patterns stay fixed as camera rotates
+- Dramatically increased effect visibility with stronger color shifts
+- Larger noise scale (0.02-0.06) for visible patterns
+
+### Noise Effects (all screen-space):
+- **voronoi**: Large cellular regions with inverted/tinted cells, bright edge lines
+- **perlin**: Smooth organic color bleeding between cyan and magenta
+- **worley**: Cracked glass effect with dark/bright crack lines and edge glow
+- **value**: Posterized color bands with distinct palette colors
+- **ridged**: Glowing orange/yellow circuit veins on darkened background
+- **turbulence**: Chaotic data corruption with RGB splitting and block artifacts
+
 ## [4.3.1] - 2026-02-02
 
 ### Fixed
