@@ -1118,7 +1118,8 @@ function buildBuildingGeometry(group, b, mainMat, darkerMat, accentMat, pal) {
       group.add(mesh);
       // Frame lines
       const edgesGeo = new THREE.EdgesGeometry(geometry);
-      const edges = new THREE.LineSegments(edgesGeo, new THREE.LineBasicMaterial({ color: darkerMat.color }));
+      const edgeColor = darkerMat.uniforms ? darkerMat.uniforms.baseColor.value : (darkerMat.color || 0x333333);
+      const edges = new THREE.LineSegments(edgesGeo, new THREE.LineBasicMaterial({ color: edgeColor }));
       edges.position.y = b.h / 2;
       group.add(edges);
       // Horizontal mullions
@@ -1461,7 +1462,8 @@ function buildBuildingGeometry(group, b, mainMat, darkerMat, accentMat, pal) {
 
       // Diagonal bracing/structural lines
       const braceCount = rndInt(2, 5);
-      const braceMat = new THREE.LineBasicMaterial({ color: darkerMat.color || 0x333333 });
+      const braceColor = darkerMat.uniforms ? darkerMat.uniforms.baseColor.value : (darkerMat.color || 0x333333);
+      const braceMat = new THREE.LineBasicMaterial({ color: braceColor });
       for (let i = 0; i < braceCount; i++) {
         const points = [];
         const startY = rnd(0.1, 0.4) * b.h;
