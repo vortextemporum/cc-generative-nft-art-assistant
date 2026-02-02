@@ -318,10 +318,16 @@
           <h2>Version</h2>
           <div class="version-selector">
             <select id="version-select">
-              <option value="current" data-framework="three.js" data-file="sketch.js">v4.1.0 - Parametric Design (Current)</option>
-              <option value="v4.1.0" data-framework="three.js" data-file="versions/v4.1.0-parametric.js">v4.1.0 - Parametric Design</option>
-              <option value="v3.2.0" data-framework="three.js" data-file="versions/v3.2.0-per-building-shaders.js">v3.2.0 - Per-Building Shaders</option>
-              <option value="v1.0.0" data-framework="p5.js" data-file="versions/v1.0.0-sketch.js">v1.0.0 - Original (p5.js)</option>
+              <optgroup label="3D Versions (three.js)">
+                <option value="current">v4.1.0 - Parametric Design (Current)</option>
+                <option value="v4.1.0">v4.1.0 - Parametric Design</option>
+                <option value="v3.2.0">v3.2.0 - Per-Building Shaders</option>
+              </optgroup>
+              <optgroup label="2D Versions (p5.js)">
+                <option value="v2.7.0">v2.7.0 - Enhanced Styles & Weirdness</option>
+                <option value="v2.0.0">v2.0.0 - Full City Infrastructure</option>
+                <option value="v1.0.0">v1.0.0 - Original</option>
+              </optgroup>
             </select>
             <div class="version-info">
               Framework: <span class="framework" id="framework-display">three.js</span>
@@ -371,6 +377,7 @@
   <script>
     // Version configuration
     const VERSIONS = {
+      // 3D Versions (three.js)
       'current': {
         framework: 'three.js',
         file: 'sketch.js',
@@ -397,6 +404,23 @@
           'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
         ],
         description: 'v3.2.0 - Per-Building Shader Effects'
+      },
+      // 2D Versions (p5.js)
+      'v2.7.0': {
+        framework: 'p5.js',
+        file: 'versions/v2.7.0-enhanced-styles.js',
+        libs: [
+          'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'
+        ],
+        description: 'v2.7.0 - Enhanced Building Styles & Weirdness'
+      },
+      'v2.0.0': {
+        framework: 'p5.js',
+        file: 'versions/v2.0.0-city-infrastructure.js',
+        libs: [
+          'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'
+        ],
+        description: 'v2.0.0 - Full City Infrastructure'
       },
       'v1.0.0': {
         framework: 'p5.js',
