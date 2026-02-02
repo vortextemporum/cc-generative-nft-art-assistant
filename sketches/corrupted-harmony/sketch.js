@@ -1,8 +1,9 @@
 /**
- * CORRUPTED HARMONY v4.4.0
+ * CORRUPTED HARMONY v4.5.0
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
  * Screen-space noise: voronoi cells, perlin bleeding, worley cracks, ridged veins
+ * Building stats display showing effect/noise type per building
  */
 
 // =============================================================================
@@ -615,7 +616,7 @@ function createStencilMaterial(baseColor, levels = 4) {
   });
 }
 
-function createEffectMaterial(effect, baseColor, seed, rarity) {
+function createEffectMaterial(effect, baseColor, seed, rarity, noiseType = null) {
   const intensity = rarity === 'legendary' ? 0.8 :
                     rarity === 'rare' ? 0.6 :
                     rarity === 'uncommon' ? 0.4 : 0.25;
@@ -623,7 +624,7 @@ function createEffectMaterial(effect, baseColor, seed, rarity) {
   switch (effect) {
     case 'dither': return createDitherMaterial(baseColor, intensity);
     case 'glitch': return createGlitchMaterial(baseColor, intensity, seed);
-    case 'corrupt': return createCorruptMaterial(baseColor, intensity, seed);
+    case 'corrupt': return createCorruptMaterial(baseColor, intensity, seed, noiseType);
     case 'liquify': return createLiquifyMaterial(baseColor, intensity, seed);
     case 'stencil': return createStencilMaterial(baseColor, rndInt(3, 5));
     default: return new THREE.MeshLambertMaterial({ color: baseColor });
@@ -638,6 +639,7 @@ let scene, camera, renderer, controls;
 let cityGroup;
 let clock;
 let shaderMaterials = [];
+let buildingStats = []; // Track building styles and effects for display
 
 function init() {
   const container = document.getElementById('sketch-container');
@@ -725,6 +727,7 @@ function buildCity() {
   }
 
   shaderMaterials = [];
+  buildingStats = [];
   cityGroup = new THREE.Group();
 
   // Sky gradient background
@@ -938,10 +941,25 @@ function buildBuilding(b, pal) {
   const mainColor = pal.building[colorIndex];
   const darkerColor = pal.building[Math.max(0, colorIndex - 1)];
 
+  // For corrupt effect, pre-select noise type so we can track it
+  let noiseType = null;
+  if (b.effect === 'corrupt') {
+    noiseType = rndChoice(NOISE_TYPES);
+  }
+
   // Use effect material for this building
-  const mainMat = createEffectMaterial(b.effect, mainColor, b.seed, features.rarity);
-  const darkerMat = createEffectMaterial(b.effect, darkerColor, b.seed + 10, features.rarity);
-  const accentMat = createEffectMaterial(b.effect, pal.accent, b.seed + 20, features.rarity);
+  const mainMat = createEffectMaterial(b.effect, mainColor, b.seed, features.rarity, noiseType);
+  const darkerMat = createEffectMaterial(b.effect, darkerColor, b.seed + 10, features.rarity, noiseType);
+  const accentMat = createEffectMaterial(b.effect, pal.accent, b.seed + 20, features.rarity, noiseType);
+
+  // Track building stats for display
+  buildingStats.push({
+    id: buildingStats.length + 1,
+    style: b.style,
+    effect: b.effect,
+    noiseType: noiseType,
+    height: Math.round(b.h * 10) / 10
+  });
 
   // Track shader materials for time updates
   if (mainMat.uniforms) shaderMaterials.push(mainMat);
@@ -1882,6 +1900,7 @@ function onKeyDown(e) {
 window.sketchAPI = {
   getFeatures: () => features,
   getHash: () => hash,
+  getBuildingStats: () => buildingStats,
   regenerate: () => {
     hash = "0x" + Array(64).fill(0).map(() =>
       "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");

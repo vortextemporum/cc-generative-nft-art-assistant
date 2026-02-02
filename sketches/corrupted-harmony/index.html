@@ -274,6 +274,98 @@
       font-size: 0.8rem;
     }
 
+    .building-stats-container {
+      max-width: 1400px;
+      margin: 20px auto 0;
+    }
+
+    .building-stats-container .panel {
+      background: #111;
+      border: 1px solid #222;
+      padding: 20px;
+    }
+
+    .building-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .building-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      padding: 8px 10px;
+      font-size: 0.65rem;
+      border-radius: 4px;
+    }
+
+    .building-card .building-id {
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .building-card .building-style {
+      color: #888;
+      text-transform: capitalize;
+    }
+
+    .building-card .building-effect {
+      margin-top: 4px;
+    }
+
+    .building-card .effect-label {
+      color: #555;
+    }
+
+    .building-card .effect-value {
+      font-weight: 500;
+    }
+
+    .building-card .effect-value.clean { color: #888; }
+    .building-card .effect-value.dither { color: #aaa; }
+    .building-card .effect-value.glitch { color: #ff6b6b; }
+    .building-card .effect-value.corrupt { color: #ffd93d; }
+    .building-card .effect-value.liquify { color: #6bcb77; }
+    .building-card .effect-value.stencil { color: #4d96ff; }
+
+    .building-card .noise-type {
+      margin-top: 2px;
+      color: #ffd93d;
+      font-style: italic;
+    }
+
+    .stats-loading {
+      color: #555;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .stats-summary {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #222;
+    }
+
+    .stats-summary-item {
+      font-size: 0.7rem;
+    }
+
+    .stats-summary-item .count {
+      color: #aaa;
+      font-weight: 600;
+    }
+
+    .stats-summary-item .label {
+      color: #555;
+      margin-left: 4px;
+    }
+
     @media (max-width: 1100px) {
       .main-layout {
         flex-direction: column;
@@ -319,7 +411,7 @@
           <div class="version-selector">
             <select id="version-select">
               <optgroup label="3D Versions (three.js)">
-                <option value="current">v4.4.0 - Screen-Space Noise (Current)</option>
+                <option value="current">v4.5.0 - Building Stats (Current)</option>
                 <option value="v4.2.0">v4.2.0 - Voronoi Panels</option>
                 <option value="v4.1.0">v4.1.0 - Parametric Design</option>
                 <option value="v3.2.0">v3.2.0 - Per-Building Shaders</option>
@@ -370,6 +462,16 @@
       </div>
     </div>
 
+    <!-- Building Stats Panel -->
+    <div class="building-stats-container">
+      <div class="panel">
+        <h2>Building Effects</h2>
+        <div id="building-stats" class="building-stats">
+          <div class="stats-loading">Loading buildings...</div>
+        </div>
+      </div>
+    </div>
+
     <footer>
       Corrupted Harmony &mdash; Generative Architecture in Dissonance
     </footer>
@@ -386,7 +488,7 @@
           'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
           'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
         ],
-        description: 'v4.4.0 - Screen-Space Noise Effects'
+        description: 'v4.5.0 - Building Stats Display'
       },
       'v4.2.0': {
         framework: 'three.js',
@@ -562,7 +664,67 @@
       if (hashEl) {
         hashEl.textContent = hash.slice(0, 18) + '...';
       }
+
+      // Update building stats
+      updateBuildingStats();
     }
+
+    function updateBuildingStats() {
+      const container = document.getElementById('building-stats');
+      if (!container || !window.sketchAPI?.getBuildingStats) return;
+
+      const stats = window.sketchAPI.getBuildingStats();
+      if (!stats || stats.length === 0) {
+        container.innerHTML = '<div class="stats-loading">No buildings found</div>';
+        return;
+      }
+
+      // Count effects
+      const effectCounts = {};
+      const noiseCounts = {};
+      stats.forEach(b => {
+        effectCounts[b.effect] = (effectCounts[b.effect] || 0) + 1;
+        if (b.noiseType) {
+          noiseCounts[b.noiseType] = (noiseCounts[b.noiseType] || 0) + 1;
+        }
+      });
+
+      // Summary
+      const summaryHtml = `
+        <div class="stats-summary">
+          <div class="stats-summary-item">
+            <span class="count">${stats.length}</span>
+            <span class="label">buildings</span>
+          </div>
+          ${Object.entries(effectCounts).map(([effect, count]) => `
+            <div class="stats-summary-item">
+              <span class="count">${count}</span>
+              <span class="label effect-value ${effect}">${effect}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      // Building cards
+      const cardsHtml = stats.map(b => `
+        <div class="building-card">
+          <div class="building-id">#${b.id}</div>
+          <div class="building-style">${b.style}</div>
+          <div class="building-effect">
+            <span class="effect-label">Effect:</span>
+            <span class="effect-value ${b.effect}">${b.effect}</span>
+          </div>
+          ${b.noiseType ? `<div class="noise-type">${b.noiseType}</div>` : ''}
+        </div>
+      `).join('');
+
+      container.innerHTML = summaryHtml + cardsHtml;
+    }
+
+    // Make updateBuildingStats available globally for sketch callback
+    window.updateFeaturesDisplay = function() {
+      updateDisplay();
+    };
 
     // Version selector handler
     document.getElementById('version-select')?.addEventListener('change', (e) => {
@@ -581,7 +743,10 @@
     document.getElementById('btn-regenerate')?.addEventListener('click', () => {
       if (window.sketchAPI) {
         window.sketchAPI.regenerate();
-        setTimeout(updateDisplay, 100);
+        setTimeout(() => {
+          updateDisplay();
+          updateBuildingStats();
+        }, 100);
       }
     });
 

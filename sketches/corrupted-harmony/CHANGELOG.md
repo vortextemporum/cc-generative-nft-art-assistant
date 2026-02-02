@@ -2,6 +2,14 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.5.0] - 2026-02-02
+
+### Added
+- **Building Effects panel** displays which effect each building uses
+- Shows noise type for corrupt-effect buildings (voronoi, perlin, worley, etc.)
+- Summary counts of each effect type
+- getBuildingStats() added to sketchAPI
+
 ## [4.4.0] - 2026-02-02
 
 ### Changed
