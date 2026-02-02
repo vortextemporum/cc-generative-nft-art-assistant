@@ -1,6 +1,6 @@
 /**
- * CORRUPTED HARMONY v4.0.2
- * 3D isometric city with per-building shader effects
+ * CORRUPTED HARMONY v4.1.0
+ * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
  */
 
@@ -61,7 +61,7 @@ const BLOCK_SIZE = 12;
 const ROAD_WIDTH = 2;
 const BUILDING_MARGIN = 0.3; // Gap between buildings and plot edges
 
-const ARCH_STYLES = ['brutalist', 'deco', 'modernist', 'gothic', 'retro', 'geometric', 'organic'];
+const ARCH_STYLES = ['brutalist', 'deco', 'modernist', 'gothic', 'retro', 'geometric', 'organic', 'parametric', 'twisted', 'voronoi'];
 const EFFECT_TYPES = ['clean', 'dither', 'glitch', 'corrupt', 'liquify', 'stencil'];
 
 const PALETTES = {
@@ -516,7 +516,7 @@ function buildCity() {
   const groundGeo = new THREE.BoxGeometry(groundSize, 0.5, groundSize);
   const groundMat = new THREE.MeshLambertMaterial({ color: pal.ground });
   const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.position.set(groundSize/2 - ROAD_WIDTH, -0.25, groundSize/2 - ROAD_WIDTH);
+  ground.position.set(groundSize/2, -0.25, groundSize/2);
   cityGroup.add(ground);
 
   buildRoads(pal, groundSize);
@@ -535,7 +535,7 @@ function buildCity() {
     }
   }
 
-  cityGroup.position.set(-groundSize/2 + ROAD_WIDTH, 0, -groundSize/2 + ROAD_WIDTH);
+  cityGroup.position.set(-groundSize/2, 0, -groundSize/2);
   scene.add(cityGroup);
 }
 
@@ -543,11 +543,12 @@ function buildRoads(pal, groundSize) {
   const roadMat = new THREE.MeshLambertMaterial({ color: pal.road });
   const markingMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
+  // Horizontal roads (running in x direction)
   for (let i = 0; i <= GRID_SIZE; i++) {
-    const z = i * (BLOCK_SIZE + ROAD_WIDTH);
+    const z = i * (BLOCK_SIZE + ROAD_WIDTH) + ROAD_WIDTH/2;
     const roadGeo = new THREE.BoxGeometry(groundSize, 0.1, ROAD_WIDTH);
     const road = new THREE.Mesh(roadGeo, roadMat);
-    road.position.set(groundSize/2 - ROAD_WIDTH, 0.05, z);
+    road.position.set(groundSize/2, 0.05, z);
     cityGroup.add(road);
 
     // Road markings (dashed center line)
@@ -559,11 +560,12 @@ function buildRoads(pal, groundSize) {
     }
   }
 
+  // Vertical roads (running in z direction)
   for (let i = 0; i <= GRID_SIZE; i++) {
-    const x = i * (BLOCK_SIZE + ROAD_WIDTH);
+    const x = i * (BLOCK_SIZE + ROAD_WIDTH) + ROAD_WIDTH/2;
     const roadGeo = new THREE.BoxGeometry(ROAD_WIDTH, 0.1, groundSize);
     const road = new THREE.Mesh(roadGeo, roadMat);
-    road.position.set(x, 0.05, groundSize/2 - ROAD_WIDTH);
+    road.position.set(x, 0.05, groundSize/2);
     cityGroup.add(road);
 
     // Road markings
@@ -935,7 +937,6 @@ function buildBuildingGeometry(group, b, mainMat, darkerMat, accentMat, pal) {
       break;
 
     case 'organic':
-    default:
       // Twisted bio-form tower
       const twistSegs = 9;
       for (let i = 0; i < twistSegs; i++) {
@@ -956,6 +957,221 @@ function buildBuildingGeometry(group, b, mainMat, darkerMat, accentMat, pal) {
       blob.position.y = b.h + b.w * 0.25;
       blob.scale.set(1, 0.65, 1);
       group.add(blob);
+      break;
+
+    case 'parametric':
+      // Grasshopper-style parametric tower with attractor-influenced floor plates
+      const paramFloors = Math.floor(b.h / 1.2);
+      const attractorX = (rnd() - 0.5) * b.w * 3;
+      const attractorZ = (rnd() - 0.5) * b.d * 3;
+      const attractorY = rnd(0.3, 0.7) * b.h;
+
+      for (let i = 0; i < paramFloors; i++) {
+        const t = i / (paramFloors - 1);
+        const floorY = t * b.h;
+        const floorH = b.h / paramFloors * 0.92;
+
+        // Distance-based deformation from attractor point
+        const distY = Math.abs(floorY - attractorY);
+        const influence = Math.max(0, 1 - distY / (b.h * 0.5));
+        const offsetX = attractorX * influence * 0.15;
+        const offsetZ = attractorZ * influence * 0.15;
+
+        // Lofted profile: interpolate between different shapes
+        const shapeProgress = Math.sin(t * Math.PI);
+        const cornerRadius = shapeProgress * b.w * 0.2;
+        const scaleX = 1 + Math.sin(t * Math.PI * 2) * 0.15;
+        const scaleZ = 1 + Math.cos(t * Math.PI * 2) * 0.15;
+
+        const floorGeo = new THREE.BoxGeometry(b.w * scaleX, floorH, b.d * scaleZ);
+        const floor = new THREE.Mesh(floorGeo, mainMat);
+        floor.position.set(offsetX, floorY + floorH / 2, offsetZ);
+        floor.rotation.y = t * 0.3 + cornerRadius * 0.1;
+        group.add(floor);
+
+        // Parametric panel dividers on facade
+        if (i > 0 && i < paramFloors - 1) {
+          const panelCount = 4 + Math.floor(shapeProgress * 4);
+          for (let p = 0; p < panelCount; p++) {
+            const angle = (p / panelCount) * Math.PI * 2;
+            const panelGeo = new THREE.BoxGeometry(0.08, floorH * 0.9, 0.08);
+            const panel = new THREE.Mesh(panelGeo, darkerMat);
+            panel.position.set(
+              offsetX + Math.cos(angle) * b.w * scaleX * 0.48,
+              floorY + floorH / 2,
+              offsetZ + Math.sin(angle) * b.d * scaleZ * 0.48
+            );
+            group.add(panel);
+          }
+        }
+      }
+
+      // Parametric canopy
+      const canopyGeo = new THREE.BoxGeometry(b.w * 1.3, 0.15, b.d * 1.3);
+      const canopy = new THREE.Mesh(canopyGeo, accentMat);
+      canopy.position.y = b.h + 0.5;
+      canopy.rotation.y = Math.PI / 6;
+      group.add(canopy);
+      break;
+
+    case 'twisted':
+      // Turning Torso style - floors rotate progressively
+      const twistedFloors = Math.floor(b.h / 1.5);
+      const totalTwist = rnd(0.5, 1.5) * Math.PI; // 90-270 degrees total rotation
+
+      for (let i = 0; i < twistedFloors; i++) {
+        const t = i / (twistedFloors - 1);
+        const floorY = t * b.h;
+        const floorH = b.h / twistedFloors * 0.85;
+        const rotation = t * totalTwist;
+
+        // Floor plate with tapering
+        const taper = 1 - t * 0.2;
+        const floorGeo = new THREE.BoxGeometry(b.w * taper, floorH, b.d * taper);
+        const floor = new THREE.Mesh(floorGeo, mainMat);
+        floor.position.y = floorY + floorH / 2;
+        floor.rotation.y = rotation;
+        group.add(floor);
+
+        // Structural core
+        if (i % 3 === 0) {
+          const coreGeo = new THREE.CylinderGeometry(b.w * 0.1, b.w * 0.1, floorH * 3, 8);
+          const core = new THREE.Mesh(coreGeo, darkerMat);
+          core.position.y = floorY + floorH * 1.5;
+          group.add(core);
+        }
+
+        // Edge beams connecting floors
+        if (i > 0) {
+          const prevRotation = ((i - 1) / (twistedFloors - 1)) * totalTwist;
+          const prevTaper = 1 - ((i - 1) / (twistedFloors - 1)) * 0.2;
+          for (let c = 0; c < 4; c++) {
+            const cornerAngle = (c / 4) * Math.PI * 2 + Math.PI / 4;
+            const prevX = Math.cos(cornerAngle + prevRotation) * b.w * prevTaper * 0.48;
+            const prevZ = Math.sin(cornerAngle + prevRotation) * b.d * prevTaper * 0.48;
+            const currX = Math.cos(cornerAngle + rotation) * b.w * taper * 0.48;
+            const currZ = Math.sin(cornerAngle + rotation) * b.d * taper * 0.48;
+
+            const beamLen = Math.sqrt(
+              Math.pow(currX - prevX, 2) +
+              Math.pow(floorH * (b.h / twistedFloors) / 0.85, 2) +
+              Math.pow(currZ - prevZ, 2)
+            );
+            const beamGeo = new THREE.CylinderGeometry(0.06, 0.06, beamLen, 4);
+            const beam = new THREE.Mesh(beamGeo, accentMat);
+            beam.position.set(
+              (prevX + currX) / 2,
+              floorY - floorH * 0.5,
+              (prevZ + currZ) / 2
+            );
+            beam.lookAt(currX, floorY + floorH / 2, currZ);
+            beam.rotateX(Math.PI / 2);
+            group.add(beam);
+          }
+        }
+      }
+
+      // Crown element
+      const crownGeo = new THREE.OctahedronGeometry(b.w * 0.3, 0);
+      const crown = new THREE.Mesh(crownGeo, accentMat);
+      crown.position.y = b.h + b.w * 0.3;
+      crown.rotation.y = totalTwist;
+      group.add(crown);
+      break;
+
+    case 'voronoi':
+      // Voronoi-paneled facade building
+      const vBaseGeo = new THREE.BoxGeometry(b.w, b.h, b.d);
+      const vBase = new THREE.Mesh(vBaseGeo, mainMat);
+      vBase.position.y = b.h / 2;
+      group.add(vBase);
+
+      // Generate voronoi-like panel pattern on each face
+      const panelDepth = 0.12;
+      const cellCount = rndInt(8, 18);
+
+      // Generate cell centers
+      const cells = [];
+      for (let i = 0; i < cellCount; i++) {
+        cells.push({
+          x: rnd(-0.45, 0.45),
+          y: rnd(0.05, 0.95)
+        });
+      }
+
+      // Create panels for front and back faces
+      for (const face of ['front', 'back']) {
+        const faceZ = face === 'front' ? b.d / 2 + panelDepth / 2 : -b.d / 2 - panelDepth / 2;
+        const normalZ = face === 'front' ? 1 : -1;
+
+        for (const cell of cells) {
+          // Random panel size based on "voronoi" approximation
+          const panelW = rnd(0.4, 1.2);
+          const panelH = rnd(0.6, 2.0);
+
+          const panelGeo = new THREE.BoxGeometry(panelW, panelH, panelDepth);
+          const panelMat = rndBool(0.3) ? accentMat : darkerMat;
+          const panel = new THREE.Mesh(panelGeo, panelMat);
+
+          panel.position.set(
+            cell.x * b.w,
+            cell.y * b.h,
+            faceZ
+          );
+
+          // Slight rotation for organic feel
+          panel.rotation.z = rnd(-0.1, 0.1);
+          group.add(panel);
+        }
+      }
+
+      // Create panels for side faces
+      for (const face of ['left', 'right']) {
+        const faceX = face === 'right' ? b.w / 2 + panelDepth / 2 : -b.w / 2 - panelDepth / 2;
+
+        for (let i = 0; i < cellCount / 2; i++) {
+          const panelW = rnd(0.4, 1.0);
+          const panelH = rnd(0.6, 1.8);
+
+          const panelGeo = new THREE.BoxGeometry(panelDepth, panelH, panelW);
+          const panelMat = rndBool(0.3) ? accentMat : darkerMat;
+          const panel = new THREE.Mesh(panelGeo, panelMat);
+
+          panel.position.set(
+            faceX,
+            rnd(0.1, 0.9) * b.h,
+            rnd(-0.4, 0.4) * b.d
+          );
+          panel.rotation.x = rnd(-0.1, 0.1);
+          group.add(panel);
+        }
+      }
+
+      // Structural frame elements
+      const framePositions = [
+        [-b.w/2, 0, -b.d/2], [b.w/2, 0, -b.d/2],
+        [-b.w/2, 0, b.d/2], [b.w/2, 0, b.d/2]
+      ];
+      for (const [fx, fy, fz] of framePositions) {
+        const frameGeo = new THREE.BoxGeometry(0.2, b.h, 0.2);
+        const frame = new THREE.Mesh(frameGeo, darkerMat);
+        frame.position.set(fx, b.h / 2, fz);
+        group.add(frame);
+      }
+
+      // Cantilevered top
+      const cantGeo = new THREE.BoxGeometry(b.w * 1.1, 0.4, b.d * 1.1);
+      const cant = new THREE.Mesh(cantGeo, accentMat);
+      cant.position.y = b.h + 0.2;
+      group.add(cant);
+      break;
+
+    default:
+      // Fallback simple box
+      geometry = new THREE.BoxGeometry(b.w, b.h, b.d);
+      mesh = new THREE.Mesh(geometry, mainMat);
+      mesh.position.y = b.h / 2;
+      group.add(mesh);
       break;
   }
 }
@@ -1016,7 +1232,8 @@ function addFragments(group, b, material, count) {
 // =============================================================================
 
 function addWindows(group, b, pal) {
-  if (b.style === 'retro' || b.style === 'organic') return;
+  // Skip window generation for styles with custom facade patterns
+  if (['retro', 'organic', 'parametric', 'twisted', 'voronoi'].includes(b.style)) return;
 
   const isNight = features.timeOfDay === 'night';
   const windowColor = isNight ? pal.accent : pal.window;

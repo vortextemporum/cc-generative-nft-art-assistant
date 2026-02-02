@@ -2,6 +2,20 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.1.0] - 2026-02-02
+
+### Added
+- Three new Grasshopper/Rhino-inspired parametric building styles:
+  - **parametric**: Attractor-influenced floor plates with lofted profiles, panel dividers
+  - **twisted**: Turning Torso-style towers with progressive floor rotation, structural cores, edge beams
+  - **voronoi**: Buildings with voronoi-pattern facade panels, structural frames
+- Parametric canopy and crown elements for new building types
+
+### Fixed
+- Fixed grass/park/water alignment with city grid (was shifted from proper positions)
+- Corrected road positioning to align with block boundaries
+- Fixed ground and cityGroup centering calculations
+
 ## [4.0.2] - 2026-02-02
 
 ### Fixed
