@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Corrupted Harmony</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     * {
       margin: 0;
@@ -165,7 +163,7 @@
       flex-wrap: wrap;
     }
 
-    button {
+    button, select {
       background: #1a1a1a;
       border: 1px solid #333;
       color: #888;
@@ -180,10 +178,55 @@
       min-width: 100px;
     }
 
-    button:hover {
+    button:hover, select:hover {
       background: #222;
       color: #fff;
       border-color: #444;
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+    }
+
+    select option {
+      background: #1a1a1a;
+      color: #aaa;
+    }
+
+    .version-selector {
+      margin-bottom: 15px;
+    }
+
+    .version-selector label {
+      display: block;
+      font-size: 0.65rem;
+      color: #555;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .version-selector select {
+      width: 100%;
+    }
+
+    .version-info {
+      font-size: 0.6rem;
+      color: #444;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .version-info .framework {
+      color: #666;
+      background: #1a1a1a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-left: 5px;
     }
 
     .shortcuts {
@@ -272,6 +315,21 @@
 
       <div class="sidebar">
         <div class="panel">
+          <h2>Version</h2>
+          <div class="version-selector">
+            <select id="version-select">
+              <option value="current" data-framework="three.js" data-file="sketch.js">v4.1.0 - Parametric Design (Current)</option>
+              <option value="v4.1.0" data-framework="three.js" data-file="versions/v4.1.0-parametric.js">v4.1.0 - Parametric Design</option>
+              <option value="v3.2.0" data-framework="three.js" data-file="versions/v3.2.0-per-building-shaders.js">v3.2.0 - Per-Building Shaders</option>
+              <option value="v1.0.0" data-framework="p5.js" data-file="versions/v1.0.0-sketch.js">v1.0.0 - Original (p5.js)</option>
+            </select>
+            <div class="version-info">
+              Framework: <span class="framework" id="framework-display">three.js</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
           <h2>Features</h2>
           <div id="features-list"></div>
           <div class="hash-display">
@@ -294,14 +352,14 @@
               <span>Save image</span>
               <span class="shortcut-key">S</span>
             </div>
-            <div class="shortcut-row">
+            <div class="shortcut-row" id="rotation-shortcut">
               <span>Toggle rotation</span>
               <span class="shortcut-key">Space</span>
             </div>
           </div>
         </div>
 
-        <div class="version">v4.1.0 - Parametric Design + Alignment Fix</div>
+        <div class="version" id="version-display">Loading...</div>
       </div>
     </div>
 
@@ -310,9 +368,100 @@
     </footer>
   </div>
 
-  <script src="sketch.js"></script>
   <script>
-    // Wait for three.js to initialize
+    // Version configuration
+    const VERSIONS = {
+      'current': {
+        framework: 'three.js',
+        file: 'sketch.js',
+        libs: [
+          'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+          'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
+        ],
+        description: 'v4.1.0 - Parametric Design + Alignment Fix'
+      },
+      'v4.1.0': {
+        framework: 'three.js',
+        file: 'versions/v4.1.0-parametric.js',
+        libs: [
+          'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+          'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
+        ],
+        description: 'v4.1.0 - Parametric Design'
+      },
+      'v3.2.0': {
+        framework: 'three.js',
+        file: 'versions/v3.2.0-per-building-shaders.js',
+        libs: [
+          'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+          'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
+        ],
+        description: 'v3.2.0 - Per-Building Shader Effects'
+      },
+      'v1.0.0': {
+        framework: 'p5.js',
+        file: 'versions/v1.0.0-sketch.js',
+        libs: [
+          'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'
+        ],
+        description: 'v1.0.0 - Original (p5.js 2D)'
+      }
+    };
+
+    // Get version from URL or default to current
+    function getVersionFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const version = params.get('v');
+      return version && VERSIONS[version] ? version : 'current';
+    }
+
+    // Load scripts sequentially
+    async function loadScripts(urls) {
+      for (const url of urls) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = url;
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+    }
+
+    // Initialize the selected version
+    async function initVersion(versionKey) {
+      const version = VERSIONS[versionKey];
+      if (!version) return;
+
+      // Update UI
+      document.getElementById('version-select').value = versionKey;
+      document.getElementById('framework-display').textContent = version.framework;
+      document.getElementById('version-display').textContent = version.description;
+
+      // Show/hide rotation shortcut based on framework
+      const rotationShortcut = document.getElementById('rotation-shortcut');
+      if (rotationShortcut) {
+        rotationShortcut.style.display = version.framework === 'three.js' ? 'flex' : 'none';
+      }
+
+      // Load libraries
+      try {
+        await loadScripts(version.libs);
+      } catch (e) {
+        console.error('Failed to load libraries:', e);
+        return;
+      }
+
+      // Load sketch
+      const script = document.createElement('script');
+      script.src = version.file;
+      document.body.appendChild(script);
+
+      // Wait for sketch to initialize
+      waitForSketch();
+    }
+
+    // Wait for sketch API to be available
     function waitForSketch() {
       if (window.sketchAPI && window.sketchAPI.getFeatures()) {
         updateDisplay();
@@ -321,10 +470,6 @@
         setTimeout(waitForSketch, 100);
       }
     }
-
-    window.addEventListener('load', () => {
-      setTimeout(waitForSketch, 500);
-    });
 
     function updateDisplay() {
       const features = window.sketchAPI.getFeatures();
@@ -366,6 +511,19 @@
       }
     }
 
+    // Version selector handler
+    document.getElementById('version-select')?.addEventListener('change', (e) => {
+      const version = e.target.value;
+      // Reload page with new version parameter
+      const url = new URL(window.location);
+      if (version === 'current') {
+        url.searchParams.delete('v');
+      } else {
+        url.searchParams.set('v', version);
+      }
+      window.location.href = url.toString();
+    });
+
     // Button handlers
     document.getElementById('btn-regenerate')?.addEventListener('click', () => {
       if (window.sketchAPI) {
@@ -375,8 +533,13 @@
     });
 
     document.getElementById('btn-save')?.addEventListener('click', () => {
-      // Trigger S key for three.js save
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }));
+    });
+
+    // Initialize on load
+    window.addEventListener('load', () => {
+      const version = getVersionFromURL();
+      initVersion(version);
     });
   </script>
 </body>
