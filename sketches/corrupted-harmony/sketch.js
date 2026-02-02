@@ -1,5 +1,5 @@
 /**
- * CORRUPTED HARMONY v4.3.0
+ * CORRUPTED HARMONY v4.3.1
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/glitch/corrupt/liquify/stencil effects
  * Enhanced noise algorithms: voronoi, perlin, worley, value noise
@@ -1687,8 +1687,14 @@ function addWindows(group, b, pal) {
     return windowGroup;
   };
 
+  // Account for window height so tops don't exceed building
+  // Also leave extra room for roof elements (spires, domes, etc.)
+  const roofMargin = 1.5;
   const startY = margin + winH / 2;
-  const endY = b.h - margin;
+  const endY = b.h - margin - winH / 2 - roofMargin;
+
+  // Skip if building too short for windows
+  if (endY < startY) return;
 
   // Scattered style places windows more randomly
   if (windowStyle === 'scattered') {

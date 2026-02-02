@@ -2,6 +2,14 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [4.3.1] - 2026-02-02
+
+### Fixed
+- Windows no longer extend above building tops
+- Added roof margin (1.5 units) to leave room for spires, domes, antennas
+- endY now accounts for window height (was only checking center position)
+- Skip window generation entirely for buildings too short to fit windows
+
 ## [4.3.0] - 2026-02-02
 
 ### Changed
