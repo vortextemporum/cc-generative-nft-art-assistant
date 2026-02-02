@@ -956,8 +956,10 @@ function buildBuilding(b, pal) {
   const group = new THREE.Group();
 
   const colorIndex = rndInt(0, 4);
-  const mainColor = pal.building[colorIndex];
-  const darkerColor = pal.building[Math.max(0, colorIndex - 1)];
+  // Defensive color checks with fallbacks
+  const mainColor = (pal.building && pal.building[colorIndex]) || 0x666666;
+  const darkerColor = (pal.building && pal.building[Math.max(0, colorIndex - 1)]) || 0x444444;
+  const accentColor = pal.accent || 0x888888;
 
   // For corrupt effect, pre-select noise type so we can track it
   let noiseType = null;
@@ -968,7 +970,7 @@ function buildBuilding(b, pal) {
   // Use effect material for this building
   const mainMat = createEffectMaterial(b.effect, mainColor, b.seed, features.rarity, noiseType);
   const darkerMat = createEffectMaterial(b.effect, darkerColor, b.seed + 10, features.rarity, noiseType);
-  const accentMat = createEffectMaterial(b.effect, pal.accent, b.seed + 20, features.rarity, noiseType);
+  const accentMat = createEffectMaterial(b.effect, accentColor, b.seed + 20, features.rarity, noiseType);
 
   // Building info for click detection
   const buildingId = buildingStats.length + 1;
@@ -1913,29 +1915,32 @@ function onCanvasClick(event) {
   raycaster.setFromCamera(mouse, camera);
 
   // Find intersections with city objects
-  const intersects = raycaster.intersectObjects(cityGroup.children, true);
+  const intersects = raycaster.intersectObjects(scene.children, true);
+
+  if (intersects.length === 0) {
+    selectedBuilding = null;
+    window.dispatchEvent(new CustomEvent('buildingSelected', { detail: null }));
+    return;
+  }
 
   // Find the first building (traverse up to find group with buildingInfo)
   for (const intersect of intersects) {
     let obj = intersect.object;
-    // Traverse up to find the building group
-    while (obj && obj.parent) {
+    // Traverse up through all parents to find the building group
+    while (obj) {
       if (obj.userData && obj.userData.isBuilding) {
         const info = obj.userData.buildingInfo;
         selectedBuilding = info;
 
         // Dispatch custom event for UI to handle
         window.dispatchEvent(new CustomEvent('buildingSelected', { detail: info }));
-
-        // Also log to console for debugging
-        console.log('Building selected:', info);
         return;
       }
       obj = obj.parent;
     }
   }
 
-  // Clicked on nothing - deselect
+  // Clicked on ground/road/etc - deselect
   selectedBuilding = null;
   window.dispatchEvent(new CustomEvent('buildingSelected', { detail: null }));
 }
