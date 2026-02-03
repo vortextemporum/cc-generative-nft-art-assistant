@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Railway Sim - Interactive Railway Simulation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d14;
+      color: #e8e8e8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 900px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .main-container {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #sketch-holder {
+      background: #1a1a24;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    #sketch-holder canvas {
+      display: block;
+    }
+
+    .sidebar {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel {
+      background: #1a1a24;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .panel h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 8px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    button {
+      background: #2a2a3a;
+      color: #e8e8e8;
+      border: 1px solid #444;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #3a3a4a;
+      border-color: #666;
+    }
+
+    button.primary {
+      background: #4a6fa5;
+      border-color: #5a7fb5;
+    }
+
+    button.primary:hover {
+      background: #5a7fb5;
+    }
+
+    button.danger {
+      background: #8b3a3a;
+      border-color: #9b4a4a;
+    }
+
+    button.danger:hover {
+      background: #9b4a4a;
+    }
+
+    .hash-display {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.7rem;
+      color: #666;
+      word-break: break-all;
+      padding: 8px;
+      background: #12121a;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    .features-table {
+      width: 100%;
+      font-size: 0.85rem;
+    }
+
+    .features-table tr {
+      border-bottom: 1px solid #2a2a3a;
+    }
+
+    .features-table td {
+      padding: 6px 0;
+    }
+
+    .features-table td:first-child {
+      color: #888;
+    }
+
+    .features-table td:last-child {
+      text-align: right;
+      font-weight: 500;
+    }
+
+    .rarity-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .rarity-common { background: #3a3a4a; color: #aaa; }
+    .rarity-uncommon { background: #2a5a3a; color: #8f8; }
+    .rarity-rare { background: #3a3a6a; color: #88f; }
+    .rarity-legendary { background: #6a4a2a; color: #fa4; }
+
+    .keyboard-hints {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 12px;
+      font-size: 0.8rem;
+    }
+
+    .keyboard-hints kbd {
+      background: #2a2a3a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.75rem;
+    }
+
+    .keyboard-hints span {
+      color: #888;
+    }
+
+    .train-status {
+      padding: 8px;
+      background: #12121a;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .train-status .label {
+      color: #888;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .train-status .value {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .status-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .status-row > div {
+      flex: 1;
+    }
+
+    .speed-bar {
+      height: 8px;
+      background: #2a2a3a;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .speed-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4a6fa5, #7a9fd5);
+      transition: width 0.1s;
+    }
+
+    footer {
+      margin-top: 24px;
+      text-align: center;
+      color: #555;
+      font-size: 0.75rem;
+    }
+
+    footer a {
+      color: #888;
+      text-decoration: none;
+    }
+
+    .paused-indicator {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #fa4;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      display: none;
+      z-index: 100;
+    }
+
+    .paused-indicator.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>RAILWAY SIM</h1>
+    <p class="subtitle">Interactive Railway Simulation</p>
+  </header>
+
+  <div class="paused-indicator" id="paused-indicator">PAUSED</div>
+
+  <div class="main-container">
+    <div id="sketch-holder"></div>
+
+    <div class="sidebar">
+      <!-- Controls -->
+      <div class="panel">
+        <h2>Controls</h2>
+        <div class="controls-grid">
+          <button id="btn-regenerate" class="primary">Regenerate (R)</button>
+          <button id="btn-save">Save PNG (S)</button>
+          <button id="btn-dispatch">Add Train (N)</button>
+          <button id="btn-remove" class="danger">Remove (X)</button>
+          <button id="btn-pause" style="grid-column: span 2;">Pause / Resume (Space)</button>
+        </div>
+      </div>
+
+      <!-- Train Status -->
+      <div class="panel">
+        <h2>Selected Train</h2>
+        <div class="train-status">
+          <div class="status-row">
+            <div>
+              <div class="label">Type</div>
+              <div class="value" id="train-type">-</div>
+            </div>
+            <div>
+              <div class="label">Speed</div>
+              <div class="value" id="train-speed">0.0</div>
+            </div>
+          </div>
+          <div class="label">Throttle</div>
+          <div class="speed-bar">
+            <div class="speed-bar-fill" id="speed-bar" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="keyboard-hints" style="margin-top: 12px;">
+          <kbd>W/↑</kbd> <span>Accelerate</span>
+          <kbd>S/↓</kbd> <span>Brake/Reverse</span>
+          <kbd>A/←</kbd> <span>Direction Left</span>
+          <kbd>D/→</kbd> <span>Direction Right</span>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="panel">
+        <h2>Features</h2>
+        <table class="features-table" id="features-table">
+          <tr><td>Environment</td><td>-</td></tr>
+          <tr><td>Complexity</td><td>-</td></tr>
+          <tr><td>Nodes</td><td>-</td></tr>
+          <tr><td>Trains</td><td>-</td></tr>
+          <tr><td>Weather</td><td>-</td></tr>
+        </table>
+        <div class="hash-display" id="hash-display">0x...</div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="panel">
+        <h2>How to Play</h2>
+        <div style="font-size: 0.85rem; color: #aaa; line-height: 1.6;">
+          <p><strong>Drive:</strong> Select a train by clicking, then use arrow keys or WASD to control speed and direction.</p>
+          <p style="margin-top: 8px;"><strong>Switches:</strong> Click the arrow indicators at junctions to change track routing.</p>
+          <p style="margin-top: 8px;"><strong>Dispatch:</strong> Press N to add new trains to the network.</p>
+          <p style="margin-top: 8px;"><strong>Collisions:</strong> If trains crash, they'll reset after a moment.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Railway Sim v1.0.0 | Generative Railway Simulation</p>
+  </footer>
+
+  <script src="sketch.js"></script>
+  <script>
+    // Move canvas into holder
+    new p5((p) => {
+      p.setup = () => {
+        const canvas = p.createCanvas(700, 700);
+        canvas.parent('sketch-holder');
+      };
+    });
+
+    // Wait for sketch to initialize
+    setTimeout(() => {
+      const rs = window.railwaySim;
+      if (!rs) return;
+
+      // UI Elements
+      const btnRegenerate = document.getElementById('btn-regenerate');
+      const btnSave = document.getElementById('btn-save');
+      const btnDispatch = document.getElementById('btn-dispatch');
+      const btnRemove = document.getElementById('btn-remove');
+      const btnPause = document.getElementById('btn-pause');
+      const pausedIndicator = document.getElementById('paused-indicator');
+      const hashDisplay = document.getElementById('hash-display');
+      const featuresTable = document.getElementById('features-table');
+      const trainType = document.getElementById('train-type');
+      const trainSpeed = document.getElementById('train-speed');
+      const speedBar = document.getElementById('speed-bar');
+
+      // Sync UI with sketch state
+      function syncUI() {
+        const features = rs.getFeatures();
+        const hash = rs.getHash();
+
+        hashDisplay.textContent = hash;
+
+        // Update features table
+        const envRarity = {
+          urban: 'common', rural: 'common',
+          industrial: 'uncommon', coastal: 'rare', mountain: 'legendary'
+        };
+        const weatherDisplay = features.weatherEffect === 'none' ? 'Clear' :
+          features.weatherEffect.charAt(0).toUpperCase() + features.weatherEffect.slice(1);
+
+        featuresTable.innerHTML = `
+          <tr>
+            <td>Environment</td>
+            <td><span class="rarity-badge rarity-${envRarity[features.environment]}">${features.environment}</span></td>
+          </tr>
+          <tr>
+            <td>Complexity</td>
+            <td><span class="rarity-badge rarity-${features.complexity}">${features.complexity}</span></td>
+          </tr>
+          <tr>
+            <td>Nodes</td>
+            <td>${features.nodeCount}</td>
+          </tr>
+          <tr>
+            <td>Trains</td>
+            <td>${rs.getTrains().length}</td>
+          </tr>
+          <tr>
+            <td>Weather</td>
+            <td>${weatherDisplay}</td>
+          </tr>
+          <tr>
+            <td>Stations</td>
+            <td>${features.hasStations ? features.stationCount : 'None'}</td>
+          </tr>
+        `;
+      }
+
+      // Update train status
+      function updateTrainStatus() {
+        const train = rs.getSelectedTrain();
+        if (train) {
+          trainType.textContent = train.type.toUpperCase();
+          trainSpeed.textContent = Math.abs(train.speed).toFixed(1);
+          const maxSpeed = train.config.speed;
+          const pct = (Math.abs(train.targetSpeed) / maxSpeed) * 100;
+          speedBar.style.width = pct + '%';
+          speedBar.style.background = train.speed >= 0 ?
+            'linear-gradient(90deg, #4a6fa5, #7a9fd5)' :
+            'linear-gradient(90deg, #a54a4a, #d57a7a)';
+        } else {
+          trainType.textContent = '-';
+          trainSpeed.textContent = '0.0';
+          speedBar.style.width = '0%';
+        }
+      }
+
+      // Button handlers
+      btnRegenerate.onclick = () => {
+        rs.regenerate();
+        syncUI();
+      };
+
+      btnSave.onclick = () => {
+        saveCanvas(`railway-sim-${rs.getHash().slice(2, 10)}`, 'png');
+      };
+
+      btnDispatch.onclick = () => {
+        rs.dispatchTrain();
+        syncUI();
+      };
+
+      btnRemove.onclick = () => {
+        const trains = rs.getTrains();
+        const selected = rs.getSelectedTrain();
+        if (selected) {
+          const idx = trains.indexOf(selected);
+          if (idx > -1) trains.splice(idx, 1);
+        }
+        syncUI();
+      };
+
+      let isPaused = false;
+      btnPause.onclick = () => {
+        isPaused = rs.togglePause();
+        pausedIndicator.classList.toggle('visible', isPaused);
+        btnPause.textContent = isPaused ? 'Resume (Space)' : 'Pause (Space)';
+      };
+
+      // Keyboard handler for pause indicator
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          isPaused = !isPaused;
+          pausedIndicator.classList.toggle('visible', isPaused);
+          btnPause.textContent = isPaused ? 'Resume (Space)' : 'Pause (Space)';
+        }
+        if (e.key === 'r' || e.key === 'R') {
+          setTimeout(syncUI, 100);
+        }
+        if (e.key === 'n' || e.key === 'N') {
+          setTimeout(syncUI, 100);
+        }
+      });
+
+      // Initial sync
+      syncUI();
+
+      // Update train status periodically
+      setInterval(updateTrainStatus, 100);
+      setInterval(() => {
+        document.querySelector('#features-table tr:nth-child(4) td:last-child').textContent =
+          rs.getTrains().length;
+      }, 500);
+
+      // Expose syncUI for sketch
+      window.syncUI = syncUI;
+
+    }, 500);
+  </script>
+</body>
+</html>
