@@ -160,7 +160,7 @@
 
     <div class="controls-panel">
       <div class="section">
-        <h2>BLOB-COOKIE <span style="color:#444">v1.0.0</span></h2>
+        <h2>BLOB-COOKIE <span style="color:#444">v1.1.0</span></h2>
         <div class="hash-display" id="hash-display">Loading...</div>
         <div class="btn-group">
           <button class="btn btn-primary" id="btn-regenerate">Regenerate (R)</button>
@@ -227,6 +227,26 @@
       </div>
 
       <div class="section">
+        <h2>Holes</h2>
+        <p class="param-note">Actual holes through the shape</p>
+
+        <div class="slider-group">
+          <div class="slider-label"><span>holeCount</span><span class="slider-value" id="val-holeCount">2</span></div>
+          <input type="range" id="sld-holeCount" min="0" max="8" step="1" value="2">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label"><span>holeSize</span><span class="slider-value" id="val-holeSize">0.25</span></div>
+          <input type="range" id="sld-holeSize" min="0.1" max="0.5" step="0.05" value="0.25">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label"><span>holePoints (complexity)</span><span class="slider-value" id="val-holePoints">6</span></div>
+          <input type="range" id="sld-holePoints" min="3" max="12" step="1" value="6">
+        </div>
+      </div>
+
+      <div class="section">
         <h2>Material & Effects</h2>
 
         <div class="slider-group">
@@ -278,7 +298,7 @@
         </div>
       </div>
 
-      <div class="version">BLOB-COOKIE v1.0.0 | Extruded Bezier Blob</div>
+      <div class="version">BLOB-COOKIE v1.1.0 | Extruded Bezier Blob with Holes</div>
     </div>
   </div>
 
@@ -316,6 +336,9 @@
         { id: 'depth', int: false },
         { id: 'bevelSize', int: false },
         { id: 'bevelSegments', int: true },
+        { id: 'holeCount', int: true },
+        { id: 'holeSize', int: false },
+        { id: 'holePoints', int: true },
         { id: 'baseHue', int: true }
       ];
 
@@ -346,6 +369,9 @@
           ['depth', f.depth.toFixed(1), true],
           ['bevelSize', f.bevelSize.toFixed(2), true],
           ['bevelSegments', f.bevelSegments, false],
+          ['holeCount', f.holeCount, false],
+          ['holeSize', f.holeSize.toFixed(2), true],
+          ['holePoints', f.holePoints, false],
           ['baseHue', Math.round(f.baseHue), false]
         ];
 

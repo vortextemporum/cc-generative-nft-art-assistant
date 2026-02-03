@@ -1,13 +1,14 @@
 /**
- * BLOB-COOKIE v1.0.0
+ * BLOB-COOKIE v1.1.0
  *
  * Exact 2D bezier blob extruded into 3D with beveled edges.
- * Preserves negative spaces and concave areas of the original blob.
+ * NOW WITH ACTUAL HOLES - smaller blob shapes cut through the main shape.
  *
  * Algorithm:
  * 1. Generate 2D blob using exact bezier algorithm
- * 2. Create THREE.Shape from bezier curves
- * 3. Extrude with ExtrudeGeometry + bevel for smooth edges
+ * 2. Generate smaller blob holes inside the main shape
+ * 3. Create THREE.Shape with holes
+ * 4. Extrude with ExtrudeGeometry + bevel for smooth edges
  *
  * Controls:
  * - R: Regenerate
@@ -70,7 +71,7 @@ function rollRarity(weights) {
 
 const TWO_PI = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 // ============================================================================
 // FEATURE SYSTEM
@@ -139,6 +140,11 @@ function generateFeatures() {
   const bevelSegments = rndInt(3, 8);       // Bevel smoothness
   const curveSegments = rndInt(4, 8);       // Bezier curve smoothness
 
+  // HOLE parameters - actual holes through the shape
+  const holeCount = rndInt(1, 5);           // Number of holes
+  const holeSize = rnd(0.15, 0.35);         // Size of holes relative to main blob
+  const holePoints = rndInt(4, 8);          // Complexity of hole shapes
+
   // Distortion
   const distortionStrength = rnd(0.2, 0.6);
 
@@ -168,6 +174,11 @@ function generateFeatures() {
     bevelSize,
     bevelSegments,
     curveSegments,
+
+    // Hole params
+    holeCount,
+    holeSize,
+    holePoints,
 
     distortionStrength,
     baseHue,
@@ -316,6 +327,130 @@ function createBlobShape(blobPoints) {
   return shape;
 }
 
+/**
+ * Build a smaller blob for use as a hole
+ * Uses same algorithm but with different size/position
+ */
+function buildHoleBlobPoints(centerX, centerY, radius, numPoints) {
+  const blobPoints = [];
+  const radiusRandomness = 0.2;
+  const cpOffsetAngle = 25 * (Math.PI / 180);
+  const cpDist = 0.4 * radius;
+
+  // Generate points around a ring
+  for (let p = 0; p < numPoints; p++) {
+    const a = p * TWO_PI / numPoints;
+    const r = radius + rnd(-radiusRandomness * radius, radiusRandomness * radius);
+
+    const bp = {
+      x: centerX + Math.cos(a) * r,
+      y: centerY + Math.sin(a) * r,
+      angle: a,
+      cp: []
+    };
+    blobPoints.push(bp);
+  }
+
+  // Add control points
+  for (let b = 0; b < blobPoints.length; b++) {
+    const thisp = blobPoints[b];
+    const randomAngle = rnd(-cpOffsetAngle, cpOffsetAngle);
+
+    const cp1angle = thisp.angle - (HALF_PI + randomAngle);
+    const cp2angle = thisp.angle + (HALF_PI - randomAngle);
+
+    const cp1 = {
+      x: thisp.x + Math.cos(cp1angle) * cpDist,
+      y: thisp.y + Math.sin(cp1angle) * cpDist
+    };
+    const cp2 = {
+      x: thisp.x + Math.cos(cp2angle) * cpDist,
+      y: thisp.y + Math.sin(cp2angle) * cpDist
+    };
+
+    thisp.cp = [cp1, cp2];
+  }
+
+  return blobPoints;
+}
+
+/**
+ * Create a hole path from blob points
+ */
+function createHolePath(blobPoints) {
+  const holePath = new THREE.Path();
+
+  holePath.moveTo(blobPoints[0].x, blobPoints[0].y);
+
+  for (let b = 0; b < blobPoints.length; b++) {
+    const curr = blobPoints[b];
+    const next = blobPoints[(b + 1) % blobPoints.length];
+
+    holePath.bezierCurveTo(
+      curr.cp[1].x, curr.cp[1].y,
+      next.cp[0].x, next.cp[0].y,
+      next.x, next.y
+    );
+  }
+
+  return holePath;
+}
+
+/**
+ * Generate holes inside the main blob
+ */
+function generateHoles(mainRadius) {
+  const holes = [];
+  const holeCount = features.holeCount;
+  const holeSize = features.holeSize;
+  const holePoints = features.holePoints;
+
+  // Place holes at random positions inside the main blob
+  // Keep them away from edges and each other
+  const usedPositions = [];
+
+  for (let h = 0; h < holeCount; h++) {
+    // Try to find a valid position
+    let attempts = 0;
+    let validPos = null;
+
+    while (attempts < 20 && !validPos) {
+      // Random position within inner area of main blob
+      const angle = rnd(0, TWO_PI);
+      const dist = rnd(0.1, 0.5) * mainRadius;  // Keep holes in inner 50%
+
+      const cx = Math.cos(angle) * dist;
+      const cy = Math.sin(angle) * dist;
+
+      // Check distance from other holes
+      let tooClose = false;
+      for (const pos of usedPositions) {
+        const d = Math.sqrt((cx - pos.x) ** 2 + (cy - pos.y) ** 2);
+        if (d < holeSize * mainRadius * 2.5) {
+          tooClose = true;
+          break;
+        }
+      }
+
+      if (!tooClose) {
+        validPos = { x: cx, y: cy };
+        usedPositions.push(validPos);
+      }
+
+      attempts++;
+    }
+
+    if (validPos) {
+      const holeRadius = holeSize * mainRadius * rnd(0.7, 1.3);
+      const holeBlobPoints = buildHoleBlobPoints(validPos.x, validPos.y, holeRadius, holePoints);
+      const holePath = createHolePath(holeBlobPoints);
+      holes.push(holePath);
+    }
+  }
+
+  return holes;
+}
+
 // ============================================================================
 // THREE.JS SETUP
 // ============================================================================
@@ -396,6 +531,12 @@ function generateBlob() {
 
   // Create THREE.Shape from bezier curves
   const shape = createBlobShape(blobPoints);
+
+  // Generate holes and add them to the shape
+  const holes = generateHoles(features.baseRadius);
+  holes.forEach(hole => {
+    shape.holes.push(hole);
+  });
 
   // Extrude settings with bevel for smooth edges
   const extrudeSettings = {
@@ -595,6 +736,7 @@ function updateUI() {
       ['Distortion', features.distortion, getRarity('distortion', features.distortion)],
       ['Color', features.colorFamily, 'common'],
       ['Points', features.numPoints, features.numPoints >= 12 ? 'rare' : 'common'],
+      ['Holes', features.holeCount, features.holeCount >= 4 ? 'rare' : 'common'],
       ['Depth', features.depth.toFixed(2), features.depth > 0.6 ? 'uncommon' : 'common']
     ];
 
