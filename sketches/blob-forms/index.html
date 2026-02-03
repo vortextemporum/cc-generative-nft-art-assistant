@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLOB-FORMS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d14;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .sketch-panel { flex: 0 0 700px; }
+
+    #sketch-container {
+      width: 700px;
+      height: 700px;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .controls-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 400px;
+      overflow-y: auto;
+      max-height: calc(100vh - 40px);
+    }
+
+    .section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .section h2 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .section h2 button {
+      font-size: 10px;
+      padding: 3px 8px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 3px;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    .hash-display {
+      font-size: 10px;
+      color: #666;
+      word-break: break-all;
+      padding: 8px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #e0e0e0; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+
+    .features-table { width: 100%; border-collapse: collapse; }
+    .features-table th, .features-table td {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .features-table th { font-weight: 500; color: #888; font-size: 10px; text-transform: uppercase; }
+
+    .rarity-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .rarity-badge.common { background: #374151; color: #9ca3af; }
+    .rarity-badge.uncommon { background: #065f46; color: #6ee7b7; }
+    .rarity-badge.rare { background: #1e40af; color: #93c5fd; }
+    .rarity-badge.legendary { background: #7c2d12; color: #fdba74; }
+
+    .slider-group { margin-bottom: 12px; }
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 10px;
+      color: #888;
+    }
+    .slider-value { color: #e0e0e0; }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      appearance: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #3b82f6;
+      border-radius: 50%;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-family: inherit;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    .feedback-buttons { display: flex; gap: 8px; }
+    .btn-like { background: #065f46; color: #6ee7b7; }
+    .btn-dislike { background: #7f1d1d; color: #fca5a5; }
+    .feedback-stats { font-size: 10px; color: #666; margin-top: 8px; }
+
+    .shortcuts { display: flex; flex-wrap: wrap; gap: 6px; }
+    .shortcut { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #666; }
+    .shortcut kbd {
+      padding: 2px 5px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      font-size: 9px;
+    }
+
+    .version { font-size: 10px; color: #444; text-align: center; margin-top: auto; padding-top: 12px; }
+
+    .param-note {
+      font-size: 9px;
+      color: #555;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sketch-panel">
+      <div id="sketch-container"></div>
+    </div>
+
+    <div class="controls-panel">
+      <div class="section">
+        <h2>BLOB-FORMS <span style="color:#444">v1.0.0</span></h2>
+        <div class="hash-display" id="hash-display">Loading...</div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-regenerate">Regenerate (R)</button>
+          <button class="btn btn-secondary" id="btn-save">Save (S)</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Features</h2>
+        <table class="features-table">
+          <thead><tr><th>Feature</th><th>Value</th><th>Rarity</th></tr></thead>
+          <tbody id="features-body"></tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Blob Shape <button id="btn-reset">Reset</button></h2>
+        <p class="param-note">Exact parameters from original 2D bezier blob</p>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>numPoints</span>
+            <span class="slider-value" id="val-numPoints">10</span>
+          </div>
+          <input type="range" id="sld-numPoints" min="4" max="20" step="1" value="10">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>baseRadius</span>
+            <span class="slider-value" id="val-baseRadius">1.0</span>
+          </div>
+          <input type="range" id="sld-baseRadius" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>radiusRandomness</span>
+            <span class="slider-value" id="val-radiusRandomness">0.2</span>
+          </div>
+          <input type="range" id="sld-radiusRandomness" min="0" max="0.5" step="0.05" value="0.2">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>cpOffsetAngle (wobble)</span>
+            <span class="slider-value" id="val-cpOffsetAngle">30</span>
+          </div>
+          <input type="range" id="sld-cpOffsetAngle" min="0" max="90" step="5" value="30">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>cpDistance (stretch)</span>
+            <span class="slider-value" id="val-cpDistance">0.5</span>
+          </div>
+          <input type="range" id="sld-cpDistance" min="0.1" max="1.5" step="0.1" value="0.5">
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>3D Settings</h2>
+
+        <div class="slider-group">
+          <label class="slider-label">Material</label>
+          <select id="sel-material">
+            <option value="Matte">Matte</option>
+            <option value="Glossy">Glossy</option>
+            <option value="Chrome">Chrome</option>
+            <option value="Iridescent">Iridescent</option>
+            <option value="Glass">Glass</option>
+            <option value="Emissive">Emissive</option>
+            <option value="Holographic">Holographic</option>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <label class="slider-label">Distortion</label>
+          <select id="sel-distortion">
+            <option value="None">None</option>
+            <option value="Twist">Twist</option>
+            <option value="Taper">Taper</option>
+            <option value="Bend">Bend</option>
+            <option value="Wave">Wave</option>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Lathe Segments (smoothness)</span>
+            <span class="slider-value" id="val-latheSegments">48</span>
+          </div>
+          <input type="range" id="sld-latheSegments" min="16" max="128" step="8" value="48">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Base Hue</span>
+            <span class="slider-value" id="val-baseHue">180</span>
+          </div>
+          <input type="range" id="sld-baseHue" min="0" max="360" step="5" value="180">
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Feedback</h2>
+        <div class="feedback-buttons">
+          <button class="btn btn-like" id="btn-like">Like (L)</button>
+          <button class="btn btn-dislike" id="btn-dislike">Dislike (D)</button>
+        </div>
+        <div class="feedback-stats" id="feedback-stats">Loading...</div>
+      </div>
+
+      <div class="section">
+        <h2>Shortcuts</h2>
+        <div class="shortcuts">
+          <span class="shortcut"><kbd>R</kbd> Regenerate</span>
+          <span class="shortcut"><kbd>S</kbd> Save</span>
+          <span class="shortcut"><kbd>Space</kbd> Pause</span>
+          <span class="shortcut"><kbd>L</kbd> Like</span>
+          <span class="shortcut"><kbd>D</kbd> Dislike</span>
+        </div>
+      </div>
+
+      <div class="version">BLOB-FORMS v1.0.0 | Exact 2D Bezier Blob + Lathe</div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="sketch.js"></script>
+
+  <script>
+    setTimeout(() => {
+      const bf = window.blobforms;
+      if (!bf) return console.error('Blob-forms not loaded');
+
+      document.getElementById('hash-display').textContent = bf.getHash();
+
+      // Buttons
+      document.getElementById('btn-regenerate').onclick = () => { bf.regenerate(); syncUI(); };
+      document.getElementById('btn-save').onclick = () => bf.saveImage();
+      document.getElementById('btn-reset').onclick = () => { bf.resetToOriginal(); bf.regenerate(); syncUI(); };
+      document.getElementById('btn-like').onclick = () => { bf.recordFeedback(true); updateStats(); };
+      document.getElementById('btn-dislike').onclick = () => { bf.recordFeedback(false); updateStats(); };
+
+      // Selects
+      ['material', 'distortion'].forEach(p => {
+        document.getElementById(`sel-${p}`).onchange = e => {
+          bf.setParameter(p, e.target.value);
+          bf.regenerate();
+          syncUI();
+        };
+      });
+
+      // Sliders - blob shape params
+      const sliders = [
+        { id: 'numPoints', int: true },
+        { id: 'baseRadius', int: false },
+        { id: 'radiusRandomness', int: false },
+        { id: 'cpOffsetAngle', int: true },
+        { id: 'cpDistance', int: false },
+        { id: 'latheSegments', int: true },
+        { id: 'baseHue', int: true }
+      ];
+
+      sliders.forEach(({ id, int }) => {
+        const sld = document.getElementById(`sld-${id}`);
+        const val = document.getElementById(`val-${id}`);
+        sld.oninput = () => {
+          const v = int ? parseInt(sld.value) : parseFloat(sld.value);
+          val.textContent = sld.value;
+          bf.setParameter(id, v);
+          bf.regenerate();
+          syncUI();
+        };
+      });
+
+      function syncUI() {
+        const f = bf.getFeatures();
+        document.getElementById('hash-display').textContent = bf.getHash();
+
+        document.getElementById('sel-material').value = f.material;
+        document.getElementById('sel-distortion').value = f.distortion;
+
+        document.getElementById('sld-numPoints').value = f.numPoints;
+        document.getElementById('val-numPoints').textContent = f.numPoints;
+
+        document.getElementById('sld-baseRadius').value = f.baseRadius.toFixed(1);
+        document.getElementById('val-baseRadius').textContent = f.baseRadius.toFixed(1);
+
+        document.getElementById('sld-radiusRandomness').value = f.radiusRandomness.toFixed(2);
+        document.getElementById('val-radiusRandomness').textContent = f.radiusRandomness.toFixed(2);
+
+        document.getElementById('sld-cpOffsetAngle').value = Math.round(f.cpOffsetAngle);
+        document.getElementById('val-cpOffsetAngle').textContent = Math.round(f.cpOffsetAngle);
+
+        document.getElementById('sld-cpDistance').value = f.cpDistance.toFixed(1);
+        document.getElementById('val-cpDistance').textContent = f.cpDistance.toFixed(1);
+
+        document.getElementById('sld-latheSegments').value = f.latheSegments;
+        document.getElementById('val-latheSegments').textContent = f.latheSegments;
+
+        document.getElementById('sld-baseHue').value = Math.round(f.baseHue);
+        document.getElementById('val-baseHue').textContent = Math.round(f.baseHue);
+      }
+
+      function updateStats() {
+        const s = bf.getFeedbackStats();
+        document.getElementById('feedback-stats').textContent =
+          `Liked: ${s.totalLiked} | Disliked: ${s.totalDisliked}`;
+      }
+
+      syncUI();
+      updateStats();
+    }, 500);
+  </script>
+</body>
+</html>
