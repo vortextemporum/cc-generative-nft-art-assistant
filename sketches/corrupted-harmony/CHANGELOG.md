@@ -2,6 +2,82 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [5.1.2] - 2026-02-03
+
+### Fixed
+- **Removed remaining red from corrupt effect** - changed perlin noise magenta tint from (0.9, 0.3, 0.5) to purple (0.6, 0.3, 0.9)
+
+## [5.1.1] - 2026-02-03
+
+### Fixed
+- **Removed all red colors from corrupt shader** across all 9 noise types:
+  - Voronoi: edge accent changed to darkening
+  - Worley: removed red from palette, uses blue/yellow/green/purple/orange/cyan
+  - Value: red band changed to teal
+  - Ridged: orange-red veins changed to golden
+  - Pixelate: red block color changed to orange
+  - Chromatic: rainbow spectrum starts from orange instead of red
+
+## [5.1.0] - 2026-02-03
+
+### Added
+- **Rooftop gardens** - 20% of compatible buildings get green rooftops with plants
+- **Train stations** - new public space type with platforms, tracks, and canopies
+- **Parking structures** - multi-level parking with cars
+- **Growth weirdness** - organic tendril effect on buildings
+
+### Changed
+- Enhanced city generation with new block types
+
+## [5.0.0] - 2026-02-03
+
+### Added
+- **4 new building styles**: industrial, pagoda, futuristic, ruins
+- **3 new noise types**: pixelate, scanlines, chromatic
+- **3 new weirdness effects**: phase shift, gravity defying, growth
+- Enhanced ridged noise with colorful glowing circuit veins
+- Restructured data corruption effect (datamosh)
+
+### Removed
+- **Glitch effect** removed from EFFECT_TYPES
+
+## [4.9.0] - 2026-02-03
+
+### Changed
+- **Worley noise redesigned** as stained glass with glitchy cells
+- **Turbulence renamed to datamosh** with horizontal band corruption and block artifacts
+
+## [4.8.0] - 2026-02-02
+
+### Changed
+- **Worley noise transformed** into stained glass mosaic effect with bold colors
+
+## [4.7.2] - 2026-02-02
+
+### Fixed
+- **createEffectMaterial color fix** - added safeColor fallback in the main effect material factory
+  - Ensures baseColor is never undefined/null before passing to material creators
+  - Default fallback is 0x666666 (gray)
+
+### Added
+- Extensive debug logging for click-to-inspect troubleshooting:
+  - Logs "Click handler registered on canvas" on init
+  - Logs "Buildings with userData.isBuilding: X" after city generation
+  - Logs mouse NDC coordinates, intersect count, object details on each click
+  - Logs parent userData for each intersect to trace hierarchy
+
+## [4.7.1] - 2026-02-02
+
+### Fixed
+- **Comprehensive palette fallbacks** - all palette property accesses now have defensive fallbacks
+  - Added fallback to 'muted' palette if selected palette is undefined
+  - Added fallbacks for: bg, ground, road, window, grass, water
+  - Prevents THREE.Material 'color' parameter undefined errors
+
+### Added
+- Debug logging for click-to-inspect feature (check browser console)
+  - Logs intersection count, object types, and building detection
+
 ## [4.7.0] - 2026-02-02
 
 ### Added

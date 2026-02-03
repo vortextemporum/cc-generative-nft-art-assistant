@@ -510,7 +510,7 @@
           <div class="version-selector">
             <select id="version-select">
               <optgroup label="3D Versions (three.js)">
-                <option value="current">v4.7.0 - Click to Inspect (Current)</option>
+                <option value="current">v5.1.2 - Full Update (Current)</option>
                 <option value="v4.2.0">v4.2.0 - Voronoi Panels</option>
                 <option value="v4.1.0">v4.1.0 - Parametric Design</option>
                 <option value="v3.2.0">v3.2.0 - Per-Building Shaders</option>
@@ -587,7 +587,7 @@
           'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
           'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'
         ],
-        description: 'v4.7.0 - Click Buildings to Inspect'
+        description: 'v5.1.2 - Buildings, Spaces, Effects (no red)'
       },
       'v4.2.0': {
         framework: 'three.js',
@@ -680,12 +680,15 @@
       }
 
       // For p5.js: load sketch FIRST (defines setup/draw), THEN p5.js (auto-runs them)
+      // Cache-busting timestamp
+      const cacheBust = '?t=' + Date.now();
+
       // For three.js: load libraries first, then sketch
       if (version.framework === 'p5.js') {
         // Load sketch first to define setup() and draw()
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
-          script.src = version.file;
+          script.src = version.file + cacheBust;
           script.onload = resolve;
           script.onerror = reject;
           document.body.appendChild(script);
@@ -707,7 +710,7 @@
         }
         // Then load sketch
         const script = document.createElement('script');
-        script.src = version.file;
+        script.src = version.file + cacheBust;
         document.body.appendChild(script);
       }
 
@@ -827,6 +830,7 @@
 
     // Building click popup handler
     window.addEventListener('buildingSelected', (e) => {
+      console.log('buildingSelected event received:', e.detail);
       const popup = document.getElementById('building-popup');
       const info = e.detail;
 
