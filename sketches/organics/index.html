@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORGANICS</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d14;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .sketch-panel {
+      flex: 0 0 700px;
+    }
+
+    #sketch-container {
+      width: 700px;
+      height: 700px;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    #sketch-container canvas {
+      display: block;
+    }
+
+    .controls-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 400px;
+      overflow-y: auto;
+      max-height: calc(100vh - 40px);
+    }
+
+    .section {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .section h2 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section h2 button {
+      font-size: 10px;
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 3px;
+      color: #aaa;
+      cursor: pointer;
+    }
+
+    .section h2 button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .hash-display {
+      font-size: 10px;
+      color: #666;
+      word-break: break-all;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .stats-summary {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      color: #aaa;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e0e0e0;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .features-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .features-table th,
+    .features-table td {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .features-table th {
+      font-weight: 500;
+      color: #888;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .features-table td {
+      font-size: 11px;
+    }
+
+    .rarity-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .rarity-badge.common { background: #374151; color: #9ca3af; }
+    .rarity-badge.uncommon { background: #065f46; color: #6ee7b7; }
+    .rarity-badge.rare { background: #1e40af; color: #93c5fd; }
+    .rarity-badge.legendary { background: #7c2d12; color: #fdba74; }
+
+    .slider-group {
+      margin-bottom: 12px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 10px;
+      color: #888;
+    }
+
+    .slider-value {
+      color: #e0e0e0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #3b82f6;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .feedback-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-like {
+      background: #065f46;
+      color: #6ee7b7;
+    }
+
+    .btn-like:hover {
+      background: #047857;
+    }
+
+    .btn-dislike {
+      background: #7f1d1d;
+      color: #fca5a5;
+    }
+
+    .btn-dislike:hover {
+      background: #991b1b;
+    }
+
+    .feedback-stats {
+      font-size: 10px;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .rarity-curve {
+      margin-bottom: 12px;
+    }
+
+    .rarity-curve-label {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .rarity-bars {
+      display: flex;
+      gap: 2px;
+      height: 24px;
+    }
+
+    .rarity-bar {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rarity-bar-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #3b82f6;
+      transition: height 0.3s ease;
+    }
+
+    .rarity-bar.active .rarity-bar-fill {
+      background: #f59e0b;
+    }
+
+    .shortcuts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .shortcut {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: #666;
+    }
+
+    .shortcut kbd {
+      display: inline-block;
+      padding: 2px 5px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 9px;
+    }
+
+    .version {
+      font-size: 10px;
+      color: #444;
+      text-align: center;
+      margin-top: auto;
+      padding-top: 12px;
+    }
+
+    .override-indicator {
+      display: none;
+      background: #f59e0b;
+      color: #000;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      margin-bottom: 8px;
+    }
+
+    .override-indicator.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sketch Panel -->
+    <div class="sketch-panel">
+      <div id="sketch-container"></div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <!-- Header -->
+      <div class="section">
+        <h2>ORGANICS <span style="color: #444">v1.0.0</span></h2>
+        <div class="hash-display" id="hash-display">Loading...</div>
+
+        <div class="stats-summary">
+          <span class="stat">Materials: 7</span>
+          <span class="stat">Distortions: 6</span>
+          <span class="stat">Growths: 5</span>
+          <span class="stat">Booleans: 5</span>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-regenerate">Regenerate (R)</button>
+          <button class="btn btn-secondary" id="btn-save">Save (S)</button>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="section">
+        <h2>Features</h2>
+        <table class="features-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Value</th>
+              <th>Rarity</th>
+            </tr>
+          </thead>
+          <tbody id="features-body">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Parameters -->
+      <div class="section">
+        <h2>Parameters <button id="btn-reset">Reset</button></h2>
+
+        <div class="override-indicator" id="override-indicator">
+          Parameters modified - click Reset to restore original
+        </div>
+
+        <!-- Discrete features -->
+        <div class="slider-group">
+          <label class="slider-label">Material</label>
+          <select id="sel-material">
+            <option value="Matte">Matte</option>
+            <option value="Glossy">Glossy</option>
+            <option value="Chrome">Chrome</option>
+            <option value="Iridescent">Iridescent</option>
+            <option value="Glass">Glass</option>
+            <option value="Emissive">Emissive</option>
+            <option value="Holographic">Holographic</option>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <label class="slider-label">Distortion</label>
+          <select id="sel-distortion">
+            <option value="None">None</option>
+            <option value="Twist">Twist</option>
+            <option value="Taper">Taper</option>
+            <option value="Bend">Bend</option>
+            <option value="Bulge">Bulge</option>
+            <option value="Wave">Wave</option>
+          </select>
+        </div>
+
+        <div class="slider-group">
+          <label class="slider-label">Growth</label>
+          <select id="sel-growth">
+            <option value="None">None</option>
+            <option value="Spikes">Spikes</option>
+            <option value="Tendrils">Tendrils</option>
+            <option value="Bumps">Bumps</option>
+            <option value="Crystals">Crystals</option>
+          </select>
+        </div>
+
+        <!-- Blob shape parameters (from original 2D concept) -->
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Num Points (complexity)</span>
+            <span class="slider-value" id="val-numPoints">10</span>
+          </div>
+          <input type="range" id="sld-numPoints" min="4" max="16" step="1" value="10">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Radius Randomness</span>
+            <span class="slider-value" id="val-radiusRandomness">0.25</span>
+          </div>
+          <input type="range" id="sld-radiusRandomness" min="0.05" max="0.5" step="0.05" value="0.25">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>CP Offset Angle (wobble)</span>
+            <span class="slider-value" id="val-cpOffsetAngle">30</span>
+          </div>
+          <input type="range" id="sld-cpOffsetAngle" min="5" max="60" step="5" value="30">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Noise Scale</span>
+            <span class="slider-value" id="val-noiseScale">2.5</span>
+          </div>
+          <input type="range" id="sld-noiseScale" min="1" max="6" step="0.5" value="2.5">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Subdivisions (detail)</span>
+            <span class="slider-value" id="val-subdivisions">4</span>
+          </div>
+          <input type="range" id="sld-subdivisions" min="2" max="6" step="1" value="4">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Base Hue</span>
+            <span class="slider-value" id="val-baseHue">180</span>
+          </div>
+          <input type="range" id="sld-baseHue" min="0" max="360" step="5" value="180">
+        </div>
+      </div>
+
+      <!-- Rarity Curves -->
+      <div class="section">
+        <h2>Rarity Distribution</h2>
+
+        <div class="rarity-curve">
+          <div class="rarity-curve-label">Material</div>
+          <div class="rarity-bars" id="rarity-material"></div>
+        </div>
+
+        <div class="rarity-curve">
+          <div class="rarity-curve-label">Distortion</div>
+          <div class="rarity-bars" id="rarity-distortion"></div>
+        </div>
+
+        <div class="rarity-curve">
+          <div class="rarity-curve-label">Growth</div>
+          <div class="rarity-bars" id="rarity-growth"></div>
+        </div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <h2>Feedback</h2>
+        <div class="feedback-buttons">
+          <button class="btn btn-like" id="btn-like">Like (L)</button>
+          <button class="btn btn-dislike" id="btn-dislike">Dislike (D)</button>
+        </div>
+        <div class="feedback-stats" id="feedback-stats">
+          Loading stats...
+        </div>
+        <button class="btn btn-secondary" id="btn-export-feedback" style="margin-top: 8px; width: 100%;">
+          Export Feedback to Console
+        </button>
+      </div>
+
+      <!-- Shortcuts -->
+      <div class="section">
+        <h2>Keyboard Shortcuts</h2>
+        <div class="shortcuts">
+          <span class="shortcut"><kbd>R</kbd> Regenerate</span>
+          <span class="shortcut"><kbd>S</kbd> Save</span>
+          <span class="shortcut"><kbd>Space</kbd> Pause</span>
+          <span class="shortcut"><kbd>L</kbd> Like</span>
+          <span class="shortcut"><kbd>D</kbd> Dislike</span>
+        </div>
+      </div>
+
+      <!-- Version -->
+      <div class="version">
+        ORGANICS v1.0.0 | Deformed Sphere Blobs
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Sketch -->
+  <script src="sketch.js"></script>
+
+  <!-- UI Controller -->
+  <script>
+    setTimeout(() => {
+      const og = window.organics;
+      if (!og) {
+        console.error('Organics not loaded');
+        return;
+      }
+
+      document.getElementById('hash-display').textContent = og.getHash();
+
+      // Buttons
+      document.getElementById('btn-regenerate').addEventListener('click', () => {
+        og.regenerate();
+        syncUI();
+      });
+
+      document.getElementById('btn-save').addEventListener('click', () => {
+        og.saveImage();
+      });
+
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        og.resetToOriginal();
+        og.regenerate();
+        syncUI();
+      });
+
+      document.getElementById('btn-like').addEventListener('click', () => {
+        og.recordFeedback(true);
+        updateFeedbackStats();
+      });
+
+      document.getElementById('btn-dislike').addEventListener('click', () => {
+        og.recordFeedback(false);
+        updateFeedbackStats();
+      });
+
+      document.getElementById('btn-export-feedback').addEventListener('click', () => {
+        console.log('=== ORGANICS FEEDBACK EXPORT ===');
+        console.log(JSON.stringify(og.exportFeedback(), null, 2));
+      });
+
+      // Selects
+      ['material', 'distortion', 'growth'].forEach(param => {
+        const sel = document.getElementById(`sel-${param}`);
+        sel.addEventListener('change', () => {
+          og.setParameter(param, sel.value);
+          og.regenerate();
+          syncUI();
+        });
+      });
+
+      // Sliders
+      const sliders = [
+        { id: 'numPoints', int: true },
+        { id: 'radiusRandomness', int: false },
+        { id: 'cpOffsetAngle', int: true },
+        { id: 'noiseScale', int: false },
+        { id: 'subdivisions', int: true },
+        { id: 'baseHue', int: true }
+      ];
+
+      sliders.forEach(({ id, int }) => {
+        const sld = document.getElementById(`sld-${id}`);
+        const val = document.getElementById(`val-${id}`);
+
+        sld.addEventListener('input', () => {
+          const value = int ? parseInt(sld.value) : parseFloat(sld.value);
+          val.textContent = sld.value;
+          og.setParameter(id, value);
+          og.regenerate();
+          syncUI();
+        });
+      });
+
+      function syncUI() {
+        const f = og.getFeatures();
+
+        document.getElementById('hash-display').textContent = og.getHash();
+
+        // Selects
+        document.getElementById('sel-material').value = f.material;
+        document.getElementById('sel-distortion').value = f.distortion;
+        document.getElementById('sel-growth').value = f.growth;
+
+        // Sliders
+        document.getElementById('sld-numPoints').value = f.numPoints;
+        document.getElementById('val-numPoints').textContent = f.numPoints;
+
+        document.getElementById('sld-radiusRandomness').value = f.radiusRandomness.toFixed(2);
+        document.getElementById('val-radiusRandomness').textContent = f.radiusRandomness.toFixed(2);
+
+        document.getElementById('sld-cpOffsetAngle').value = Math.round(f.cpOffsetAngle);
+        document.getElementById('val-cpOffsetAngle').textContent = Math.round(f.cpOffsetAngle);
+
+        document.getElementById('sld-noiseScale').value = f.noiseScale.toFixed(1);
+        document.getElementById('val-noiseScale').textContent = f.noiseScale.toFixed(1);
+
+        document.getElementById('sld-subdivisions').value = f.subdivisions;
+        document.getElementById('val-subdivisions').textContent = f.subdivisions;
+
+        document.getElementById('sld-baseHue').value = Math.round(f.baseHue);
+        document.getElementById('val-baseHue').textContent = Math.round(f.baseHue);
+
+        // Override indicator
+        const indicator = document.getElementById('override-indicator');
+        indicator.classList.toggle('visible', og.hasModifications());
+
+        updateRarityCurves();
+      }
+
+      function updateFeedbackStats() {
+        const stats = og.getFeedbackStats();
+        document.getElementById('feedback-stats').textContent =
+          `Liked: ${stats.totalLiked} | Disliked: ${stats.totalDisliked} | Ratio: ${(stats.ratio * 100).toFixed(0)}%`;
+      }
+
+      function updateRarityCurves() {
+        const curves = og.getRarityCurves();
+        const f = og.getFeatures();
+
+        renderCurve('rarity-material', curves.material, f.material);
+        renderCurve('rarity-distortion', curves.distortion, f.distortion);
+        renderCurve('rarity-growth', curves.growth, f.growth);
+      }
+
+      function renderCurve(containerId, curve, activeValue) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        curve.labels.forEach((label, i) => {
+          const prob = curve.probabilities[i];
+          const bar = document.createElement('div');
+          bar.className = 'rarity-bar' + (label === activeValue ? ' active' : '');
+          bar.title = `${label}: ${(prob * 100).toFixed(1)}%`;
+
+          const fill = document.createElement('div');
+          fill.className = 'rarity-bar-fill';
+          fill.style.height = `${prob * 100 * 2}%`;
+
+          bar.appendChild(fill);
+          container.appendChild(bar);
+        });
+      }
+
+      syncUI();
+      updateFeedbackStats();
+
+    }, 500);
+  </script>
+</body>
+</html>
