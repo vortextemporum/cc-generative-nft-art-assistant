@@ -139,6 +139,10 @@ chore: remove test artifacts and update gitignore
 
 **For multi-phase work:** Create one commit per phase/logical unit, not one giant commit at the end.
 
+## User Preferences
+
+- **Always use questionnaires**: When running `/art:new-sketch`, use the AskUserQuestion tool to present discovery questions as interactive multiple-choice questionnaires, not walls of text. Ask 3-4 questions at a time, then follow up based on answers.
+
 ## Notes for Claude
 
 - Hash derivation is critical: `tokenData.hash` (Art Blocks) or `fxhash`/`fxrand()` (fxhash)
