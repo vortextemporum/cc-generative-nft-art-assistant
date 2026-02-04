@@ -2,7 +2,7 @@
  * Rayincarnations Fork
  * Inspired by Volatile Moods' "Rayincarnations"
  *
- * Version: 1.0.0
+ * Version: 1.1.0 (Dev Mode)
  *
  * "Explores form as the result of interaction between
  * visible processes and underlying, unseen structures"
@@ -13,6 +13,9 @@
  *   S - Save PNG
  *   0-8 - Save hi-res PNG (4k-20k)
  *   R - Regenerate with new hash
+ *   Space - Pause/resume (if animated)
+ *   L - Like current output
+ *   D - Dislike current output
  */
 
 // ============================================================================
@@ -57,10 +60,148 @@ function rndChoice(arr) { return arr[Math.floor(fxrand() * arr.length)]; }
 function rndBool(p = 0.5) { return fxrand() < p; }
 
 // ============================================================================
-// FEATURES
+// FEATURES & DEV MODE STATE
 // ============================================================================
 
 let features = {};
+let originalFeatures = {};
+let hasOverrides = false;
+
+// Rarity curves for visualization
+const RARITY_CURVES = {
+  structureType: {
+    options: ['radial', 'flow', 'grid', 'spiral', 'voronoi'],
+    probabilities: [0.2, 0.2, 0.2, 0.2, 0.2]
+  },
+  processType: {
+    options: ['organic', 'linear', 'dots', 'waves', 'tendrils'],
+    probabilities: [0.2, 0.2, 0.2, 0.2, 0.2]
+  },
+  interactionMode: {
+    options: ['reveal', 'distort', 'attract', 'repel', 'layer'],
+    probabilities: [0.2, 0.2, 0.2, 0.2, 0.2]
+  },
+  colorMode: {
+    options: ['monochrome', 'sepia', 'tinted'],
+    probabilities: [0.5, 0.33, 0.17]
+  },
+  density: {
+    options: ['sparse', 'balanced', 'dense'],
+    probabilities: [0.2, 0.4, 0.4]
+  },
+  complexity: {
+    options: ['minimal', 'moderate', 'complex'],
+    probabilities: [0.25, 0.35, 0.4]
+  }
+};
+
+// Feedback storage
+const FEEDBACK_KEY = 'rayincarnations-fork-feedback';
+
+function loadFeedback() {
+  try {
+    const stored = localStorage.getItem(FEEDBACK_KEY);
+    return stored ? JSON.parse(stored) : { liked: [], disliked: [] };
+  } catch (e) {
+    return { liked: [], disliked: [] };
+  }
+}
+
+function saveFeedback(feedback) {
+  try {
+    localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback));
+  } catch (e) {
+    console.warn('Could not save feedback:', e);
+  }
+}
+
+function recordFeedback(isLike) {
+  const feedback = loadFeedback();
+  const entry = {
+    timestamp: Date.now(),
+    hash: fxhash,
+    features: { ...features },
+    hadOverrides: hasOverrides,
+    currentState: {
+      structureType: features.structureType,
+      processType: features.processType,
+      interactionMode: features.interactionMode,
+      colorMode: features.colorMode,
+      density: features.density,
+      complexity: features.complexity,
+      tintHue: features.tintHue,
+      tintSat: features.tintSat,
+      strokeWeight: features.strokeWeight,
+      dotSize: features.dotSize,
+      structureCount: features.structureCount
+    }
+  };
+
+  if (isLike) {
+    feedback.liked.push(entry);
+    console.log('LIKED:', entry);
+  } else {
+    feedback.disliked.push(entry);
+    console.log('DISLIKED:', entry);
+  }
+
+  saveFeedback(feedback);
+  return entry;
+}
+
+function getFeedbackStats() {
+  const feedback = loadFeedback();
+  const stats = {
+    totalLiked: feedback.liked.length,
+    totalDisliked: feedback.disliked.length,
+    likedStructures: {},
+    dislikedStructures: {},
+    likedProcesses: {},
+    dislikedProcesses: {}
+  };
+
+  for (const entry of feedback.liked) {
+    const s = entry.features?.structureType || 'unknown';
+    const p = entry.features?.processType || 'unknown';
+    stats.likedStructures[s] = (stats.likedStructures[s] || 0) + 1;
+    stats.likedProcesses[p] = (stats.likedProcesses[p] || 0) + 1;
+  }
+
+  for (const entry of feedback.disliked) {
+    const s = entry.features?.structureType || 'unknown';
+    const p = entry.features?.processType || 'unknown';
+    stats.dislikedStructures[s] = (stats.dislikedStructures[s] || 0) + 1;
+    stats.dislikedProcesses[p] = (stats.dislikedProcesses[p] || 0) + 1;
+  }
+
+  return stats;
+}
+
+function exportFeedback() {
+  return loadFeedback();
+}
+
+function clearFeedback() {
+  localStorage.removeItem(FEEDBACK_KEY);
+  console.log('Feedback cleared');
+}
+
+// Parameter management
+function setParameter(name, value) {
+  hasOverrides = true;
+  features[name] = value;
+  return features;
+}
+
+function resetToOriginal() {
+  features = JSON.parse(JSON.stringify(originalFeatures));
+  hasOverrides = false;
+  return features;
+}
+
+function hasModifications() {
+  return hasOverrides;
+}
 
 function generateFeatures() {
   resetRand();
@@ -78,29 +219,17 @@ function generateFeatures() {
 
   // Hidden structure type
   const structureType = rndChoice([
-    'radial',      // Concentric rings emanating from points
-    'flow',        // Flow field underlying the forms
-    'grid',        // Hidden grid influencing placement
-    'spiral',      // Spiral attractors
-    'voronoi'      // Voronoi cell boundaries
+    'radial', 'flow', 'grid', 'spiral', 'voronoi'
   ]);
 
   // Visible process type
   const processType = rndChoice([
-    'organic',     // Organic blob-like forms
-    'linear',      // Linear strokes revealing structure
-    'dots',        // Dot accumulation
-    'waves',       // Wave interference patterns
-    'tendrils'     // Growing tendril forms
+    'organic', 'linear', 'dots', 'waves', 'tendrils'
   ]);
 
   // Interaction mode
   const interactionMode = rndChoice([
-    'reveal',      // Visible forms reveal hidden structure
-    'distort',     // Hidden structure distorts visible forms
-    'attract',     // Hidden points attract visible elements
-    'repel',       // Hidden structure repels/creates negative space
-    'layer'        // Structures layer and blend
+    'reveal', 'distort', 'attract', 'repel', 'layer'
   ]);
 
   // Color mode
@@ -143,6 +272,10 @@ function generateFeatures() {
     dotSize
   };
 
+  // Store original for reset
+  originalFeatures = JSON.parse(JSON.stringify(features));
+  hasOverrides = false;
+
   return features;
 }
 
@@ -165,10 +298,14 @@ let visibleForms = [];
 let renderPhase = 0;
 let isHiRes = false;
 let hiResScale = 1;
+let isPaused = false;
 
 // Settings
 let showTexture = true;
 let useSepia = false;
+
+// P5 instance reference for external access
+let p5Instance = null;
 
 // ============================================================================
 // HIDDEN STRUCTURES
@@ -181,7 +318,6 @@ function generateHiddenStructure(p) {
   const count = features.structureCount;
 
   if (type === 'radial') {
-    // Radial emanation points
     for (let i = 0; i < count; i++) {
       hiddenStructure.push({
         type: 'radial',
@@ -193,7 +329,6 @@ function generateHiddenStructure(p) {
     }
   }
   else if (type === 'flow') {
-    // Flow field
     const flowSeed = rnd(10000);
     hiddenStructure.push({
       type: 'flow',
@@ -203,7 +338,6 @@ function generateHiddenStructure(p) {
     });
   }
   else if (type === 'grid') {
-    // Hidden grid
     const gridSize = rnd(30, 80);
     hiddenStructure.push({
       type: 'grid',
@@ -213,7 +347,6 @@ function generateHiddenStructure(p) {
     });
   }
   else if (type === 'spiral') {
-    // Spiral attractors
     for (let i = 0; i < Math.min(count, 5); i++) {
       hiddenStructure.push({
         type: 'spiral',
@@ -226,7 +359,6 @@ function generateHiddenStructure(p) {
     }
   }
   else if (type === 'voronoi') {
-    // Voronoi seed points
     for (let i = 0; i < count; i++) {
       hiddenStructure.push({
         type: 'voronoi',
@@ -237,7 +369,6 @@ function generateHiddenStructure(p) {
   }
 }
 
-// Get influence of hidden structure at a point
 function getStructureInfluence(p, x, y) {
   let influence = { dx: 0, dy: 0, strength: 0, nearest: null, dist: Infinity };
 
@@ -295,14 +426,12 @@ function generateVisibleForms(p) {
 
   const type = features.processType;
   const density = features.density;
-  const interaction = features.interactionMode;
 
   const countMultiplier = density === 'sparse' ? 0.5 :
                           density === 'balanced' ? 1 :
                           density === 'dense' ? 2 : 1;
 
   if (type === 'organic') {
-    // Generate organic blob forms
     const blobCount = Math.floor(rndInt(3, 8) * countMultiplier);
     for (let i = 0; i < blobCount; i++) {
       const cx = rnd(margin * 2, W - margin * 2);
@@ -318,7 +447,6 @@ function generateVisibleForms(p) {
     }
   }
   else if (type === 'linear') {
-    // Generate linear strokes
     const lineCount = Math.floor(rndInt(20, 60) * countMultiplier);
     for (let i = 0; i < lineCount; i++) {
       const x1 = rnd(W);
@@ -336,7 +464,6 @@ function generateVisibleForms(p) {
     }
   }
   else if (type === 'dots') {
-    // Generate dot clusters
     const clusterCount = Math.floor(rndInt(5, 15) * countMultiplier);
     for (let i = 0; i < clusterCount; i++) {
       const cx = rnd(margin, W - margin);
@@ -359,7 +486,6 @@ function generateVisibleForms(p) {
     }
   }
   else if (type === 'waves') {
-    // Generate wave lines
     const waveCount = Math.floor(rndInt(10, 30) * countMultiplier);
     for (let i = 0; i < waveCount; i++) {
       const y = margin + (H - margin * 2) * (i / waveCount);
@@ -375,7 +501,6 @@ function generateVisibleForms(p) {
     }
   }
   else if (type === 'tendrils') {
-    // Generate growing tendrils
     const tendrilCount = Math.floor(rndInt(5, 15) * countMultiplier);
     for (let i = 0; i < tendrilCount; i++) {
       const startX = rnd(W);
@@ -392,7 +517,6 @@ function generateVisibleForms(p) {
     }
   }
 
-  // Apply interaction with hidden structure
   applyInteraction(p);
 }
 
@@ -439,7 +563,6 @@ function applyInteraction(p) {
       }
     }
     else if (form.type === 'tendril') {
-      // Generate tendril path influenced by structure
       let x = form.x;
       let y = form.y;
       let angle = form.angle;
@@ -462,7 +585,6 @@ function applyInteraction(p) {
       }
     }
     else if (form.type === 'wave') {
-      // Generate wave points influenced by structure
       for (let x = margin; x < W - margin; x += 2) {
         const baseY = form.y + p.sin(x * form.frequency + form.phase) * form.amplitude;
         const inf = getStructureInfluence(p, x, baseY);
@@ -478,7 +600,6 @@ function applyInteraction(p) {
       }
     }
     else if (form.type === 'linear') {
-      // Generate line segments influenced by structure
       const steps = 50;
       for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -574,7 +695,6 @@ function renderVisibleForms(p, canvas) {
 function renderOrganicForm(p, canvas, form, baseColor, lightColor) {
   if (!form.points || form.points.length < 3) return;
 
-  // Fill with subtle gradient
   canvas.noStroke();
   canvas.fill(p.hue(baseColor), p.saturation(baseColor), p.brightness(baseColor), 0.1);
 
@@ -582,12 +702,10 @@ function renderOrganicForm(p, canvas, form, baseColor, lightColor) {
   for (const pt of form.points) {
     canvas.curveVertex(pt.x * scale, pt.y * scale);
   }
-  // Close the shape
   canvas.curveVertex(form.points[0].x * scale, form.points[0].y * scale);
   canvas.curveVertex(form.points[1].x * scale, form.points[1].y * scale);
   canvas.endShape(p.CLOSE);
 
-  // Edge strokes with texture
   canvas.noFill();
   canvas.strokeWeight(features.strokeWeight * scale);
 
@@ -609,7 +727,6 @@ function renderOrganicForm(p, canvas, form, baseColor, lightColor) {
     canvas.endShape();
   }
 
-  // Interior dots
   const dotCount = Math.floor(form.size * 2 * (features.density === 'dense' ? 2 : 1));
   for (let i = 0; i < dotCount; i++) {
     const angle = rnd(p.TWO_PI);
@@ -645,7 +762,6 @@ function renderTendril(p, canvas, form, baseColor) {
 
   canvas.noFill();
 
-  // Multiple strokes for texture
   for (let pass = 0; pass < 4; pass++) {
     canvas.strokeWeight((features.strokeWeight * (1 - pass * 0.2)) * scale);
     canvas.stroke(p.hue(baseColor), p.saturation(baseColor),
@@ -663,7 +779,6 @@ function renderTendril(p, canvas, form, baseColor) {
     canvas.endShape();
   }
 
-  // Dots along tendril
   for (let i = 0; i < form.points.length; i += 5) {
     const pt = form.points[i];
     const brightness = p.map(pt.strength || 0, 0, 2, 20, 60);
@@ -687,7 +802,6 @@ function renderWave(p, canvas, form, baseColor) {
   }
   canvas.endShape();
 
-  // Highlight dots where structure is strong
   for (const pt of form.points) {
     if (pt.strength > 0.7) {
       canvas.noStroke();
@@ -712,9 +826,6 @@ function renderLinear(p, canvas, form, baseColor) {
 }
 
 function renderPaperTexture(p, canvas) {
-  const w = canvas.width;
-  const h = canvas.height;
-
   canvas.loadPixels();
 
   const grainAmount = 6 * Math.sqrt(scale);
@@ -751,6 +862,8 @@ function pointInPolygon(x, y, polygon) {
 // ============================================================================
 
 new p5((p) => {
+  p5Instance = p;
+
   p.setup = function() {
     generateFeatures();
 
@@ -780,48 +893,44 @@ new p5((p) => {
     showTexture = features.paperTexture;
 
     regenerate(p);
+
+    // Notify UI
+    if (typeof window.onSketchReady === 'function') {
+      window.onSketchReady();
+    }
   };
 
   function regenerate(p) {
     resetRand();
-
     generateHiddenStructure(p);
     generateVisibleForms(p);
-
     render(p);
   }
 
   function render(p) {
-    // Background
     const bgBrightness = useSepia ? 92 : 95;
     const bgHue = useSepia ? features.tintHue : 0;
     const bgSat = useSepia ? features.tintSat * 0.3 : 0;
 
     mainCanvas.background(bgHue, bgSat, bgBrightness);
 
-    // Render structure hints
     renderStructureLayer(p, structureCanvas);
     mainCanvas.image(structureCanvas, 0, 0);
 
-    // Render visible forms
     renderVisibleForms(p, mainCanvas);
 
-    // Apply paper texture
     if (showTexture) {
       renderPaperTexture(p, mainCanvas);
     }
 
-    // Draw to main canvas
     p.image(mainCanvas, 0, 0);
 
-    // Trigger preview
     if (typeof fxpreview === 'function') {
       fxpreview();
     }
   }
 
   p.draw = function() {
-    // Static piece - no continuous drawing
     p.noLoop();
   };
 
@@ -833,8 +942,10 @@ new p5((p) => {
       fxhash = "oo" + Array(49).fill(0).map(() => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
       generateFeatures();
       useSepia = features.colorMode === 'sepia' || features.colorMode === 'tinted';
+      showTexture = features.paperTexture;
       regenerate(p);
       p.redraw();
+      if (typeof window.syncUI === 'function') window.syncUI();
     }
     else if (p.key === 't' || p.key === 'T') {
       showTexture = !showTexture;
@@ -845,6 +956,17 @@ new p5((p) => {
       useSepia = !useSepia;
       render(p);
       p.redraw();
+    }
+    else if (p.key === 'l' || p.key === 'L') {
+      recordFeedback(true);
+      if (typeof window.onFeedback === 'function') window.onFeedback(true);
+    }
+    else if (p.key === 'd' || p.key === 'D') {
+      recordFeedback(false);
+      if (typeof window.onFeedback === 'function') window.onFeedback(false);
+    }
+    else if (p.key === ' ') {
+      isPaused = !isPaused;
     }
     else if (p.key >= '0' && p.key <= '8') {
       const sizes = [4000, 5000, 6000, 8000, 10000, 12000, 15000, 18000, 20000];
@@ -878,7 +1000,6 @@ new p5((p) => {
 
     hiResCanvas.background(bgHue, bgSat, bgBrightness);
 
-    // Re-render at high resolution
     resetRand();
     renderStructureLayer(p, hiResCanvas);
     renderVisibleForms(p, hiResCanvas);
@@ -912,11 +1033,45 @@ new p5((p) => {
     render(p);
     p.redraw();
   };
+
+  // Expose regenerate for external use
+  window.sketchRegenerate = () => {
+    regenerate(p);
+    p.redraw();
+  };
 });
 
 // ============================================================================
-// FEATURES EXPORT (fxhash)
+// EXPORTS FOR DEV MODE UI
 // ============================================================================
+
+window.rayincarnationsFork = {
+  getFeatures: () => features,
+  getOriginalFeatures: () => originalFeatures,
+  getHash: () => fxhash,
+  setParameter,
+  resetToOriginal,
+  hasModifications,
+  regenerate: () => {
+    if (p5Instance) {
+      resetRand();
+      generateHiddenStructure(p5Instance);
+      generateVisibleForms(p5Instance);
+      if (typeof window.sketchRegenerate === 'function') {
+        window.sketchRegenerate();
+      }
+    }
+  },
+  recordFeedback,
+  getFeedbackStats,
+  exportFeedback,
+  clearFeedback,
+  getRarityCurves: () => RARITY_CURVES,
+  setShowTexture: (v) => { showTexture = v; },
+  setUseSepia: (v) => { useSepia = v; },
+  getShowTexture: () => showTexture,
+  getUseSepia: () => useSepia
+};
 
 window.$fxhashFeatures = {
   "Structure": features.structureType,

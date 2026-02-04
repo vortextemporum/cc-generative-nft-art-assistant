@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rayincarnations Fork</title>
+  <title>Rayincarnations Fork - Dev Mode</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,6 +39,18 @@
       font-style: italic;
     }
 
+    .dev-badge {
+      display: inline-block;
+      background: #e74c3c;
+      color: white;
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-left: 8px;
+      vertical-align: middle;
+      letter-spacing: 0.1em;
+    }
+
     .main-container {
       display: flex;
       gap: 24px;
@@ -59,10 +71,12 @@
     }
 
     .sidebar {
-      width: 260px;
+      width: 320px;
       display: flex;
       flex-direction: column;
       gap: 16px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .panel {
@@ -79,6 +93,12 @@
       margin-bottom: 12px;
       border-bottom: 1px solid #2a2a3a;
       padding-bottom: 8px;
+    }
+
+    .panel h2 .modified-indicator {
+      color: #e74c3c;
+      font-size: 0.65rem;
+      margin-left: 8px;
     }
 
     .features-table {
@@ -104,6 +124,10 @@
       text-transform: capitalize;
     }
 
+    .features-table .modified {
+      color: #e74c3c;
+    }
+
     .hash-display {
       font-family: 'Monaco', 'Consolas', monospace;
       font-size: 0.65rem;
@@ -115,6 +139,256 @@
       margin-top: 12px;
     }
 
+    /* Parameter Controls */
+    .param-group {
+      margin-bottom: 16px;
+    }
+
+    .param-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .param-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .param-value {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .param-select {
+      width: 100%;
+      background: #12121a;
+      color: #e8e8e8;
+      border: 1px solid #2a2a3a;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .param-select:hover {
+      border-color: #3a3a4a;
+    }
+
+    .param-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      background: #12121a;
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .param-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #e8e8e8;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .param-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #e8e8e8;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2980b9;
+    }
+
+    .btn-secondary {
+      background: #2a2a3a;
+      color: #e8e8e8;
+    }
+
+    .btn-secondary:hover {
+      background: #3a3a4a;
+    }
+
+    .btn-success {
+      background: #27ae60;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #219a52;
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Feedback Panel */
+    .feedback-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .feedback-btn {
+      flex: 1;
+      padding: 16px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      background: #12121a;
+      color: #888;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .feedback-btn span {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .feedback-btn.like:hover {
+      border-color: #27ae60;
+      color: #27ae60;
+      background: rgba(39, 174, 96, 0.1);
+    }
+
+    .feedback-btn.dislike:hover {
+      border-color: #e74c3c;
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.1);
+    }
+
+    .feedback-btn.active {
+      transform: scale(0.95);
+    }
+
+    .feedback-stats {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .feedback-stats .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid #2a2a3a;
+    }
+
+    .feedback-stats .stat-value {
+      color: #e8e8e8;
+    }
+
+    /* Rarity Curves */
+    .rarity-section {
+      margin-bottom: 12px;
+    }
+
+    .rarity-title {
+      font-size: 0.7rem;
+      color: #666;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .rarity-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .rarity-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .rarity-bar-label {
+      font-size: 0.65rem;
+      color: #888;
+      width: 60px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .rarity-bar-container {
+      flex: 1;
+      height: 8px;
+      background: #12121a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .rarity-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3498db, #9b59b6);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .rarity-bar-fill.current {
+      background: #e74c3c;
+    }
+
+    .rarity-bar-percent {
+      font-size: 0.6rem;
+      color: #666;
+      width: 32px;
+      text-align: right;
+    }
+
+    /* Keyboard Hints */
     .keyboard-hints {
       display: grid;
       grid-template-columns: auto 1fr;
@@ -151,11 +425,68 @@
       color: #666;
       text-decoration: none;
     }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #2a2a3a;
+      color: #e8e8e8;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #27ae60;
+    }
+
+    .toast.error {
+      background: #e74c3c;
+    }
+
+    /* Collapsible panels */
+    .panel-toggle {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .panel-toggle::after {
+      content: '▼';
+      float: right;
+      font-size: 0.6rem;
+      color: #444;
+      transition: transform 0.2s;
+    }
+
+    .panel-toggle.collapsed::after {
+      transform: rotate(-90deg);
+    }
+
+    .panel-content {
+      overflow: hidden;
+      max-height: 1000px;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .panel-content.collapsed {
+      max-height: 0;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>Rayincarnations Fork</h1>
+    <h1>Rayincarnations Fork <span class="dev-badge">DEV MODE</span></h1>
     <p class="subtitle">"Form as the result of interaction between visible processes and underlying, unseen structures"</p>
   </header>
 
@@ -163,8 +494,12 @@
     <div id="sketch-holder"></div>
 
     <div class="sidebar">
+      <!-- Features Panel -->
       <div class="panel">
-        <h2>Features</h2>
+        <h2>
+          Features
+          <span class="modified-indicator" id="modified-indicator" style="display: none;">● MODIFIED</span>
+        </h2>
         <table class="features-table" id="features-table">
           <tr><td>Structure</td><td id="f-structure">-</td></tr>
           <tr><td>Process</td><td id="f-process">-</td></tr>
@@ -176,36 +511,414 @@
         <div class="hash-display" id="hash-display">...</div>
       </div>
 
+      <!-- Parameter Controls Panel -->
       <div class="panel">
-        <h2>Controls</h2>
-        <div class="keyboard-hints">
-          <kbd>T</kbd> <span>Toggle paper texture</span>
-          <kbd>W</kbd> <span>Toggle B/W vs Sepia</span>
-          <kbd>S</kbd> <span>Save PNG</span>
-          <kbd>R</kbd> <span>Regenerate</span>
-          <kbd>0-8</kbd> <span>Hi-res export</span>
+        <h2 class="panel-toggle" data-target="params-content">Parameters</h2>
+        <div class="panel-content" id="params-content">
+          <div class="param-group">
+            <div class="param-label">
+              <span>Structure Type</span>
+            </div>
+            <select class="param-select" id="param-structure" onchange="updateParameter('structureType', this.value)">
+              <option value="radial">Radial</option>
+              <option value="flow">Flow</option>
+              <option value="grid">Grid</option>
+              <option value="spiral">Spiral</option>
+              <option value="voronoi">Voronoi</option>
+            </select>
+          </div>
+
+          <div class="param-group">
+            <div class="param-label">
+              <span>Process Type</span>
+            </div>
+            <select class="param-select" id="param-process" onchange="updateParameter('processType', this.value)">
+              <option value="organic">Organic</option>
+              <option value="linear">Linear</option>
+              <option value="dots">Dots</option>
+              <option value="waves">Waves</option>
+              <option value="tendrils">Tendrils</option>
+            </select>
+          </div>
+
+          <div class="param-group">
+            <div class="param-label">
+              <span>Interaction Mode</span>
+            </div>
+            <select class="param-select" id="param-interaction" onchange="updateParameter('interactionMode', this.value)">
+              <option value="reveal">Reveal</option>
+              <option value="distort">Distort</option>
+              <option value="attract">Attract</option>
+              <option value="repel">Repel</option>
+              <option value="layer">Layer</option>
+            </select>
+          </div>
+
+          <div class="param-group">
+            <div class="param-label">
+              <span>Density</span>
+              <span class="param-value" id="density-value">1.0</span>
+            </div>
+            <input type="range" class="param-slider" id="param-density"
+                   min="0.3" max="2.5" step="0.1" value="1.0"
+                   oninput="updateSlider('density', this.value)">
+          </div>
+
+          <div class="param-group">
+            <div class="param-label">
+              <span>Complexity</span>
+              <span class="param-value" id="complexity-value">8</span>
+            </div>
+            <input type="range" class="param-slider" id="param-complexity"
+                   min="2" max="16" step="1" value="8"
+                   oninput="updateSlider('complexity', this.value)">
+          </div>
+
+          <div class="param-group">
+            <div class="param-label">
+              <span>Tint Hue</span>
+              <span class="param-value" id="tintHue-value">30°</span>
+            </div>
+            <input type="range" class="param-slider" id="param-tintHue"
+                   min="0" max="360" step="5" value="30"
+                   oninput="updateSlider('tintHue', this.value)">
+          </div>
+
+          <div class="param-group">
+            <div class="param-label">
+              <span>Stroke Weight</span>
+              <span class="param-value" id="strokeWeight-value">1.0</span>
+            </div>
+            <input type="range" class="param-slider" id="param-strokeWeight"
+                   min="0.3" max="3.0" step="0.1" value="1.0"
+                   oninput="updateSlider('strokeWeight', this.value)">
+          </div>
+
+          <div class="param-group">
+            <div class="param-label">
+              <span>Dot Size</span>
+              <span class="param-value" id="dotSize-value">2.0</span>
+            </div>
+            <input type="range" class="param-slider" id="param-dotSize"
+                   min="0.5" max="5.0" step="0.1" value="2.0"
+                   oninput="updateSlider('dotSize', this.value)">
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="resetParameters()">Reset to Original</button>
+            <button class="btn btn-primary" onclick="applyAndRegenerate()">Apply & Regenerate</button>
+          </div>
         </div>
       </div>
 
+      <!-- Feedback Panel -->
       <div class="panel">
-        <h2>About</h2>
-        <p style="font-size: 0.75rem; color: #888; line-height: 1.6;">
-          Explores the relationship between visible artistic processes and underlying mathematical structures.
-          Each piece reveals how hidden forces shape the visible forms.
-        </p>
+        <h2 class="panel-toggle" data-target="feedback-content">Feedback</h2>
+        <div class="panel-content" id="feedback-content">
+          <div class="feedback-buttons">
+            <button class="feedback-btn like" onclick="recordFeedback(true)" id="btn-like">
+              👍
+              <span>Like (L)</span>
+            </button>
+            <button class="feedback-btn dislike" onclick="recordFeedback(false)" id="btn-dislike">
+              👎
+              <span>Dislike (D)</span>
+            </button>
+          </div>
+          <div class="feedback-stats" id="feedback-stats">
+            <div class="stat-row">
+              <span>Total Liked</span>
+              <span class="stat-value" id="stat-liked">0</span>
+            </div>
+            <div class="stat-row">
+              <span>Total Disliked</span>
+              <span class="stat-value" id="stat-disliked">0</span>
+            </div>
+            <div class="stat-row">
+              <span>This Session</span>
+              <span class="stat-value" id="stat-session">0</span>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="exportFeedback()">Export Stats</button>
+            <button class="btn btn-danger" onclick="clearFeedback()">Clear All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rarity Curves Panel -->
+      <div class="panel">
+        <h2 class="panel-toggle" data-target="rarity-content">Rarity Curves</h2>
+        <div class="panel-content" id="rarity-content">
+          <div id="rarity-curves-container">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Panel -->
+      <div class="panel">
+        <h2 class="panel-toggle" data-target="controls-content">Keyboard</h2>
+        <div class="panel-content" id="controls-content">
+          <div class="keyboard-hints">
+            <kbd>T</kbd> <span>Toggle paper texture</span>
+            <kbd>W</kbd> <span>Toggle B/W vs Sepia</span>
+            <kbd>S</kbd> <span>Save PNG</span>
+            <kbd>R</kbd> <span>Regenerate (new hash)</span>
+            <kbd>Space</kbd> <span>Pause rendering</span>
+            <kbd>L</kbd> <span>Like current output</span>
+            <kbd>D</kbd> <span>Dislike current output</span>
+            <kbd>0-8</kbd> <span>Hi-res export</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <footer>
-    <p>Rayincarnations Fork v1.0.0</p>
+    <p>Rayincarnations Fork v1.1.0 - Dev Mode</p>
     <p class="credit">Inspired by <a href="https://www.volatilemoods.art/" target="_blank">Volatile Moods</a></p>
   </footer>
 
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
   <script src="sketch.js"></script>
   <script>
-    // Update UI when sketch loads
-    setTimeout(() => {
+    // Session feedback count
+    let sessionFeedbackCount = 0;
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + type;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // Update parameter from dropdown
+    function updateParameter(name, value) {
+      if (window.rayincarnationsFork) {
+        window.rayincarnationsFork.setParameter(name, value);
+        updateModifiedIndicator();
+      }
+    }
+
+    // Update parameter from slider
+    function updateSlider(name, value) {
+      const numValue = parseFloat(value);
+      document.getElementById(name + '-value').textContent =
+        name === 'tintHue' ? value + '°' : value;
+
+      if (window.rayincarnationsFork) {
+        window.rayincarnationsFork.setParameter(name, numValue);
+        updateModifiedIndicator();
+      }
+    }
+
+    // Apply changes and regenerate
+    function applyAndRegenerate() {
+      if (window.rayincarnationsFork) {
+        window.rayincarnationsFork.regenerate();
+        setTimeout(updateUI, 200);
+        showToast('Regenerated with current parameters', 'success');
+      }
+    }
+
+    // Reset to original hash-derived values
+    function resetParameters() {
+      if (window.rayincarnationsFork) {
+        const features = window.rayincarnationsFork.resetToOriginal();
+        window.rayincarnationsFork.regenerate();
+        setTimeout(() => {
+          updateUI();
+          syncControlsToFeatures();
+        }, 200);
+        showToast('Reset to original hash values', 'success');
+      }
+    }
+
+    // Update modified indicator
+    function updateModifiedIndicator() {
+      const indicator = document.getElementById('modified-indicator');
+      if (window.rayincarnationsFork && window.rayincarnationsFork.hasModifications()) {
+        indicator.style.display = 'inline';
+      } else {
+        indicator.style.display = 'none';
+      }
+    }
+
+    // Record feedback
+    function recordFeedback(isLike) {
+      if (window.rayincarnationsFork) {
+        const btn = isLike ? document.getElementById('btn-like') : document.getElementById('btn-dislike');
+        btn.classList.add('active');
+        setTimeout(() => btn.classList.remove('active'), 150);
+
+        window.rayincarnationsFork.recordFeedback(isLike);
+        sessionFeedbackCount++;
+        updateFeedbackStats();
+        showToast(isLike ? 'Liked! 👍' : 'Noted 👎', isLike ? 'success' : 'error');
+      }
+    }
+
+    // Update feedback stats display
+    function updateFeedbackStats() {
+      if (window.rayincarnationsFork) {
+        const stats = window.rayincarnationsFork.getFeedbackStats();
+        document.getElementById('stat-liked').textContent = stats.totalLiked;
+        document.getElementById('stat-disliked').textContent = stats.totalDisliked;
+        document.getElementById('stat-session').textContent = sessionFeedbackCount;
+      }
+    }
+
+    // Export feedback data
+    function exportFeedback() {
+      if (window.rayincarnationsFork) {
+        const data = window.rayincarnationsFork.exportFeedback();
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'rayincarnations-feedback-' + Date.now() + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Feedback exported!', 'success');
+      }
+    }
+
+    // Clear all feedback
+    function clearFeedback() {
+      if (confirm('Clear all feedback data? This cannot be undone.')) {
+        if (window.rayincarnationsFork) {
+          window.rayincarnationsFork.clearFeedback();
+          sessionFeedbackCount = 0;
+          updateFeedbackStats();
+          showToast('Feedback cleared', 'info');
+        }
+      }
+    }
+
+    // Render rarity curves
+    function renderRarityCurves() {
+      if (!window.rayincarnationsFork) return;
+
+      const curves = window.rayincarnationsFork.getRarityCurves();
+      const features = window.rayincarnationsFork.getFeatures();
+      const container = document.getElementById('rarity-curves-container');
+      container.innerHTML = '';
+
+      // Only show discrete parameter curves
+      const discreteParams = ['structureType', 'processType', 'interactionMode', 'colorMode', 'densityLabel', 'complexityLabel'];
+
+      for (const [key, curve] of Object.entries(curves)) {
+        if (!discreteParams.includes(key)) continue;
+
+        const section = document.createElement('div');
+        section.className = 'rarity-section';
+
+        const title = document.createElement('div');
+        title.className = 'rarity-title';
+        title.textContent = key.replace(/([A-Z])/g, ' $1').trim();
+        section.appendChild(title);
+
+        const bars = document.createElement('div');
+        bars.className = 'rarity-bars';
+
+        curve.options.forEach((option, i) => {
+          const prob = curve.probabilities[i];
+          const row = document.createElement('div');
+          row.className = 'rarity-bar-row';
+
+          const label = document.createElement('div');
+          label.className = 'rarity-bar-label';
+          label.textContent = option;
+          label.title = option;
+
+          const barContainer = document.createElement('div');
+          barContainer.className = 'rarity-bar-container';
+
+          const barFill = document.createElement('div');
+          barFill.className = 'rarity-bar-fill';
+
+          // Highlight current value
+          const currentValue = features[key] ||
+            (key === 'densityLabel' ? getDensityLabel(features.density) : null) ||
+            (key === 'complexityLabel' ? getComplexityLabel(features.complexity) : null);
+
+          if (option === currentValue) {
+            barFill.classList.add('current');
+          }
+
+          barFill.style.width = (prob * 100) + '%';
+
+          const percent = document.createElement('div');
+          percent.className = 'rarity-bar-percent';
+          percent.textContent = Math.round(prob * 100) + '%';
+
+          barContainer.appendChild(barFill);
+          row.appendChild(label);
+          row.appendChild(barContainer);
+          row.appendChild(percent);
+          bars.appendChild(row);
+        });
+
+        section.appendChild(bars);
+        container.appendChild(section);
+      }
+    }
+
+    // Helper to get density label
+    function getDensityLabel(d) {
+      if (d < 0.7) return 'sparse';
+      if (d < 1.3) return 'balanced';
+      return 'dense';
+    }
+
+    // Helper to get complexity label
+    function getComplexityLabel(c) {
+      if (c <= 4) return 'minimal';
+      if (c <= 8) return 'moderate';
+      return 'complex';
+    }
+
+    // Sync UI controls to current features
+    function syncControlsToFeatures() {
+      if (!window.rayincarnationsFork) return;
+
+      const features = window.rayincarnationsFork.getFeatures();
+
+      // Dropdowns
+      document.getElementById('param-structure').value = features.structureType || 'radial';
+      document.getElementById('param-process').value = features.processType || 'organic';
+      document.getElementById('param-interaction').value = features.interactionMode || 'distort';
+
+      // Sliders
+      if (features.density !== undefined) {
+        document.getElementById('param-density').value = features.density;
+        document.getElementById('density-value').textContent = features.density.toFixed(1);
+      }
+      if (features.complexity !== undefined) {
+        document.getElementById('param-complexity').value = features.complexity;
+        document.getElementById('complexity-value').textContent = features.complexity;
+      }
+      if (features.tintHue !== undefined) {
+        document.getElementById('param-tintHue').value = features.tintHue;
+        document.getElementById('tintHue-value').textContent = features.tintHue + '°';
+      }
+      if (features.strokeWeight !== undefined) {
+        document.getElementById('param-strokeWeight').value = features.strokeWeight;
+        document.getElementById('strokeWeight-value').textContent = features.strokeWeight.toFixed(1);
+      }
+      if (features.dotSize !== undefined) {
+        document.getElementById('param-dotSize').value = features.dotSize;
+        document.getElementById('dotSize-value').textContent = features.dotSize.toFixed(1);
+      }
+    }
+
+    // Update features display
+    function updateUI() {
       if (window.$fxhashFeatures) {
         const f = window.$fxhashFeatures;
         document.getElementById('f-structure').textContent = f['Structure'] || '-';
@@ -218,31 +931,51 @@
       if (typeof fxhash !== 'undefined') {
         document.getElementById('hash-display').textContent = fxhash;
       }
+      updateModifiedIndicator();
+      renderRarityCurves();
+    }
 
+    // Panel toggle functionality
+    document.querySelectorAll('.panel-toggle').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const targetId = toggle.getAttribute('data-target');
+        const content = document.getElementById(targetId);
+        toggle.classList.toggle('collapsed');
+        content.classList.toggle('collapsed');
+      });
+    });
+
+    // Initialize when sketch loads
+    setTimeout(() => {
       // Move canvas into holder
       const canvas = document.querySelector('canvas');
       if (canvas) {
         document.getElementById('sketch-holder').appendChild(canvas);
       }
+
+      updateUI();
+      syncControlsToFeatures();
+      updateFeedbackStats();
     }, 500);
 
-    // Update on regenerate
+    // Listen for regenerate key
     document.addEventListener('keypress', (e) => {
       if (e.key === 'r' || e.key === 'R') {
         setTimeout(() => {
-          if (window.$fxhashFeatures) {
-            const f = window.$fxhashFeatures;
-            document.getElementById('f-structure').textContent = f['Structure'] || '-';
-            document.getElementById('f-process').textContent = f['Process'] || '-';
-            document.getElementById('f-interaction').textContent = f['Interaction'] || '-';
-            document.getElementById('f-color').textContent = f['Color Mode'] || '-';
-            document.getElementById('f-density').textContent = f['Density'] || '-';
-            document.getElementById('f-complexity').textContent = f['Complexity'] || '-';
-          }
-          if (typeof fxhash !== 'undefined') {
-            document.getElementById('hash-display').textContent = fxhash;
-          }
-        }, 100);
+          updateUI();
+          syncControlsToFeatures();
+        }, 200);
+      }
+    });
+
+    // Global keyboard shortcuts handled by sketch.js (L, D, Space, etc.)
+    // This UI just needs to update after those actions
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'l' || e.key === 'L') {
+        setTimeout(updateFeedbackStats, 100);
+      }
+      if (e.key === 'd' || e.key === 'D') {
+        setTimeout(updateFeedbackStats, 100);
       }
     });
   </script>

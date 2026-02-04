@@ -26,7 +26,26 @@ rayincarnations-fork/
     └── TECHNICAL.md    # Algorithm details
 ```
 
-## Current Version: 1.0.0
+## Current Version: 1.1.0 (Dev Mode)
+
+## Dev Mode Features
+
+The sketch includes a full development mode for parameter exploration:
+
+- **Parameter Controls**: Dropdowns for discrete features, sliders for continuous values
+- **Override System**: Modify parameters while preserving original hash-derived values
+- **Feedback System**: Like/Dislike outputs, persisted in localStorage, exportable as JSON
+- **Rarity Curves**: Visual probability distributions for all discrete parameters
+- **Window API**: `window.rayincarnationsFork` exposes full control for external tools
+
+### Key API Methods
+```javascript
+window.rayincarnationsFork.setParameter('structureType', 'spiral');
+window.rayincarnationsFork.resetToOriginal();
+window.rayincarnationsFork.recordFeedback(true); // like
+window.rayincarnationsFork.exportFeedback(); // JSON string
+window.rayincarnationsFork.getRarityCurves();
+```
 
 ## Key Concepts
 
