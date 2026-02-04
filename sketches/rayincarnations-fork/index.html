@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rayincarnations Fork</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d14;
+      color: #e8e8e8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 700px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    .main-container {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #sketch-holder {
+      background: #1a1a24;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    #sketch-holder canvas {
+      display: block;
+    }
+
+    .sidebar {
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel {
+      background: #1a1a24;
+      border-radius: 6px;
+      padding: 16px;
+    }
+
+    .panel h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #666;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #2a2a3a;
+      padding-bottom: 8px;
+    }
+
+    .features-table {
+      width: 100%;
+      font-size: 0.8rem;
+    }
+
+    .features-table tr {
+      border-bottom: 1px solid #2a2a3a;
+    }
+
+    .features-table td {
+      padding: 6px 0;
+    }
+
+    .features-table td:first-child {
+      color: #888;
+    }
+
+    .features-table td:last-child {
+      text-align: right;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .hash-display {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.65rem;
+      color: #555;
+      word-break: break-all;
+      padding: 8px;
+      background: #12121a;
+      border-radius: 4px;
+      margin-top: 12px;
+    }
+
+    .keyboard-hints {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 12px;
+      font-size: 0.75rem;
+    }
+
+    .keyboard-hints kbd {
+      background: #2a2a3a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.7rem;
+    }
+
+    .keyboard-hints span {
+      color: #888;
+    }
+
+    footer {
+      margin-top: 24px;
+      text-align: center;
+      color: #444;
+      font-size: 0.7rem;
+    }
+
+    .credit {
+      margin-top: 8px;
+      color: #555;
+      font-size: 0.65rem;
+    }
+
+    .credit a {
+      color: #666;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Rayincarnations Fork</h1>
+    <p class="subtitle">"Form as the result of interaction between visible processes and underlying, unseen structures"</p>
+  </header>
+
+  <div class="main-container">
+    <div id="sketch-holder"></div>
+
+    <div class="sidebar">
+      <div class="panel">
+        <h2>Features</h2>
+        <table class="features-table" id="features-table">
+          <tr><td>Structure</td><td id="f-structure">-</td></tr>
+          <tr><td>Process</td><td id="f-process">-</td></tr>
+          <tr><td>Interaction</td><td id="f-interaction">-</td></tr>
+          <tr><td>Color</td><td id="f-color">-</td></tr>
+          <tr><td>Density</td><td id="f-density">-</td></tr>
+          <tr><td>Complexity</td><td id="f-complexity">-</td></tr>
+        </table>
+        <div class="hash-display" id="hash-display">...</div>
+      </div>
+
+      <div class="panel">
+        <h2>Controls</h2>
+        <div class="keyboard-hints">
+          <kbd>T</kbd> <span>Toggle paper texture</span>
+          <kbd>W</kbd> <span>Toggle B/W vs Sepia</span>
+          <kbd>S</kbd> <span>Save PNG</span>
+          <kbd>R</kbd> <span>Regenerate</span>
+          <kbd>0-8</kbd> <span>Hi-res export</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>About</h2>
+        <p style="font-size: 0.75rem; color: #888; line-height: 1.6;">
+          Explores the relationship between visible artistic processes and underlying mathematical structures.
+          Each piece reveals how hidden forces shape the visible forms.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Rayincarnations Fork v1.0.0</p>
+    <p class="credit">Inspired by <a href="https://www.volatilemoods.art/" target="_blank">Volatile Moods</a></p>
+  </footer>
+
+  <script src="sketch.js"></script>
+  <script>
+    // Update UI when sketch loads
+    setTimeout(() => {
+      if (window.$fxhashFeatures) {
+        const f = window.$fxhashFeatures;
+        document.getElementById('f-structure').textContent = f['Structure'] || '-';
+        document.getElementById('f-process').textContent = f['Process'] || '-';
+        document.getElementById('f-interaction').textContent = f['Interaction'] || '-';
+        document.getElementById('f-color').textContent = f['Color Mode'] || '-';
+        document.getElementById('f-density').textContent = f['Density'] || '-';
+        document.getElementById('f-complexity').textContent = f['Complexity'] || '-';
+      }
+      if (typeof fxhash !== 'undefined') {
+        document.getElementById('hash-display').textContent = fxhash;
+      }
+
+      // Move canvas into holder
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        document.getElementById('sketch-holder').appendChild(canvas);
+      }
+    }, 500);
+
+    // Update on regenerate
+    document.addEventListener('keypress', (e) => {
+      if (e.key === 'r' || e.key === 'R') {
+        setTimeout(() => {
+          if (window.$fxhashFeatures) {
+            const f = window.$fxhashFeatures;
+            document.getElementById('f-structure').textContent = f['Structure'] || '-';
+            document.getElementById('f-process').textContent = f['Process'] || '-';
+            document.getElementById('f-interaction').textContent = f['Interaction'] || '-';
+            document.getElementById('f-color').textContent = f['Color Mode'] || '-';
+            document.getElementById('f-density').textContent = f['Density'] || '-';
+            document.getElementById('f-complexity').textContent = f['Complexity'] || '-';
+          }
+          if (typeof fxhash !== 'undefined') {
+            document.getElementById('hash-display').textContent = fxhash;
+          }
+        }, 100);
+      }
+    });
+  </script>
+</body>
+</html>
