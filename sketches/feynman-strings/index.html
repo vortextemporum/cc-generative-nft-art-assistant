@@ -456,6 +456,7 @@
       <div class="controls">
         <button class="primary" onclick="window.regenerate()">Regenerate (R)</button>
         <button class="random" onclick="devRandom()">Dev Random</button>
+        <button id="anim-btn" onclick="window.toggleAnimation()" title="Toggle particle flow animation">Animate (A)</button>
         <button onclick="saveCanvas('feynman-strings-' + hash.slice(2,10), 'png')">Save PNG (S)</button>
         <button class="like" onclick="like()">Like (L)</button>
         <button class="dislike" onclick="dislike()">Dislike (D)</button>
@@ -466,6 +467,7 @@
       <div class="keyboard-hints">
         <span><span class="key">R</span> Regenerate</span>
         <span><span class="key">S</span> Save</span>
+        <span><span class="key">A</span> Animate</span>
         <span><span class="key">L</span> Like</span>
         <span><span class="key">D</span> Dislike</span>
       </div>
@@ -697,6 +699,34 @@
           <span class="toggle-label">Overlapping Layers</span>
           <div class="toggle" id="overlapping-toggle" onclick="toggleOverlapping()"></div>
         </div>
+
+        <div class="section-divider"></div>
+        <div class="section-title">Physics Enhancements</div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Particle Labels (γ, e⁻, μ...)</span>
+          <div class="toggle" id="labels-toggle" onclick="toggleLabels()"></div>
+        </div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Reaction Diagrams</span>
+          <div class="toggle" id="reactions-toggle" onclick="toggleReactions()"></div>
+        </div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Momentum Flow</span>
+          <div class="toggle" id="momentum-toggle" onclick="toggleMomentum()"></div>
+        </div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Color Charge Flow</span>
+          <div class="toggle" id="colorflow-toggle" onclick="toggleColorFlow()"></div>
+        </div>
+
+        <div class="toggle-group">
+          <span class="toggle-label">Vertex Glow</span>
+          <div class="toggle" id="vertexglow-toggle" onclick="toggleVertexGlow()"></div>
+        </div>
       </div>
 
       <!-- Rarity Curves Panel (hidden in dev mode) -->
@@ -714,7 +744,7 @@
         <button style="margin-top: 10px; width: 100%;" onclick="exportStats()">Export to Console</button>
       </div>
 
-      <div class="version">Feynman Strings v1.6.0</div>
+      <div class="version">Feynman Strings v1.7.0</div>
     </div>
   </div>
 
@@ -844,6 +874,20 @@
         </div>`;
       }
 
+      // Physics enhancements
+      const enhancements = [];
+      if (features.showLabels) enhancements.push('Labels');
+      if (features.showReactions) enhancements.push('Reactions');
+      if (features.showMomentumFlow) enhancements.push('Momentum');
+      if (features.showColorFlow) enhancements.push('Color Flow');
+      if (features.showVertexGlow) enhancements.push('Glow');
+      if (enhancements.length > 0) {
+        html += `<div class="feature-row">
+          <span class="feature-name">Enhancements</span>
+          <span class="feature-value"><small>${enhancements.join(', ')}</small></span>
+        </div>`;
+      }
+
       // Show background pattern and symmetry
       if (features.backgroundPattern && features.backgroundPattern !== "none") {
         html += `<div class="feature-row">
@@ -888,6 +932,13 @@
 
       bgDiagramsToggle.classList.toggle('active', features.hasBackgroundDiagrams);
       overlappingToggle.classList.toggle('active', features.hasOverlappingLayers);
+
+      // Physics enhancement toggles
+      document.getElementById('labels-toggle').classList.toggle('active', !!features.showLabels);
+      document.getElementById('reactions-toggle').classList.toggle('active', !!features.showReactions);
+      document.getElementById('momentum-toggle').classList.toggle('active', !!features.showMomentumFlow);
+      document.getElementById('colorflow-toggle').classList.toggle('active', !!features.showColorFlow);
+      document.getElementById('vertexglow-toggle').classList.toggle('active', !!features.showVertexGlow);
     }
 
     function toggleBgDiagrams() {
@@ -903,6 +954,49 @@
       window.setParameter('hasOverlappingLayers', isActive);
       window.render();
     }
+
+    function toggleLabels() {
+      const toggle = document.getElementById('labels-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('showLabels', isActive);
+      window.render();
+    }
+
+    function toggleReactions() {
+      const toggle = document.getElementById('reactions-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('showReactions', isActive);
+      window.render();
+    }
+
+    function toggleMomentum() {
+      const toggle = document.getElementById('momentum-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('showMomentumFlow', isActive);
+      window.render();
+    }
+
+    function toggleColorFlow() {
+      const toggle = document.getElementById('colorflow-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('showColorFlow', isActive);
+      window.render();
+    }
+
+    function toggleVertexGlow() {
+      const toggle = document.getElementById('vertexglow-toggle');
+      const isActive = toggle.classList.toggle('active');
+      window.setParameter('showVertexGlow', isActive);
+      window.render();
+    }
+
+    window.updateAnimationButton = function() {
+      const btn = document.getElementById('anim-btn');
+      if (btn) {
+        btn.style.background = window.isAnimating() ? '#4a6a4a' : '#2a2a3a';
+        btn.style.borderColor = window.isAnimating() ? '#6aaa6a' : '#3a3a4a';
+      }
+    };
 
     function updateRarityCurves() {
       if (devMode) {
@@ -1148,6 +1242,13 @@
       window.setParameter('hasCalabiYau', Math.random() > 0.7);
       window.setParameter('hasGraviton', Math.random() > 0.8);
       window.setParameter('hasSupersymmetry', Math.random() > 0.75);
+
+      // Physics enhancements (higher probability in dev mode)
+      window.setParameter('showLabels', Math.random() > 0.4);
+      window.setParameter('showReactions', Math.random() > 0.4);
+      window.setParameter('showMomentumFlow', Math.random() > 0.5);
+      window.setParameter('showColorFlow', Math.random() > 0.5);
+      window.setParameter('showVertexGlow', Math.random() > 0.4);
 
       window.render();
       updateFeaturesDisplay();

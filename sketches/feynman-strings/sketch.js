@@ -1,5 +1,5 @@
 /**
- * Feynman Strings v1.0.0
+ * Feynman Strings v1.7.0
  *
  * Generative art inspired by Feynman diagrams and string theory.
  * From technical particle physics notation to abstract quantum chaos.
@@ -9,8 +9,14 @@
  * - QCD: Quarks (colored), gluons (curly), color charge dynamics
  * - String: Worldsheets, vibrating strings, dimensional membranes
  * - Vacuum: Virtual pairs, quantum foam, spacetime bubbles
+ * - Bubble: Particle tracks in detector
+ * - SpinNetwork: Loop quantum gravity
+ * - Electroweak: W/Z bosons, Higgs, muon, tau
+ * - Cosmic: High-energy particle showers
+ * - Nuclear: Decay chains, fission/fusion
+ * - Topological: Anyons, braiding, knots
  *
- * @version 1.0.0
+ * @version 1.7.0
  */
 
 // ============================================================
@@ -291,7 +297,7 @@ const MODES = {
     fullName: "Electroweak",
     description: "W/Z bosons, Higgs mechanism, weak decays, symmetry breaking",
     weight: 0.08,
-    particles: ["wBoson", "zBoson", "higgs", "neutrino"],
+    particles: ["wBoson", "zBoson", "higgs", "neutrino", "muon", "tau"],
     elements: ["wPropagator", "zPropagator", "higgsVertex", "weakDecay", "neutrinoLine"]
   },
   cosmic: {
@@ -466,8 +472,20 @@ function generateFeatures() {
   // Connection density (how interconnected vertices are)
   const connectionDensity = rnd(0.3, 0.8) * density;
 
-  // Labels (only for technical)
-  const showLabels = false; // Labels disabled
+  // Labels - always on for technical style, 15% chance otherwise
+  const showLabels = style === "technical" || rndBool(0.15);
+
+  // Reaction diagrams - 25% chance
+  const showReactions = rndBool(0.25);
+
+  // Momentum flow chevrons - technical style favored
+  const showMomentumFlow = style === "technical" && rndBool(0.7);
+
+  // Color charge flow on gluons - technical and geometric
+  const showColorFlow = (style === "technical" || style === "geometric") && rndBool(0.6);
+
+  // Vertex glow - not for minimal style
+  const showVertexGlow = style !== "minimal" && rndBool(0.4);
 
   // Arrow style
   const arrowStyle = style === "technical" ? "standard" : rndChoice(["standard", "bold", "subtle", "none"]);
@@ -498,6 +516,10 @@ function generateFeatures() {
     layerCount,
     connectionDensity,
     showLabels,
+    showReactions,
+    showMomentumFlow,
+    showColorFlow,
+    showVertexGlow,
     arrowStyle,
     hasBackgroundDiagrams,
     hasOverlappingLayers,
@@ -612,8 +634,13 @@ function drawScene() {
     drawCalabiYau(width/2 + rnd(-100, 100), height/2 + rnd(-100, 100), rnd(60, 120));
   }
 
-  // Labels overlay (if technical style)
-  if (features.showLabels && features.style === "technical") {
+  // Time axis indicator (flowing composition + labels)
+  if (features.showLabels && features.composition === "flowing") {
+    drawTimeAxis();
+  }
+
+  // Labels overlay
+  if (features.showLabels) {
     drawParticleLabels();
   }
 }
@@ -1341,6 +1368,17 @@ function drawQEDElements(vertices, alpha) {
     const v2 = vertices[(vertices.indexOf(v1) + 1) % vertices.length];
     drawSelfEnergyBlob(v1.x, v1.y, v2.x, v2.y, alpha);
   }
+
+  // Reaction diagrams
+  if (features.showReactions && rndBool(0.4 * features.density)) {
+    const rx = rnd(150, width - 150);
+    const ry = rnd(150, height - 150);
+    if (rndBool(0.5)) {
+      drawAnnihilationReaction(rx, ry, rnd(80, 120), alpha);
+    } else {
+      drawPairProductionReaction(rx, ry, rnd(80, 120), alpha);
+    }
+  }
 }
 
 function drawQCDElements(vertices, alpha) {
@@ -1402,6 +1440,13 @@ function drawQCDElements(vertices, alpha) {
     const x = rnd(100, width - 100);
     const y = rnd(100, height - 100);
     drawSunsetDiagram(x, y, rnd(40, 60), alpha);
+  }
+
+  // Higgs production reaction
+  if (features.showReactions && rndBool(0.25 * features.density)) {
+    const rx = rnd(150, width - 150);
+    const ry = rnd(150, height - 150);
+    drawHiggsProductionReaction(rx, ry, rnd(100, 140), alpha);
   }
 }
 
@@ -1633,6 +1678,20 @@ function drawElectroweakElements(vertices, alpha) {
     const y = rnd(120, height - 120);
     drawElectroweakMixing(x, y, rnd(60, 90), alpha);
   }
+
+  // Reaction diagrams
+  if (features.showReactions && rndBool(0.35 * features.density)) {
+    const rx = rnd(150, width - 150);
+    const ry = rnd(150, height - 150);
+    const roll = rnd();
+    if (roll < 0.33) {
+      drawBetaDecayReaction(rx, ry, rnd(90, 130), alpha);
+    } else if (roll < 0.66) {
+      drawMuonDecayReaction(rx, ry, rnd(90, 130), alpha);
+    } else {
+      drawAnnihilationReaction(rx, ry, rnd(80, 120), alpha);
+    }
+  }
 }
 
 function drawCosmicElements(vertices, alpha) {
@@ -1719,6 +1778,13 @@ function drawNuclearElements(vertices, alpha) {
     const y = rnd(150, height - 150);
     drawFusionReaction(x, y, rnd(50, 80), alpha);
   }
+
+  // Beta decay reaction diagram
+  if (features.showReactions && rndBool(0.3 * features.density)) {
+    const rx = rnd(150, width - 150);
+    const ry = rnd(150, height - 150);
+    drawBetaDecayReaction(rx, ry, rnd(90, 130), alpha);
+  }
 }
 
 function drawTopologicalElements(vertices, alpha) {
@@ -1780,12 +1846,53 @@ function drawPropagator(x1, y1, x2, y2, particleType) {
     case "quark":
       drawFermionLine(x1, y1, x2, y2, 1);
       break;
+    case "muon":
+      drawMuonLine(x1, y1, x2, y2, 1);
+      break;
+    case "tau":
+      drawTauLine(x1, y1, x2, y2, 1);
+      break;
     case "wBoson":
+      drawWBosonPropagator(x1, y1, x2, y2, 1);
+      break;
     case "zBoson":
-      drawMassiveBosonPropagator(x1, y1, x2, y2, 1);
+      drawZBosonPropagator(x1, y1, x2, y2, 1);
+      break;
+    case "higgs":
+      drawHiggsPropagator(x1, y1, x2, y2, 1);
+      break;
+    case "graviton":
+      drawGravitonPropagator(x1, y1, x2, y2, 1);
+      break;
+    case "neutrino":
+      drawNeutrinoLine(x1, y1, x2, y2, 1);
+      break;
+    case "neutrino_e":
+      drawNeutrinoFlavored(x1, y1, x2, y2, "electron", 1);
+      break;
+    case "neutrino_mu":
+      drawNeutrinoFlavored(x1, y1, x2, y2, "muon", 1);
+      break;
+    case "neutrino_tau":
+      drawNeutrinoFlavored(x1, y1, x2, y2, "tau", 1);
       break;
     default:
       drawFermionLine(x1, y1, x2, y2, 1);
+  }
+
+  // Momentum flow chevrons
+  if (features.showMomentumFlow) {
+    drawMomentumFlow(x1, y1, x2, y2, 1);
+  }
+
+  // Color charge flow on gluons
+  if (features.showColorFlow && particleType === "gluon") {
+    drawColorChargeFlow(x1, y1, x2, y2, 1);
+  }
+
+  // Particle label overlay
+  if (features.showLabels) {
+    drawPropagatorLabel(x1, y1, x2, y2, particleType);
   }
 }
 
@@ -1937,6 +2044,11 @@ function drawVirtualPropagator(x1, y1, x2, y2) {
 
 function drawVertex(x, y, type) {
   const size = features.lineWeight * 3;
+
+  // Vertex glow for interaction and qcd types
+  if (features.showVertexGlow && (type === "interaction" || type === "qcd")) {
+    drawVertexGlow(x, y, size * 2, type === "qcd" ? COLORS.quarkRed : pal.accent);
+  }
 
   switch (type) {
     case "interaction":
@@ -3436,6 +3548,127 @@ function drawNeutrinoLine(x1, y1, x2, y2, alpha = 1) {
 }
 
 /**
+ * Muon Line - Heavier lepton, thicker line
+ */
+function drawMuonLine(x1, y1, x2, y2, alpha = 1) {
+  const col = color(COLORS.muon || "#6c5ce7");
+  col.setAlpha(alpha * 255);
+
+  stroke(col);
+  strokeWeight(features.lineWeight * 1.1);
+  line(x1, y1, x2, y2);
+
+  // Arrow
+  if (features.arrowStyle !== "none") {
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const angle = atan2(y2 - y1, x2 - x1);
+    fill(col);
+    noStroke();
+    drawArrow(mx, my, angle, features.lineWeight * 3.5);
+  }
+}
+
+/**
+ * Tau Line - Heaviest lepton, thickest line
+ */
+function drawTauLine(x1, y1, x2, y2, alpha = 1) {
+  const col = color(COLORS.tau || "#00b894");
+  col.setAlpha(alpha * 255);
+
+  stroke(col);
+  strokeWeight(features.lineWeight * 1.3);
+  line(x1, y1, x2, y2);
+
+  // Arrow
+  if (features.arrowStyle !== "none") {
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const angle = atan2(y2 - y1, x2 - x1);
+    fill(col);
+    noStroke();
+    drawArrow(mx, my, angle, features.lineWeight * 4);
+  }
+}
+
+/**
+ * Higgs Propagator - Dashed line (scalar particle convention)
+ */
+function drawHiggsPropagator(x1, y1, x2, y2, alpha = 1) {
+  const col = color(COLORS.higgs || "#fd79a8");
+  col.setAlpha(alpha * 255);
+
+  stroke(col);
+  strokeWeight(features.lineWeight * 1.2);
+  drawingContext.setLineDash([10, 5]);
+  line(x1, y1, x2, y2);
+  drawingContext.setLineDash([]);
+}
+
+/**
+ * Graviton Propagator - Double wavy line (theoretical)
+ */
+function drawGravitonPropagator(x1, y1, x2, y2, alpha = 1) {
+  const col = color(COLORS.graviton || "#dfe6e9");
+  col.setAlpha(alpha * 200);
+
+  stroke(col);
+  strokeWeight(features.lineWeight * 0.8);
+  noFill();
+
+  const d = dist(x1, y1, x2, y2);
+  const angle = atan2(y2 - y1, x2 - x1);
+  const waveCount = Math.max(4, Math.floor(d / 14));
+  const amplitude = 5;
+
+  // Draw two parallel wavy lines
+  for (let offset of [-2, 2]) {
+    const offX = cos(angle + HALF_PI) * offset;
+    const offY = sin(angle + HALF_PI) * offset;
+    beginShape();
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      const baseX = lerp(x1, x2, t) + offX;
+      const baseY = lerp(y1, y2, t) + offY;
+      const wave = sin(t * waveCount * TWO_PI) * amplitude;
+      const perpX = cos(angle + HALF_PI) * wave;
+      const perpY = sin(angle + HALF_PI) * wave;
+      vertex(baseX + perpX, baseY + perpY);
+    }
+    endShape();
+  }
+}
+
+/**
+ * Flavored Neutrino Line - Dashed + ghostly, flavor-colored
+ */
+function drawNeutrinoFlavored(x1, y1, x2, y2, flavor, alpha = 1) {
+  let col;
+  switch (flavor) {
+    case "electron": col = color(COLORS.electron || "#1d3557"); break;
+    case "muon": col = color(COLORS.muon || "#6c5ce7"); break;
+    case "tau": col = color(COLORS.tau || "#00b894"); break;
+    default: col = color(COLORS.neutrino || "#b2bec3");
+  }
+  col.setAlpha(alpha * 150);
+
+  stroke(col);
+  strokeWeight(features.lineWeight * 0.7);
+  drawingContext.setLineDash([5, 4]);
+  line(x1, y1, x2, y2);
+  drawingContext.setLineDash([]);
+
+  // Ghostly arrow
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+  const angle = atan2(y2 - y1, x2 - x1);
+  col.setAlpha(alpha * 100);
+  fill(col);
+  noStroke();
+  drawArrow(midX, midY, angle, 3);
+}
+
+/**
  * Higgs Vertex - Symmetry breaking point
  */
 function drawHiggsVertex(x, y, size, alpha = 1) {
@@ -4841,9 +5074,21 @@ function getRandomParticleType() {
     case "qcd":
       return rndChoice(["gluon", "quark", "gluon", "gluon"]);
     case "string":
-      return rndChoice(["fermion", "photon"]);
+      return rndChoice(["fermion", "photon", "graviton"]);
     case "vacuum":
       return rndChoice(["photon", "fermion"]);
+    case "electroweak":
+      return rndChoice(["wBoson", "zBoson", "neutrino", "muon", "tau", "higgs", "electron"]);
+    case "cosmic":
+      return rndChoice(["muon", "electron", "photon", "muon", "fermion"]);
+    case "nuclear":
+      return rndChoice(["fermion", "electron", "neutrino_e", "photon"]);
+    case "bubble":
+      return rndChoice(["electron", "photon", "muon", "fermion"]);
+    case "spinNetwork":
+      return rndChoice(["fermion", "photon"]);
+    case "topological":
+      return rndChoice(["fermion", "photon"]);
     default:
       return "fermion";
   }
@@ -4897,16 +5142,434 @@ function drawConfinementTube(x1, y1, x2, y2, alpha) {
   pop();
 }
 
+// ============================================================
+// PARTICLE LABEL SYSTEM
+// ============================================================
+
+/**
+ * Get Unicode physics notation for a particle type
+ */
+function getParticleLabel(particleType) {
+  const labels = {
+    photon: "\u03B3",          // γ
+    electron: "e\u207B",       // e⁻
+    positron: "e\u207A",       // e⁺
+    fermion: "\u03C8",         // ψ
+    muon: "\u03BC\u207B",      // μ⁻
+    tau: "\u03C4\u207B",       // τ⁻
+    neutrino: "\u03BD",        // ν
+    neutrino_e: "\u03BD\u2091",// νₑ
+    neutrino_mu: "\u03BD\u03BC",// νμ
+    neutrino_tau: "\u03BD\u03C4",// ντ
+    wBoson: "W\u00B1",         // W±
+    zBoson: "Z\u2070",         // Z⁰
+    higgs: "H",
+    gluon: "g",
+    graviton: "G",
+    quark: "q"
+  };
+  return labels[particleType] || particleType;
+}
+
+/**
+ * Render a physics label with proper styling
+ */
+function drawPhysicsLabel(x, y, label, size, alpha = 1) {
+  push();
+  const bg = color(pal.background);
+  bg.setAlpha(180);
+
+  // Background pill for readability
+  textFont('serif');
+  textSize(size);
+  textAlign(CENTER, CENTER);
+  const tw = textWidth(label) + 6;
+  const th = size + 4;
+  noStroke();
+  fill(bg);
+  rectMode(CENTER);
+  rect(x, y, tw, th, 3);
+
+  // Label text
+  const col = color(pal.line);
+  col.setAlpha(alpha * 220);
+  fill(col);
+  noStroke();
+  text(label, x, y);
+  pop();
+}
+
+/**
+ * Draw a label at the midpoint of a propagator, offset perpendicular
+ */
+function drawPropagatorLabel(x1, y1, x2, y2, particleType) {
+  const label = getParticleLabel(particleType);
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const angle = atan2(y2 - y1, x2 - x1);
+
+  // Offset perpendicular to the line
+  const offsetDist = 12;
+  const ox = cos(angle + HALF_PI) * offsetDist;
+  const oy = sin(angle + HALF_PI) * offsetDist;
+
+  drawPhysicsLabel(mx + ox, my + oy, label, 9);
+}
+
 function drawParticleLabels() {
+  // Mode names at bottom
   fill(pal.dim);
   noStroke();
   textSize(9);
   textAlign(CENTER);
   textFont('monospace');
 
-  // Add labels near edges explaining the diagram type
   const modeNames = features.modes.map(m => MODES[m].name).join(" + ");
   text(modeNames, width/2, height - 20);
+
+  // Style label
+  if (features.showLabels) {
+    textSize(8);
+    const styleText = features.style + " / " + features.palette;
+    text(styleText, width/2, height - 8);
+  }
+}
+
+// ============================================================
+// REACTION DIAGRAMS
+// ============================================================
+
+/**
+ * e⁻e⁺ → γγ  (Electron-positron annihilation to two photons)
+ */
+function drawAnnihilationReaction(x, y, size, alpha = 1) {
+  const s = size * 0.5;
+
+  // Incoming electron (left-top)
+  drawFermionLine(x - s, y - s * 0.6, x, y, alpha);
+  // Incoming positron (left-bottom)
+  drawFermionLine(x - s, y + s * 0.6, x, y, alpha);
+
+  // Outgoing photons
+  drawPhotonPropagator(x, y, x + s, y - s * 0.6, alpha);
+  drawPhotonPropagator(x, y, x + s, y + s * 0.6, alpha);
+
+  // Vertex
+  drawVertex(x, y, "interaction");
+
+  // Labels
+  if (features.showLabels) {
+    drawPhysicsLabel(x - s - 8, y - s * 0.6, "e\u207B", 8, alpha);
+    drawPhysicsLabel(x - s - 8, y + s * 0.6, "e\u207A", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y - s * 0.6, "\u03B3", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y + s * 0.6, "\u03B3", 8, alpha);
+  }
+}
+
+/**
+ * n → p + e⁻ + ν̄ₑ  (Beta decay)
+ */
+function drawBetaDecayReaction(x, y, size, alpha = 1) {
+  const s = size * 0.5;
+
+  // Incoming neutron
+  drawFermionLine(x - s, y, x - s * 0.2, y, alpha);
+
+  // W boson (internal)
+  drawWBosonPropagator(x - s * 0.2, y, x + s * 0.2, y - s * 0.5, alpha);
+
+  // Outgoing proton
+  drawFermionLine(x - s * 0.2, y, x + s, y + s * 0.3, alpha);
+
+  // Decay products from W vertex
+  drawFermionLine(x + s * 0.2, y - s * 0.5, x + s, y - s * 0.8, alpha);
+  drawNeutrinoLine(x + s * 0.2, y - s * 0.5, x + s, y - s * 0.2, alpha);
+
+  // Vertices
+  drawVertex(x - s * 0.2, y, "decay");
+  drawVertex(x + s * 0.2, y - s * 0.5, "decay");
+
+  if (features.showLabels) {
+    drawPhysicsLabel(x - s - 6, y, "n", 8, alpha);
+    drawPhysicsLabel(x + s + 6, y + s * 0.3, "p", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y - s * 0.8, "e\u207B", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y - s * 0.2, "\u03BD\u0304\u2091", 8, alpha);
+  }
+}
+
+/**
+ * gg → H → γγ  (Higgs production via gluon fusion)
+ */
+function drawHiggsProductionReaction(x, y, size, alpha = 1) {
+  const s = size * 0.5;
+
+  // Incoming gluons
+  drawGluonPropagator(x - s, y - s * 0.4, x - s * 0.15, y, alpha);
+  drawGluonPropagator(x - s, y + s * 0.4, x - s * 0.15, y, alpha);
+
+  // Top quark loop (triangle connecting gluon vertices to Higgs)
+  const col = color(pal.line);
+  col.setAlpha(alpha * 180);
+  stroke(col);
+  strokeWeight(features.lineWeight * 0.8);
+  noFill();
+  triangle(x - s * 0.15, y, x - s * 0.15, y - s * 0.25, x + s * 0.1, y);
+
+  // Higgs propagator
+  drawHiggsPropagator(x - s * 0.15, y, x + s * 0.15, y, alpha);
+
+  // Outgoing photons
+  drawPhotonPropagator(x + s * 0.15, y, x + s, y - s * 0.4, alpha);
+  drawPhotonPropagator(x + s * 0.15, y, x + s, y + s * 0.4, alpha);
+
+  // Vertices
+  drawVertex(x - s * 0.15, y, "interaction");
+  drawVertex(x + s * 0.15, y, "interaction");
+
+  if (features.showLabels) {
+    drawPhysicsLabel(x - s - 6, y - s * 0.4, "g", 8, alpha);
+    drawPhysicsLabel(x - s - 6, y + s * 0.4, "g", 8, alpha);
+    drawPhysicsLabel(x, y - 12, "H", 9, alpha);
+    drawPhysicsLabel(x + s + 6, y - s * 0.4, "\u03B3", 8, alpha);
+    drawPhysicsLabel(x + s + 6, y + s * 0.4, "\u03B3", 8, alpha);
+  }
+}
+
+/**
+ * γ → e⁻e⁺  (Pair production)
+ */
+function drawPairProductionReaction(x, y, size, alpha = 1) {
+  const s = size * 0.5;
+
+  // Incoming photon
+  drawPhotonPropagator(x - s, y, x, y, alpha);
+
+  // Nucleus (needed for momentum conservation)
+  const col = color(pal.dim);
+  col.setAlpha(alpha * 120);
+  stroke(col);
+  strokeWeight(features.lineWeight * 2);
+  drawingContext.setLineDash([3, 3]);
+  line(x, y + s * 0.6, x, y);
+  drawingContext.setLineDash([]);
+
+  // Outgoing pair
+  drawFermionLine(x, y, x + s, y - s * 0.5, alpha);
+  drawFermionLine(x, y, x + s, y + s * 0.3, alpha);
+
+  // Vertex
+  drawVertex(x, y, "creation");
+
+  if (features.showLabels) {
+    drawPhysicsLabel(x - s - 6, y, "\u03B3", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y - s * 0.5, "e\u207B", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y + s * 0.3, "e\u207A", 8, alpha);
+  }
+}
+
+/**
+ * μ⁻ → e⁻ + ν̄ₑ + νμ  (Muon decay)
+ */
+function drawMuonDecayReaction(x, y, size, alpha = 1) {
+  const s = size * 0.5;
+
+  // Incoming muon
+  drawMuonLine(x - s, y, x - s * 0.15, y, alpha);
+
+  // W boson (virtual, internal)
+  drawWBosonPropagator(x - s * 0.15, y, x + s * 0.2, y - s * 0.4, alpha);
+
+  // Outgoing muon neutrino
+  drawNeutrinoFlavored(x - s * 0.15, y, x + s, y + s * 0.4, "muon", alpha);
+
+  // Decay products from W vertex
+  drawFermionLine(x + s * 0.2, y - s * 0.4, x + s, y - s * 0.7, alpha);
+  drawNeutrinoFlavored(x + s * 0.2, y - s * 0.4, x + s, y - s * 0.1, "electron", alpha);
+
+  // Vertices
+  drawVertex(x - s * 0.15, y, "decay");
+  drawVertex(x + s * 0.2, y - s * 0.4, "decay");
+
+  if (features.showLabels) {
+    drawPhysicsLabel(x - s - 8, y, "\u03BC\u207B", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y + s * 0.4, "\u03BD\u03BC", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y - s * 0.7, "e\u207B", 8, alpha);
+    drawPhysicsLabel(x + s + 8, y - s * 0.1, "\u03BD\u0304\u2091", 8, alpha);
+  }
+}
+
+// ============================================================
+// MOMENTUM FLOW & VISUAL POLISH
+// ============================================================
+
+/**
+ * Draw momentum flow chevrons along a propagator path
+ */
+function drawMomentumFlow(x1, y1, x2, y2, alpha = 1) {
+  const d = dist(x1, y1, x2, y2);
+  const angle = atan2(y2 - y1, x2 - x1);
+  const spacing = 40;
+  const count = Math.floor(d / spacing);
+
+  const col = color(pal.dim);
+  col.setAlpha(alpha * 100);
+  stroke(col);
+  strokeWeight(features.lineWeight * 0.5);
+  noFill();
+
+  for (let i = 1; i <= count; i++) {
+    const t = i / (count + 1);
+    const cx = lerp(x1, x2, t);
+    const cy = lerp(y1, y2, t);
+    const chevSize = 4;
+
+    push();
+    translate(cx, cy);
+    rotate(angle);
+    line(-chevSize, -chevSize * 0.6, 0, 0);
+    line(-chevSize, chevSize * 0.6, 0, 0);
+    pop();
+  }
+}
+
+/**
+ * Draw color charge flow dots along gluon lines
+ */
+function drawColorChargeFlow(x1, y1, x2, y2, alpha = 1) {
+  const d = dist(x1, y1, x2, y2);
+  const count = Math.floor(d / 15);
+  const rgbColors = ["#e63946", "#2a9d8f", "#457b9d"]; // RGB color charge
+
+  noStroke();
+  for (let i = 0; i < count; i++) {
+    const t = (i + 0.5) / count;
+    const cx = lerp(x1, x2, t);
+    const cy = lerp(y1, y2, t);
+    const dotCol = color(rgbColors[i % 3]);
+    dotCol.setAlpha(alpha * 160);
+    fill(dotCol);
+    circle(cx, cy, 3);
+  }
+}
+
+/**
+ * Draw a glow effect behind a vertex
+ */
+function drawVertexGlow(x, y, size, glowColor, alpha = 1) {
+  noStroke();
+  for (let r = 3; r >= 0; r--) {
+    const col = color(glowColor);
+    col.setAlpha(alpha * (20 - r * 5));
+    fill(col);
+    circle(x, y, size * (1 + r * 0.8));
+  }
+}
+
+/**
+ * Draw time axis indicator on right edge
+ */
+function drawTimeAxis() {
+  const x = width - 25;
+  const y1 = 60;
+  const y2 = height - 60;
+
+  const col = color(pal.dim);
+  col.setAlpha(120);
+  stroke(col);
+  strokeWeight(1);
+  drawingContext.setLineDash([5, 5]);
+  line(x, y1, x, y2);
+  drawingContext.setLineDash([]);
+
+  // Arrow at top
+  fill(col);
+  noStroke();
+  triangle(x, y1 - 5, x - 4, y1 + 3, x + 4, y1 + 3);
+
+  // Label
+  textFont('serif');
+  textSize(10);
+  textAlign(CENTER);
+  fill(col);
+  text("t", x, y1 - 10);
+}
+
+// ============================================================
+// ANIMATION SYSTEM (Non-deterministic overlay)
+// ============================================================
+
+let animationActive = false;
+let flowParticles = [];
+
+class FlowParticle {
+  constructor() {
+    this.reset();
+  }
+
+  // Use Math.random() to avoid consuming hash-based R state
+  _rnd(min = 0, max = 1) {
+    return Math.random() * (max - min) + min;
+  }
+
+  reset() {
+    this.x = this._rnd(0, width * 0.3);
+    this.y = this._rnd(50, height - 50);
+    this.vx = this._rnd(0.5, 2.5);
+    this.vy = this._rnd(-0.5, 0.5);
+    this.life = 1;
+    this.decay = this._rnd(0.003, 0.008);
+    this.size = this._rnd(2, 5);
+    this.trail = [];
+    const particleColors = [COLORS.photon, COLORS.electron, COLORS.muon, COLORS.quarkRed, COLORS.quarkGreen, COLORS.quarkBlue];
+    this.col = particleColors[Math.floor(Math.random() * particleColors.length)];
+  }
+
+  update() {
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 15) this.trail.shift();
+
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += this._rnd(-0.1, 0.1);
+    this.life -= this.decay;
+
+    if (this.life <= 0 || this.x > width || this.y < 0 || this.y > height) {
+      this.reset();
+    }
+  }
+
+  draw() {
+    // Trail
+    noFill();
+    const c = color(this.col);
+    for (let i = 0; i < this.trail.length - 1; i++) {
+      const alpha = (i / this.trail.length) * this.life * 100;
+      c.setAlpha(alpha);
+      stroke(c);
+      strokeWeight(this.size * (i / this.trail.length));
+      line(this.trail[i].x, this.trail[i].y, this.trail[i + 1].x, this.trail[i + 1].y);
+    }
+
+    // Head
+    c.setAlpha(this.life * 255);
+    noStroke();
+    fill(c);
+    circle(this.x, this.y, this.size);
+  }
+}
+
+function initAnimation() {
+  flowParticles = [];
+  for (let i = 0; i < 20; i++) {
+    flowParticles.push(new FlowParticle());
+  }
+}
+
+function drawAnimationLayer() {
+  for (const p of flowParticles) {
+    p.update();
+    p.draw();
+  }
 }
 
 // ============================================================
@@ -4922,7 +5585,32 @@ function keyPressed() {
     regenerate();
     return false; // Prevent default browser behavior (reload)
   }
+  if (key === 'a' || key === 'A') {
+    toggleAnimation();
+    return false;
+  }
   return true;
+}
+
+function toggleAnimation() {
+  animationActive = !animationActive;
+  if (animationActive) {
+    initAnimation();
+    loop();
+  } else {
+    noLoop();
+    render(); // Redraw static scene
+  }
+  if (typeof window.updateAnimationButton === 'function') {
+    window.updateAnimationButton();
+  }
+}
+
+function draw() {
+  if (animationActive) {
+    drawScene();
+    drawAnimationLayer();
+  }
 }
 
 function regenerate() {
@@ -5006,6 +5694,8 @@ function exportFeedback() {
 window.recordFeedback = recordFeedback;
 window.getFeedbackStats = getFeedbackStats;
 window.exportFeedback = exportFeedback;
+window.toggleAnimation = toggleAnimation;
+window.isAnimating = function() { return animationActive; };
 
 // ============================================================
 // RARITY CURVES (for UI display)

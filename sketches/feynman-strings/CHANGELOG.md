@@ -2,6 +2,57 @@
 
 All notable changes to Feynman Strings will be documented in this file.
 
+## [1.7.0] - 2026-02-09
+
+### Added
+- **New particle propagators**:
+  - `drawMuonLine()` - Heavier lepton, thicker line with muon color (#6c5ce7)
+  - `drawTauLine()` - Heaviest lepton, thickest line with tau color (#00b894)
+  - `drawHiggsPropagator()` - Scalar particle dashed line convention
+  - `drawGravitonPropagator()` - Theoretical double wavy line
+  - `drawNeutrinoFlavored()` - Flavor-specific neutrino lines (electron/muon/tau colored)
+- **Particle label system** (Unicode physics notation):
+  - `getParticleLabel()` - Maps particle types to symbols (γ, e⁻, μ⁻, τ⁻, νₑ, W±, Z⁰, H, g, G, q, ψ)
+  - `drawPhysicsLabel()` - Renders labels with serif font and background pill
+  - `drawPropagatorLabel()` - Labels at propagator midpoints with perpendicular offset
+  - Labels appear automatically on all `drawPropagator()` calls when enabled
+- **5 reaction diagram functions**:
+  - `drawAnnihilationReaction()` - e⁻e⁺ → γγ (QED)
+  - `drawBetaDecayReaction()` - n → p + e⁻ + ν̄ₑ (Nuclear, Electroweak)
+  - `drawHiggsProductionReaction()` - gg → H → γγ (QCD, Electroweak)
+  - `drawPairProductionReaction()` - γ → e⁻e⁺ (QED, Bubble)
+  - `drawMuonDecayReaction()` - μ⁻ → e⁻ + ν̄ₑ + νμ (Electroweak)
+- **Visual polish effects**:
+  - `drawMomentumFlow()` - Chevron indicators along propagator paths
+  - `drawColorChargeFlow()` - RGB dots cycling along gluon lines
+  - `drawVertexGlow()` - Concentric fading circles behind vertices
+  - `drawTimeAxis()` - Dashed vertical arrow labeled "t" for flowing compositions
+- **Animation system** (non-deterministic overlay):
+  - `FlowParticle` class with colored dot + trail
+  - Toggle with `A` key - does NOT affect hash→output mapping
+  - 20 flowing particles with randomized colors and trajectories
+- **5 new feature flags**:
+  - `showLabels` - Particle notation (always on for technical, 15% otherwise)
+  - `showReactions` - Reaction diagrams (25% chance)
+  - `showMomentumFlow` - Chevrons (technical style, 70% chance)
+  - `showColorFlow` - Gluon color dots (technical/geometric, 60% chance)
+  - `showVertexGlow` - Vertex glow (not minimal, 40% chance)
+- **Dev UI enhancements**:
+  - 5 new toggles in Parameters panel (Labels, Reactions, Momentum, Color Flow, Glow)
+  - Animation button with active state indicator
+  - `A` key shortcut hint
+  - Enhancements display in Features panel
+
+### Changed
+- `showLabels` feature flag changed from hardcoded `false` to conditional generation
+- `drawPropagator()` dispatcher expanded with 8 new particle type cases (muon, tau, higgs, graviton, neutrino, neutrino_e/mu/tau)
+- `drawPropagator()` now integrates momentum flow, color charge flow, and label overlays
+- `drawVertex()` now renders glow effect for interaction and QCD vertex types
+- `getRandomParticleType()` expanded from 4 modes to all 10 modes
+- Electroweak mode particles array expanded to include muon and tau
+- Labels overlay condition relaxed from requiring technical style
+- Dev Random mode now randomizes all 5 new physics enhancement features
+
 ## [1.6.0] - 2025-01-31
 
 ### Added
