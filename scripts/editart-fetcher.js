@@ -13,6 +13,7 @@
  *   node editart-fetcher.js --limit 50           # Fetch only first N collections
  *   node editart-fetcher.js --since 2025-01-01   # Fetch collections created after date
  *   node editart-fetcher.js --update             # Incremental update (fetch new since last run)
+ *   node editart-fetcher.js --no-resume          # Ignore checkpoint, start fresh
  */
 
 import fs from 'fs';
@@ -21,6 +22,8 @@ import http from 'http';
 
 const OBJKT_ENDPOINT = "https://data.objkt.com/v3/graphql";
 const DEFAULT_OUTPUT = "data/editart-dataset.json";
+const CHECKPOINT_FILE = "data/.editart-checkpoint.json";
+const CHECKPOINT_INTERVAL = 20; // Save every N collections
 
 // IPFS gateways to try (in order of preference)
 const IPFS_GATEWAYS = [
@@ -405,6 +408,45 @@ function detectScriptType(collection) {
 }
 
 // ============================================================================
+// CHECKPOINT SYSTEM
+// ============================================================================
+
+function saveCheckpoint(checkpointFile, data) {
+  try {
+    const tempFile = checkpointFile + '.tmp';
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2));
+    fs.renameSync(tempFile, checkpointFile);
+    return true;
+  } catch (e) {
+    console.error(`  [WARN] Checkpoint save failed: ${e.message}`);
+    return false;
+  }
+}
+
+function loadCheckpoint(checkpointFile) {
+  try {
+    if (fs.existsSync(checkpointFile)) {
+      const data = JSON.parse(fs.readFileSync(checkpointFile, 'utf8'));
+      console.log(`\n  Resuming from checkpoint: ${data.processed.length} collections already processed\n`);
+      return data;
+    }
+  } catch (e) {
+    console.log(`  Could not load checkpoint: ${e.message}`);
+  }
+  return null;
+}
+
+function clearCheckpoint(checkpointFile) {
+  try {
+    if (fs.existsSync(checkpointFile)) {
+      fs.unlinkSync(checkpointFile);
+    }
+  } catch (e) {
+    // Ignore cleanup errors
+  }
+}
+
+// ============================================================================
 // INCREMENTAL UPDATE
 // ============================================================================
 
@@ -421,15 +463,44 @@ function loadExistingDataset(outputFile) {
 }
 
 // ============================================================================
+// GRACEFUL SHUTDOWN
+// ============================================================================
+
+let currentCheckpointData = null;
+
+function setupSignalHandlers() {
+  const handleShutdown = (signal) => {
+    console.log(`\n\n[${signal}] Saving checkpoint before exit...`);
+    if (currentCheckpointData && currentCheckpointData.processed?.length > 0) {
+      saveCheckpoint(CHECKPOINT_FILE, currentCheckpointData);
+      console.log(`  Saved ${currentCheckpointData.processed.length} collections to checkpoint`);
+      console.log(`  Run the script again to resume.\n`);
+    }
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+}
+
+// ============================================================================
 // MAIN
 // ============================================================================
 
 async function main() {
+  setupSignalHandlers();
   const args = process.argv.slice(2);
 
   // Parse arguments
   const includeScripts = args.includes('--with-scripts') || args.includes('-s');
   const updateMode = args.includes('--update') || args.includes('-u');
+  const noResume = args.includes('--no-resume');
+
+  // Clear checkpoint if --no-resume
+  if (noResume) {
+    clearCheckpoint(CHECKPOINT_FILE);
+    console.log("Starting fresh (checkpoint cleared)\n");
+  }
 
   let outputFile = DEFAULT_OUTPUT;
   const outputIdx = args.findIndex(a => a === '--output' || a === '-o');
@@ -465,7 +536,13 @@ Options:
   --limit, -l N         Fetch only first N collections
   --since DATE          Fetch collections created after DATE (YYYY-MM-DD)
   --update, -u          Incremental update (merge with existing dataset)
+  --no-resume           Ignore checkpoint, start fresh
   --help, -h            Show this help
+
+Checkpoint System:
+  Progress is saved every ${CHECKPOINT_INTERVAL} collections to ${CHECKPOINT_FILE}.
+  If the script crashes, run it again to resume from where it left off.
+  Use --no-resume to ignore checkpoint and start fresh.
 
 Examples:
   # Fetch all collections (fast, metadata only)
@@ -516,12 +593,23 @@ Examples:
       }
     }
 
+    // Load checkpoint if resuming
+    const checkpoint = loadCheckpoint(CHECKPOINT_FILE);
+    const processedContracts = new Set(checkpoint?.processed?.map(p => p.contract_address) || []);
+    const normalizedProjects = checkpoint?.processed || [];
+
     // Fetch tokens and normalize
     console.log("Fetching tokens and normalizing data...\n");
-    const normalizedProjects = [];
+    let checkpointCounter = 0;
 
     for (let i = 0; i < collectionsToProcess.length; i++) {
       const collection = collectionsToProcess[i];
+
+      // Skip already processed (from checkpoint)
+      if (processedContracts.has(collection.contract)) {
+        continue;
+      }
+
       process.stdout.write(`  [${i + 1}/${collectionsToProcess.length}] ${collection.name?.slice(0, 40) || collection.contract}... `);
 
       try {
@@ -539,15 +627,43 @@ Examples:
         }
 
         normalizedProjects.push(normalized);
+        processedContracts.add(collection.contract);
+        checkpointCounter++;
         console.log("done");
+
+        // Update checkpoint data for signal handler
+        currentCheckpointData = {
+          processed: normalizedProjects,
+          timestamp: new Date().toISOString(),
+          includeScripts
+        };
+
+        // Save checkpoint periodically
+        if (checkpointCounter >= CHECKPOINT_INTERVAL) {
+          saveCheckpoint(CHECKPOINT_FILE, currentCheckpointData);
+          console.log(`  [CHECKPOINT] Saved ${normalizedProjects.length} collections`);
+          checkpointCounter = 0;
+        }
 
       } catch (e) {
         console.log(`error: ${e.message.slice(0, 50)}`);
         // Still add with basic info
-        normalizedProjects.push(normalizeCollection(collection, []));
+        const fallback = normalizeCollection(collection, []);
+        normalizedProjects.push(fallback);
+        processedContracts.add(collection.contract);
+        checkpointCounter++;
       }
 
       await sleep(150);
+    }
+
+    // Final checkpoint before save
+    if (normalizedProjects.length > 0 && checkpointCounter > 0) {
+      saveCheckpoint(CHECKPOINT_FILE, {
+        processed: normalizedProjects,
+        timestamp: new Date().toISOString(),
+        includeScripts
+      });
     }
 
     // Merge with existing data if in update mode
@@ -576,6 +692,10 @@ Examples:
 
     const json = JSON.stringify(dataset, null, 2);
     fs.writeFileSync(outputFile, json);
+
+    // Clear checkpoint after successful save
+    clearCheckpoint(CHECKPOINT_FILE);
+    console.log("  [OK] Checkpoint cleared");
 
     const sizeMB = (Buffer.byteLength(json) / 1024 / 1024).toFixed(2);
 
