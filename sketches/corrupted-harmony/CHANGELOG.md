@@ -2,6 +2,26 @@
 
 All notable changes to Corrupted Harmony will be documented in this file.
 
+## [5.2.0] - 2026-02-03
+
+### Added
+- **Material variations for buildings** - 8 material types with PBR rendering:
+  - **glass**: transparent, reflective surfaces (modernist, futuristic, parametric)
+  - **metal**: shiny metallic finish (industrial, futuristic, twisted)
+  - **concrete**: matte rough surfaces (brutalist, geometric)
+  - **brick**: warm textured look (gothic, ruins)
+  - **stone**: natural stone finish (gothic, brutalist, deco)
+  - **weathered**: aged worn surfaces (ruins, industrial)
+  - **ceramic**: smooth glazed tiles (deco, organic, pagoda)
+  - **copper**: oxidized patina effect (deco, organic, pagoda)
+- **Environment mapping** for realistic reflections on glass/metal materials
+- **Style-to-material mapping** - each architectural style has preferred materials
+- Material type shown in building inspector (click to inspect)
+
+### Changed
+- Upgraded from MeshLambertMaterial to MeshStandardMaterial for 'clean' effect buildings
+- Added PMREMGenerator for environment reflections
+
 ## [5.1.2] - 2026-02-03
 
 ### Fixed

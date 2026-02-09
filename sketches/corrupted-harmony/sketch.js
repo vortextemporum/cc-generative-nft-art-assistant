@@ -1,7 +1,8 @@
 /**
- * CORRUPTED HARMONY v5.1.2
+ * CORRUPTED HARMONY v5.2.0
  * 3D isometric city with per-building shader effects + parametric design
  * Three.js rendering with dither/corrupt/liquify/stencil effects
+ * Material variations: glass, metal, concrete, brick, stone, weathered, ceramic, copper
  * Click any building to inspect its properties
  */
 
@@ -64,6 +65,27 @@ const BUILDING_MARGIN = 0.3; // Gap between buildings and plot edges
 
 const ARCH_STYLES = ['brutalist', 'deco', 'modernist', 'gothic', 'retro', 'geometric', 'organic', 'parametric', 'twisted', 'voronoi', 'industrial', 'pagoda', 'futuristic', 'ruins'];
 const EFFECT_TYPES = ['clean', 'dither', 'corrupt', 'liquify', 'stencil'];
+
+// Material types for building surfaces
+const MATERIAL_TYPES = ['concrete', 'glass', 'metal', 'brick', 'stone', 'weathered', 'ceramic', 'copper'];
+
+// Style-to-material mapping (preferred materials for each style)
+const STYLE_MATERIALS = {
+  brutalist: ['concrete', 'stone', 'weathered'],
+  deco: ['stone', 'copper', 'ceramic'],
+  modernist: ['glass', 'metal', 'concrete'],
+  gothic: ['stone', 'brick', 'weathered'],
+  retro: ['metal', 'ceramic', 'glass'],
+  geometric: ['concrete', 'metal', 'glass'],
+  organic: ['ceramic', 'stone', 'copper'],
+  parametric: ['glass', 'metal', 'ceramic'],
+  twisted: ['glass', 'metal', 'copper'],
+  voronoi: ['glass', 'ceramic', 'metal'],
+  industrial: ['metal', 'weathered', 'concrete'],
+  pagoda: ['ceramic', 'copper', 'stone'],
+  futuristic: ['glass', 'metal', 'ceramic'],
+  ruins: ['weathered', 'stone', 'brick']
+};
 
 const PALETTES = {
   muted: {
@@ -719,7 +741,94 @@ function createStencilMaterial(baseColor, levels = 4) {
   });
 }
 
-function createEffectMaterial(effect, baseColor, seed, rarity, noiseType = null) {
+// Get a material type for a building style
+function getMaterialForStyle(style) {
+  const materials = STYLE_MATERIALS[style] || ['concrete', 'stone', 'metal'];
+  return rndChoice(materials);
+}
+
+// Create a material with physical properties based on material type
+function createMaterialVariation(materialType, baseColor) {
+  const color = new THREE.Color(baseColor);
+
+  switch (materialType) {
+    case 'glass':
+      // Reflective, transparent glass
+      return new THREE.MeshStandardMaterial({
+        color: color.clone().multiplyScalar(1.1),
+        metalness: 0.1,
+        roughness: 0.05,
+        transparent: true,
+        opacity: 0.85,
+        envMapIntensity: 1.5
+      });
+
+    case 'metal':
+      // Shiny metallic surface
+      return new THREE.MeshStandardMaterial({
+        color: color,
+        metalness: 0.85,
+        roughness: 0.25,
+        envMapIntensity: 1.0
+      });
+
+    case 'concrete':
+      // Matte concrete
+      return new THREE.MeshStandardMaterial({
+        color: color.clone().multiplyScalar(0.9),
+        metalness: 0.0,
+        roughness: 0.9
+      });
+
+    case 'brick':
+      // Slightly rough brick
+      return new THREE.MeshStandardMaterial({
+        color: color.clone().lerp(new THREE.Color(0x8b4513), 0.15),
+        metalness: 0.0,
+        roughness: 0.85
+      });
+
+    case 'stone':
+      // Natural stone look
+      return new THREE.MeshStandardMaterial({
+        color: color.clone().lerp(new THREE.Color(0x888888), 0.2),
+        metalness: 0.0,
+        roughness: 0.75
+      });
+
+    case 'weathered':
+      // Aged, worn surface
+      return new THREE.MeshStandardMaterial({
+        color: color.clone().multiplyScalar(0.7),
+        metalness: 0.1,
+        roughness: 0.95
+      });
+
+    case 'ceramic':
+      // Smooth ceramic/tile
+      return new THREE.MeshStandardMaterial({
+        color: color.clone().multiplyScalar(1.05),
+        metalness: 0.0,
+        roughness: 0.3,
+        envMapIntensity: 0.5
+      });
+
+    case 'copper':
+      // Oxidized copper patina
+      const copperBase = color.clone().lerp(new THREE.Color(0x4a9c7c), 0.4);
+      return new THREE.MeshStandardMaterial({
+        color: copperBase,
+        metalness: 0.6,
+        roughness: 0.5,
+        envMapIntensity: 0.8
+      });
+
+    default:
+      return new THREE.MeshLambertMaterial({ color: baseColor });
+  }
+}
+
+function createEffectMaterial(effect, baseColor, seed, rarity, noiseType = null, materialType = null) {
   // Ensure baseColor is always valid
   const safeColor = baseColor !== undefined && baseColor !== null ? baseColor : 0x666666;
 
@@ -732,7 +841,12 @@ function createEffectMaterial(effect, baseColor, seed, rarity, noiseType = null)
     case 'corrupt': return createCorruptMaterial(safeColor, intensity, seed, noiseType);
     case 'liquify': return createLiquifyMaterial(safeColor, intensity, seed);
     case 'stencil': return createStencilMaterial(safeColor, rndInt(3, 5));
-    default: return new THREE.MeshLambertMaterial({ color: safeColor });
+    default:
+      // For 'clean' effect, use material variation if specified
+      if (materialType) {
+        return createMaterialVariation(materialType, safeColor);
+      }
+      return new THREE.MeshLambertMaterial({ color: safeColor });
   }
 }
 
@@ -799,6 +913,38 @@ function init() {
   const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
   backLight.position.set(-30, 50, -30);
   scene.add(backLight);
+
+  // Create simple environment map for reflective materials
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  pmremGenerator.compileEquirectangularShader();
+
+  // Create a simple gradient environment
+  const envScene = new THREE.Scene();
+  const envGeo = new THREE.SphereGeometry(500, 32, 16);
+  const envMat = new THREE.MeshBasicMaterial({
+    side: THREE.BackSide,
+    vertexColors: true
+  });
+
+  // Add gradient colors to sphere (sky blue to gray)
+  const colors = [];
+  const positionAttribute = envGeo.getAttribute('position');
+  for (let i = 0; i < positionAttribute.count; i++) {
+    const y = positionAttribute.getY(i);
+    const t = (y / 500 + 1) / 2; // Normalize to 0-1
+    const r = 0.4 + t * 0.4;
+    const g = 0.45 + t * 0.35;
+    const b = 0.5 + t * 0.3;
+    colors.push(r, g, b);
+  }
+  envGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+  const envMesh = new THREE.Mesh(envGeo, envMat);
+  envScene.add(envMesh);
+
+  const envMap = pmremGenerator.fromScene(envScene).texture;
+  scene.environment = envMap;
+  pmremGenerator.dispose();
 
   // Raycaster for click detection
   raycaster = new THREE.Raycaster();
@@ -1104,10 +1250,13 @@ function buildBuilding(b, pal) {
     noiseType = rndChoice(NOISE_TYPES);
   }
 
-  // Use effect material for this building
-  const mainMat = createEffectMaterial(b.effect, mainColor, b.seed, features.rarity, noiseType);
-  const darkerMat = createEffectMaterial(b.effect, darkerColor, b.seed + 10, features.rarity, noiseType);
-  const accentMat = createEffectMaterial(b.effect, accentColor, b.seed + 20, features.rarity, noiseType);
+  // Get material type based on building style
+  const materialType = getMaterialForStyle(b.style);
+
+  // Use effect material for this building (with material variation for 'clean' effect)
+  const mainMat = createEffectMaterial(b.effect, mainColor, b.seed, features.rarity, noiseType, materialType);
+  const darkerMat = createEffectMaterial(b.effect, darkerColor, b.seed + 10, features.rarity, noiseType, materialType);
+  const accentMat = createEffectMaterial(b.effect, accentColor, b.seed + 20, features.rarity, noiseType, materialType);
 
   // Building info for click detection
   const buildingId = buildingStats.length + 1;
@@ -1116,6 +1265,7 @@ function buildBuilding(b, pal) {
     style: b.style,
     effect: b.effect,
     noiseType: noiseType,
+    material: materialType,
     height: Math.round(b.h * 10) / 10,
     width: Math.round(b.w * 10) / 10,
     depth: Math.round(b.d * 10) / 10,
