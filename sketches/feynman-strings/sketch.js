@@ -399,23 +399,6 @@ function generateFeatures() {
   const paletteKeys = Object.keys(PALETTES);
   const palette = rndChoice(paletteKeys);
 
-  // Style (affects visual treatment)
-  const styleRoll = R();
-  let style;
-  if (styleRoll < 0.15) {
-    style = "technical";  // Clean, labeled, diagram-like
-  } else if (styleRoll < 0.35) {
-    style = "geometric";  // Sol LeWitt - systematic, grid-based
-  } else if (styleRoll < 0.55) {
-    style = "artistic";   // Balanced
-  } else if (styleRoll < 0.75) {
-    style = "abstract";   // Loose, flowing, poetic
-  } else if (styleRoll < 0.90) {
-    style = "chaotic";    // Extreme abstraction
-  } else {
-    style = "maximalist"; // Everything at once
-  }
-
   // Composition (15 layouts including symmetry variants)
   const compositionRoll = R();
   let composition;
@@ -451,17 +434,8 @@ function generateFeatures() {
     composition = "radial8";
   }
 
-  // Line weight - style dependent
-  let lineWeight;
-  if (style === "technical") {
-    lineWeight = rnd(0.5, 1.5);
-  } else if (style === "geometric") {
-    lineWeight = rnd(1.5, 3);
-  } else if (style === "maximalist") {
-    lineWeight = rnd(2, 5);
-  } else {
-    lineWeight = rnd(1, 4);
-  }
+  // Line weight
+  const lineWeight = rnd(0.5, 4);
 
   // Special features (rare)
   const hasHiggs = rndBool(0.05);
@@ -490,23 +464,23 @@ function generateFeatures() {
   // Connection density (how interconnected vertices are)
   const connectionDensity = rnd(0.3, 0.8) * density;
 
-  // Labels - always on for technical style, 15% chance otherwise
-  const showLabels = style === "technical" || rndBool(0.15);
+  // Physics label overlays (particle notation, coupling constants, etc.)
+  const showLabels = rndBool(0.20);
 
   // Reaction diagrams - 25% chance
   const showReactions = rndBool(0.25);
 
-  // Momentum flow chevrons - technical style favored
-  const showMomentumFlow = style === "technical" && rndBool(0.7);
+  // Momentum flow chevrons
+  const showMomentumFlow = rndBool(0.10);
 
-  // Color charge flow on gluons - technical and geometric
-  const showColorFlow = (style === "technical" || style === "geometric") && rndBool(0.6);
+  // Color charge flow on gluons
+  const showColorFlow = rndBool(0.15);
 
-  // Vertex glow - not for minimal style
-  const showVertexGlow = style !== "minimal" && rndBool(0.4);
+  // Vertex glow
+  const showVertexGlow = rndBool(0.4);
 
   // Arrow style
-  const arrowStyle = style === "technical" ? "standard" : rndChoice(["standard", "bold", "subtle", "none"]);
+  const arrowStyle = rndChoice(["standard", "bold", "subtle", "none"]);
 
   // Extra complexity features
   const hasBackgroundDiagrams = rndBool(0.4 * density);
@@ -519,7 +493,6 @@ function generateFeatures() {
     density,
     densityName,
     palette,
-    style,
     composition,
     lineWeight,
     hasHiggs,
@@ -597,30 +570,6 @@ function drawScene() {
   pal = PALETTES[features.palette];
   background(pal.background);
 
-  // Style-dependent rendering modifiers
-  // Scale lineWeight so style has immediate visual impact
-  const baseWeight = features.lineWeight;
-  switch (features.style) {
-    case "technical":
-      features.lineWeight = baseWeight * 0.6;
-      break;
-    case "geometric":
-      features.lineWeight = baseWeight * 0.9;
-      break;
-    case "artistic":
-      features.lineWeight = baseWeight * 1.1;
-      break;
-    case "abstract":
-      features.lineWeight = baseWeight * 0.5;
-      break;
-    case "chaotic":
-      features.lineWeight = baseWeight * 1.6;
-      break;
-    case "maximalist":
-      features.lineWeight = baseWeight * 2.0;
-      break;
-  }
-
   // Draw background pattern (Sol LeWitt style)
   if (features.backgroundPattern !== "none") {
     drawBackgroundPattern();
@@ -632,12 +581,6 @@ function drawScene() {
     drawingContext.globalAlpha = 0.15;
     drawRandomDiagrams(Math.floor(features.density * 3), 0.5);
     pop();
-  }
-
-  // Abstract/artistic: apply global alpha for softer rendering
-  if (features.style === "abstract") {
-    push();
-    drawingContext.globalAlpha = 0.65;
   }
 
   // Draw based on composition
@@ -701,19 +644,11 @@ function drawScene() {
     drawTimeAxis();
   }
 
-  // Close abstract alpha scope
-  if (features.style === "abstract") {
-    pop();
-  }
-
-  // Cross-section formula for collision/feynman + technical style
-  if (features.showLabels && features.style === "technical" &&
+  // Cross-section formula for collision/feynman compositions
+  if (features.showLabels &&
       (features.composition === "collision" || features.composition === "feynman")) {
     drawCrossSectionFormula();
   }
-
-  // Restore original lineWeight
-  features.lineWeight = baseWeight;
 }
 
 // ============================================================
@@ -1033,7 +968,7 @@ function drawCenteredComposition() {
   // Draw loops with varying sizes
   vertices.forEach(v => {
     if (rndBool(features.loopProbability)) {
-      const loopSize = rnd(15, 45) * (features.style === "maximalist" ? 1.5 : 1);
+      const loopSize = rnd(15, 45);
       drawLoop(v.x, v.y, loopSize);
     }
     // Extra loops for dense/chaotic
@@ -1173,8 +1108,8 @@ function drawLayeredComposition() {
     const mode = features.modes[layer % features.modes.length];
     drawModeLayer(mode, 1.0);
 
-    // Add extra connections for complexity
-    if (features.style === "maximalist" || features.style === "chaotic") {
+    // Add extra connections at high density
+    if (features.density > 1.5) {
       for (let i = 0; i < features.density * 3; i++) {
         const x1 = rnd(100, width - 100);
         const y1 = rnd(100, height - 100);
@@ -5510,8 +5445,8 @@ function drawPropagatorNetwork(vertices) {
     drawPropagator(v1.x, v1.y, v2.x, v2.y, particleType);
   });
 
-  // For maximalist/chaotic styles, add extra random connections
-  if (features.style === "maximalist" || features.style === "chaotic") {
+  // Add extra random connections at high density
+  if (features.density > 1.5) {
     const extraConnections = Math.floor(features.density * 5);
     for (let i = 0; i < extraConnections; i++) {
       const v1 = rndChoice(vertices);
@@ -6177,10 +6112,6 @@ const RARITY_CURVES = {
   density: {
     labels: ["minimal", "sparse", "moderate", "dense", "intense", "chaotic"],
     probabilities: [0.10, 0.20, 0.25, 0.25, 0.15, 0.05]
-  },
-  style: {
-    labels: ["technical", "geometric", "artistic", "abstract", "chaotic", "maximalist"],
-    probabilities: [0.15, 0.20, 0.20, 0.20, 0.15, 0.10]
   },
   composition: {
     labels: ["centered", "scattered", "flowing", "layered", "grid", "radial", "collision", "feynman", "detector", "chalk", "symBreak", "bilateral", "rad4", "rad6", "rad8"],

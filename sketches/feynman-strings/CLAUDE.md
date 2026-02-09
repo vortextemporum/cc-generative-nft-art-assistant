@@ -135,17 +135,16 @@ feynman-strings/
 |---------|---------|--------|
 | **modeBlend** | single / dual / triple / chaos | 40% / 30% / 20% / 10% |
 | **density** | minimal / sparse / moderate / dense / chaotic | 20% / 30% / 30% / 15% / 5% |
-| **style** | technical / artistic / abstract / chaotic | 30% / 30% / 25% / 15% |
 | **composition** | 15 options: centered, scattered, flowing, layered, grid, radial, collision, feynman, detector, chalkboard, symmetryBreaking, bilateral, radial4, radial6, radial8 | see rarity curves |
 | **hasHiggs** | true/false | 5% |
 | **hasCalabiYau** | true/false | 3% |
 | **hasGraviton** | true/false | 2% |
 | **hasSupersymmetry** | true/false | 4% |
-| **showLabels** | true/false | 15% (100% for technical) |
+| **showLabels** | true/false | 20% |
 | **showReactions** | true/false | 25% |
-| **showMomentumFlow** | true/false | technical only, 70% |
-| **showColorFlow** | true/false | technical/geometric, 60% |
-| **showVertexGlow** | true/false | not minimal, 40% |
+| **showMomentumFlow** | true/false | 10% |
+| **showColorFlow** | true/false | 15% |
+| **showVertexGlow** | true/false | 40% |
 
 ## Quick Commands
 

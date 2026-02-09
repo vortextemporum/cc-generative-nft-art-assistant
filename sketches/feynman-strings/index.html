@@ -586,21 +586,7 @@
         </div>
 
         <div class="section-divider"></div>
-        <div class="section-title">Style</div>
-
-        <div class="slider-group">
-          <div class="slider-label">
-            <span>Style</span>
-          </div>
-          <select id="style-select">
-            <option value="technical">Technical</option>
-            <option value="geometric">Geometric (LeWitt)</option>
-            <option value="artistic">Artistic</option>
-            <option value="abstract">Abstract</option>
-            <option value="chaotic">Chaotic</option>
-            <option value="maximalist">Maximalist</option>
-          </select>
-        </div>
+        <div class="section-title">Appearance</div>
 
         <div class="slider-group">
           <div class="slider-label">
@@ -808,16 +794,6 @@
         </span>
       </div>`;
 
-      // Style
-      const styleRarity = features.style === 'chaotic' ? 'rare' :
-                         features.style === 'maximalist' ? 'rare' : 'common';
-      html += `<div class="feature-row">
-        <span class="feature-name">Style</span>
-        <span class="feature-value">
-          <span class="rarity-badge rarity-${styleRarity}">${features.style}</span>
-        </span>
-      </div>`;
-
       // Composition
       html += `<div class="feature-row">
         <span class="feature-name">Composition</span>
@@ -906,7 +882,6 @@
       document.getElementById('vertexCount-value').textContent = features.vertexCount;
 
       // Update selects
-      document.getElementById('style-select').value = features.style;
       document.getElementById('palette-select').value = features.palette;
       document.getElementById('composition-select').value = features.composition;
       document.getElementById('bgPattern-select').value = features.backgroundPattern || 'none';
@@ -1086,12 +1061,6 @@
         window.render();
       });
 
-      // Style select
-      document.getElementById('style-select').addEventListener('change', (e) => {
-        window.setParameter('style', e.target.value);
-        window.render();
-      });
-
       // Palette select
       document.getElementById('palette-select').addEventListener('change', (e) => {
         window.setParameter('palette', e.target.value);
@@ -1180,7 +1149,6 @@
       document.getElementById('rarity-panel').style.display = 'none';
 
       const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork', 'electroweak', 'cosmic', 'nuclear', 'topological'];
-      const allStyles = ['technical', 'geometric', 'artistic', 'abstract', 'chaotic', 'maximalist'];
       const allPalettes = ['blackboard', 'cosmic', 'void', 'midnight', 'matrix', 'paper', 'parchment', 'minimal', 'lewitt', 'lewittColor', 'blueprint', 'infrared', 'plasma', 'quantum'];
       const allCompositions = ['centered', 'scattered', 'flowing', 'layered', 'grid', 'radial', 'collision', 'feynman', 'detector', 'chalkboard', 'symmetryBreaking', 'bilateral', 'radial4', 'radial6', 'radial8'];
       const allPatterns = ['none', 'grid', 'lines', 'dots', 'arcs', 'diagonal', 'crosshatch', 'concentric', 'concentricSquares', 'radialLines', 'wavyLines', 'bands', 'isometric', 'randomArcs', 'nestedArcs', 'allFour'];
@@ -1206,7 +1174,6 @@
       // Set all random parameters
       window.setParameter('modes', modes);
       window.setParameter('modeBlend', modeBlend);
-      window.setParameter('style', allStyles[Math.floor(Math.random() * allStyles.length)]);
       window.setParameter('palette', allPalettes[Math.floor(Math.random() * allPalettes.length)]);
       window.setParameter('composition', allCompositions[Math.floor(Math.random() * allCompositions.length)]);
       window.setParameter('backgroundPattern', allPatterns[Math.floor(Math.random() * allPatterns.length)]);
