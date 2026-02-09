@@ -236,6 +236,68 @@ const PALETTES = {
     accent: "#ff0000",
     dim: "#0000ff",
     grid: "#ffff00"
+  },
+
+  // Pastel / soft palettes
+  pastel: {
+    background: "#f0e6f6",
+    line: "#6b5b95",
+    accent: "#f7a8b8",
+    dim: "#b8b8d1",
+    grid: "#e6dced"
+  },
+  arctic: {
+    background: "#e8f0f8",
+    line: "#37474f",
+    accent: "#4fc3f7",
+    dim: "#90a4ae",
+    grid: "#d8e8f0"
+  },
+  earth: {
+    background: "#f0e8d8",
+    line: "#5d4037",
+    accent: "#c75b39",
+    dim: "#a1887f",
+    grid: "#e5dcc8"
+  },
+
+  // Additional dark palettes
+  chalk: {
+    background: "#36454f",
+    line: "#d4d4d4",
+    accent: "#e8c547",
+    dim: "#5a6b78",
+    grid: "#3d4f5a"
+  },
+  neon: {
+    background: "#0a0012",
+    line: "#ff00ff",
+    accent: "#00ffff",
+    dim: "#6600aa",
+    grid: "#150025"
+  },
+
+  // Additional colored palettes
+  sunset: {
+    background: "#1a0c0c",
+    line: "#ff8a65",
+    accent: "#ffd54f",
+    dim: "#bf360c",
+    grid: "#2a1515"
+  },
+  ocean: {
+    background: "#0a1a1a",
+    line: "#4dd0e1",
+    accent: "#80cbc4",
+    dim: "#00695c",
+    grid: "#122828"
+  },
+  amber: {
+    background: "#1a1008",
+    line: "#ffb300",
+    accent: "#ff6f00",
+    dim: "#7b5e00",
+    grid: "#2a1e10"
   }
 };
 
@@ -547,7 +609,7 @@ let pal;
 function setup() {
   canvas = createCanvas(SIZE, SIZE);
   canvas.parent('sketch-holder');
-  pixelDensity(2);
+  pixelDensity(3);
   noLoop();
 
   generateFeatures();
@@ -642,12 +704,6 @@ function drawScene() {
   // Time axis indicator (flowing composition + labels)
   if (features.showLabels && features.composition === "flowing") {
     drawTimeAxis();
-  }
-
-  // Cross-section formula for collision/feynman compositions
-  if (features.showLabels &&
-      (features.composition === "collision" || features.composition === "feynman")) {
-    drawCrossSectionFormula();
   }
 }
 
@@ -1457,12 +1513,15 @@ function drawDetectorComposition() {
     drawPropagator(cx, cy, ex, ey, "muon");
   }
 
-  // Labels
-  if (features.showLabels) {
-    drawPhysicsLabel(cx, cy - innerR - 12, "Tracking", 7, 0.7);
-    drawPhysicsLabel(cx, cy - middleR - 12, "Calorimeter", 7, 0.7);
-    drawPhysicsLabel(cx, cy - outerR - 12, "Muon", 7, 0.7);
-  }
+  // Dashed ring guides at layer boundaries
+  stroke(pal.dim);
+  strokeWeight(0.5);
+  drawingContext.setLineDash([3, 4]);
+  noFill();
+  ellipse(cx, cy, innerR * 2, innerR * 2);
+  ellipse(cx, cy, middleR * 2, middleR * 2);
+  ellipse(cx, cy, outerR * 2, outerR * 2);
+  drawingContext.setLineDash([]);
 }
 
 function drawChalkboardComposition() {
@@ -2557,7 +2616,6 @@ function drawSunsetDiagram(x, y, size, alpha = 1) {
   circle(x - size * 0.5, y, 5);
   circle(x + size * 0.5, y, 5);
 
-  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "2-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2596,7 +2654,6 @@ function drawBoxDiagram(x, y, size, alpha = 1) {
   circle(x + half, y + half, 5);
   circle(x - half, y + half, 5);
 
-  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2634,7 +2691,6 @@ function drawTriangleDiagram(x, y, size, alpha = 1) {
   circle(v2.x, v2.y, 5);
   circle(v3.x, v3.y, 5);
 
-  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2677,7 +2733,6 @@ function drawLadderDiagram(x, y, size, rungs = 3, alpha = 1) {
   line(x + size/2, y - halfHeight, x + size/2 + size * 0.2, y - halfHeight);
   line(x + size/2, y + halfHeight, x + size/2 + size * 0.2, y + halfHeight);
 
-  if (features.showLabels) drawPhysicsLabel(x, y - halfHeight - 12, rungs + "-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2752,7 +2807,6 @@ function drawComptonDiagram(x, y, size, alpha = 1) {
   drawArrow(x, y, 0, 4);
   drawArrow(x + size * 0.65, y, 0, 4);
 
-  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "tree", 8, alpha * 0.9);
 }
 
 /**
@@ -2789,7 +2843,6 @@ function drawBremsstrahlungDiagram(x, y, size, alpha = 1) {
   drawArrow(x - size * 0.5, y + size * 0.15, inAngle, 4);
   drawArrow(x + size * 0.5, y + size * 0.15, outAngle, 4);
 
-  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "tree", 8, alpha * 0.9);
 }
 
 /**
@@ -2832,7 +2885,6 @@ function drawVertexCorrection(x, y, size, alpha = 1) {
   circle(x - size * 0.2, y, 5);
   circle(x + size * 0.2, y, 5);
 
-  if (features.showLabels) drawPhysicsLabel(x, y + size * 0.7, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2864,7 +2916,6 @@ function drawCrossedDiagram(x, y, size, alpha = 1) {
   drawArrow(x - size * 0.5, y + size * 0.25, atan2(-size * 0.5, size), 4);
   drawArrow(x + size * 0.5, y + size * 0.25, atan2(-size * 0.5, -size), 4);
 
-  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "tree", 8, alpha * 0.9);
 }
 
 // ============================================================
@@ -2981,13 +3032,6 @@ function drawStringHarmonics(x, y, length, numModes = 4, alpha = 1) {
   circle(x - length/2, y, 5);
   circle(x + length/2, y, 5);
 
-  // Label
-  if (features.showLabels) {
-    fill(pal.dim);
-    textSize(8);
-    textAlign(CENTER);
-    text("n=1..." + numModes, x, y + numModes * 10 + 15);
-  }
 }
 
 /**
@@ -3286,14 +3330,6 @@ function drawDBraneAttachment(x, y, size, alpha = 1) {
   vertex(x - size * 0.9, y + size * 0.7);
   endShape(CLOSE);
 
-  // Label
-  if (features.showLabels) {
-    fill(pal.dim);
-    noStroke();
-    textSize(10);
-    textAlign(LEFT, CENTER);
-    text("D-brane", x - size * 0.9, y + size * 0.85);
-  }
 
   // Multiple open strings attached
   const stringCount = rndInt(2, 5);
@@ -3454,9 +3490,20 @@ function drawStringJoining(x, y, size, angle, alpha = 1) {
 }
 
 function drawCalabiYau(x, y, size) {
-  // Simplified 2D projection of Calabi-Yau manifold
-  // (6D compactified space - drawn as complex folded shape)
+  // 2D projection of Calabi-Yau manifold - randomly picks a variant
+  const variant = rndChoice(["folded", "tori", "rosette"]);
 
+  if (variant === "tori") {
+    drawCalabiYauTori(x, y, size);
+  } else if (variant === "rosette") {
+    drawCalabiYauRosette(x, y, size);
+  } else {
+    drawCalabiYauFolded(x, y, size);
+  }
+}
+
+function drawCalabiYauTori(x, y, size) {
+  // Simple overlapping tori suggesting higher dimensions
   const col = color(COLORS.calabiYau);
   col.setAlpha(150);
 
@@ -3464,9 +3511,9 @@ function drawCalabiYau(x, y, size) {
   stroke(col);
   strokeWeight(1.5);
 
-  // Multiple overlapping tori suggesting higher dimensions
-  for (let i = 0; i < 5; i++) {
-    const angle = i * TWO_PI / 5;
+  const lobeCount = Math.floor(rnd(4, 7));
+  for (let i = 0; i < lobeCount; i++) {
+    const angle = i * TWO_PI / lobeCount;
     const ox = cos(angle) * size * 0.3;
     const oy = sin(angle) * size * 0.3;
     const rot = angle + rnd(-0.3, 0.3);
@@ -3475,7 +3522,6 @@ function drawCalabiYau(x, y, size) {
     translate(x + ox, y + oy);
     rotate(rot);
 
-    // Torus cross-section
     beginShape();
     for (let j = 0; j <= 30; j++) {
       const t = (j / 30) * TWO_PI;
@@ -3487,19 +3533,175 @@ function drawCalabiYau(x, y, size) {
     pop();
   }
 
-  // Central singularity
+  // Central point
   fill(COLORS.calabiYau);
   noStroke();
   circle(x, y, 6);
+}
 
-  // Label
-  if (features.showLabels) {
-    fill(pal.dim);
-    noStroke();
-    textSize(10);
-    textAlign(CENTER);
-    text("Calabi-Yau", x, y + size * 0.5 + 15);
+function drawCalabiYauRosette(x, y, size) {
+  // Rose-curve based Calabi-Yau with layered petals
+  const col = color(COLORS.calabiYau);
+  const strCol = color(COLORS.string);
+  const petalN = Math.floor(rnd(3, 6));
+  const baseRotation = rnd(0, TWO_PI);
+
+  push();
+  translate(x, y);
+  rotate(baseRotation);
+
+  // Multiple rose curves at different scales and rotations
+  for (let layer = 0; layer < 3; layer++) {
+    const sc = 1.0 - layer * 0.25;
+    const c = color(lerpColor(col, strCol, layer / 3));
+    c.setAlpha(60 + layer * 25);
+    stroke(c);
+    strokeWeight(0.7 + layer * 0.3);
+    noFill();
+
+    const rotOff = layer * PI / (petalN * 2);
+    beginShape();
+    for (let j = 0; j <= 120; j++) {
+      const t = (j / 120) * TWO_PI;
+      const r = size * sc * 0.45 * cos(petalN * (t + rotOff));
+      if (abs(r) < 1) continue;
+      const rr = abs(r);
+      vertex(cos(t) * rr, sin(t) * rr * 0.65);
+    }
+    endShape();
   }
+
+  // Connecting filaments between petals
+  for (let i = 0; i < petalN * 2; i++) {
+    const a = (i / (petalN * 2)) * TWO_PI;
+    const c = color(COLORS.calabiYau);
+    c.setAlpha(40);
+    stroke(c);
+    strokeWeight(0.4);
+    const r1 = size * 0.08;
+    const r2 = size * 0.35 * abs(cos(petalN * a));
+    if (r2 > size * 0.05) {
+      line(cos(a) * r1, sin(a) * r1 * 0.65, cos(a) * r2, sin(a) * r2 * 0.65);
+    }
+  }
+
+  // Central glow
+  const gc = color(COLORS.calabiYau);
+  gc.setAlpha(160);
+  fill(gc);
+  noStroke();
+  circle(0, 0, 5);
+  gc.setAlpha(50);
+  fill(gc);
+  circle(0, 0, 12);
+
+  pop();
+}
+
+function drawCalabiYauFolded(x, y, size) {
+  // Elaborate folded manifold with layered petals and cross-connections
+  const col = color(COLORS.calabiYau);
+  const strCol = color(COLORS.string);
+  const braneCol = color(COLORS.brane);
+  const folds = 6;
+  const layers = 3;
+  const baseRotation = rnd(0, TWO_PI);
+
+  push();
+  translate(x, y);
+  rotate(baseRotation);
+
+  // Outer folded manifold layers
+  for (let layer = layers - 1; layer >= 0; layer--) {
+    const layerScale = 0.5 + layer * 0.25;
+    const layerAlpha = 40 + layer * 30;
+    const layerRot = layer * PI / folds;
+
+    for (let f = 0; f < folds; f++) {
+      const angle = (f / folds) * TWO_PI + layerRot;
+
+      const c = color(lerpColor(col, strCol, layer / layers));
+      c.setAlpha(layerAlpha);
+      stroke(c);
+      strokeWeight(0.8 + layer * 0.3);
+      noFill();
+
+      beginShape();
+      for (let j = 0; j <= 40; j++) {
+        const t = (j / 40) * TWO_PI;
+        const fold = sin(t * 3) * 0.3 + sin(t * 5) * 0.15;
+        const r = size * layerScale * (0.3 + 0.2 * sin(t * 2 + angle) + fold * 0.2);
+        const px = cos(t + angle) * r;
+        const py = sin(t + angle) * r * 0.6;
+        vertex(px, py);
+      }
+      endShape(CLOSE);
+    }
+  }
+
+  // Internal cross-connections
+  for (let i = 0; i < folds * 2; i++) {
+    const a1 = (i / (folds * 2)) * TWO_PI;
+    const a2 = a1 + PI / folds + rnd(-0.2, 0.2);
+    const r1 = size * 0.15 + rnd(0, size * 0.1);
+    const r2 = size * 0.3 + rnd(0, size * 0.15);
+
+    const c = color(COLORS.calabiYau);
+    c.setAlpha(50);
+    stroke(c);
+    strokeWeight(0.5);
+    noFill();
+
+    bezier(
+      cos(a1) * r1, sin(a1) * r1 * 0.6,
+      cos(a1 + 0.3) * r2 * 0.7, sin(a1 + 0.3) * r2 * 0.4,
+      cos(a2 - 0.3) * r2 * 0.7, sin(a2 - 0.3) * r2 * 0.4,
+      cos(a2) * r1, sin(a2) * r1 * 0.6
+    );
+  }
+
+  // Inner radial fibers
+  for (let i = 0; i < folds * 3; i++) {
+    const angle = (i / (folds * 3)) * TWO_PI;
+    const innerR = size * 0.05;
+    const outerR = size * 0.25 + rnd(0, size * 0.15);
+
+    const c = color(lerpColor(col, braneCol, rnd(0, 0.5)));
+    c.setAlpha(35);
+    stroke(c);
+    strokeWeight(0.4);
+    line(cos(angle) * innerR, sin(angle) * innerR * 0.6,
+         cos(angle) * outerR, sin(angle) * outerR * 0.6);
+  }
+
+  // Central knot
+  noFill();
+  for (let ring = 0; ring < 3; ring++) {
+    const rr = size * 0.06 * (ring + 1);
+    const c = color(COLORS.calabiYau);
+    c.setAlpha(100 - ring * 25);
+    stroke(c);
+    strokeWeight(1.2 - ring * 0.3);
+    beginShape();
+    for (let j = 0; j <= 24; j++) {
+      const t = (j / 24) * TWO_PI;
+      const wobble = sin(t * (ring + 3)) * rr * 0.3;
+      vertex(cos(t) * (rr + wobble), sin(t) * (rr + wobble) * 0.6);
+    }
+    endShape(CLOSE);
+  }
+
+  // Central glow point
+  const gc = color(COLORS.calabiYau);
+  gc.setAlpha(180);
+  fill(gc);
+  noStroke();
+  circle(0, 0, 4);
+  gc.setAlpha(60);
+  fill(gc);
+  circle(0, 0, 10);
+
+  pop();
 }
 
 // ============================================================
@@ -3702,8 +3904,6 @@ function drawPathIntegralSum(x1, y1, x2, y2, alpha = 1) {
     const sumX = (x1 + x2) / 2;
     const sumY = (y1 + y2) / 2 - 30;
     text("∑", sumX, sumY);
-    textSize(8);
-    text("paths", sumX, sumY + 12);
   }
 }
 
@@ -3768,14 +3968,6 @@ function drawVacuumBubble(x, y, size, alpha = 1) {
     circle(x, y, 5);
   }
 
-  // Label
-  if (features.showLabels) {
-    fill(pal.dim);
-    noStroke();
-    textSize(8);
-    textAlign(CENTER, CENTER);
-    text("vacuum", x, y + size + 12);
-  }
 }
 
 /**
@@ -4818,29 +5010,66 @@ function drawTopologicalDefect(x, y, size, alpha = 1) {
 // ============================================================
 
 function drawQuantumFoam(alpha) {
-  // Dense field of tiny virtual loops
+  // Dense field of tiny virtual loops - picks a variant
+  const variant = rndChoice(["loops", "mesh", "stipple"]);
   const foamDensity = features.density * 200;
 
-  for (let i = 0; i < foamDensity; i++) {
-    const x = rnd(width);
-    const y = rnd(height);
-    const size = rnd(2, 8);
-    const a = alpha * rnd(0.3, 0.8);
+  if (variant === "mesh") {
+    // Interconnected triangular mesh of flickering edges
+    const pts = [];
+    const count = Math.floor(foamDensity * 0.3);
+    for (let i = 0; i < count; i++) {
+      pts.push({ x: rnd(width), y: rnd(height) });
+    }
+    strokeWeight(0.3);
+    for (let i = 0; i < count; i++) {
+      const p = pts[i];
+      // Connect to 1-2 nearby random points
+      for (let k = 0; k < 2; k++) {
+        const j = Math.floor(rnd(count));
+        const q = pts[j];
+        const d = dist(p.x, p.y, q.x, q.y);
+        if (d < 40) {
+          const col = color(COLORS.foam);
+          col.setAlpha(alpha * rnd(0.2, 0.5) * 255);
+          stroke(col);
+          line(p.x, p.y, q.x, q.y);
+        }
+      }
+    }
+  } else if (variant === "stipple") {
+    // Dense stipple dots with varying size
+    noStroke();
+    for (let i = 0; i < foamDensity; i++) {
+      const col = color(COLORS.foam);
+      col.setAlpha(alpha * rnd(0.15, 0.5) * 255);
+      fill(col);
+      const s = rnd(1, 4);
+      circle(rnd(width), rnd(height), s);
+    }
+  } else {
+    // Original: tiny ellipse loops
+    for (let i = 0; i < foamDensity; i++) {
+      const x = rnd(width);
+      const y = rnd(height);
+      const size = rnd(2, 8);
+      const a = alpha * rnd(0.3, 0.8);
 
-    const col = color(COLORS.foam);
-    col.setAlpha(a * 255);
+      const col = color(COLORS.foam);
+      col.setAlpha(a * 255);
 
-    noFill();
-    stroke(col);
-    strokeWeight(0.5);
+      noFill();
+      stroke(col);
+      strokeWeight(0.5);
 
-    // Tiny loops
-    ellipse(x, y, size, size * rnd(0.5, 1));
+      ellipse(x, y, size, size * rnd(0.5, 1));
+    }
   }
 }
 
 function drawVirtualPair(x, y, size, alpha) {
-  // Particle-antiparticle pair appearing and annihilating
+  // Particle-antiparticle pair - picks a variant
+  const variant = rndChoice(["bubble", "figure8", "splash"]);
   const col = color(COLORS.virtualPair);
   col.setAlpha(alpha * 180);
 
@@ -4848,59 +5077,130 @@ function drawVirtualPair(x, y, size, alpha) {
   strokeWeight(features.lineWeight * 0.8);
   noFill();
 
-  // Two curved lines emerging and meeting
-  const spread = size * 0.6;
+  if (variant === "figure8") {
+    // Figure-8 loop representing pair creation/annihilation
+    beginShape();
+    for (let j = 0; j <= 40; j++) {
+      const t = (j / 40) * TWO_PI;
+      const px = x + sin(t) * size * 0.4;
+      const py = y + sin(t * 2) * size * 0.5;
+      vertex(px, py);
+    }
+    endShape(CLOSE);
 
-  beginShape();
-  vertex(x, y);
-  bezierVertex(
-    x - spread, y - size * 0.5,
-    x - spread, y + size * 0.5,
-    x, y + size
-  );
-  endShape();
+    // Crossing point
+    fill(col);
+    noStroke();
+    circle(x, y, 4);
+  } else if (variant === "splash") {
+    // Radial burst of short particle-antiparticle arcs
+    const arms = Math.floor(rnd(3, 6));
+    for (let i = 0; i < arms; i++) {
+      const angle = (i / arms) * TWO_PI + rnd(-0.2, 0.2);
+      const len = size * rnd(0.5, 1.0);
+      const curve = rnd(-0.4, 0.4);
 
-  beginShape();
-  vertex(x, y);
-  bezierVertex(
-    x + spread, y - size * 0.5,
-    x + spread, y + size * 0.5,
-    x, y + size
-  );
-  endShape();
+      noFill();
+      stroke(col);
+      beginShape();
+      vertex(x, y);
+      bezierVertex(
+        x + cos(angle + curve) * len * 0.4, y + sin(angle + curve) * len * 0.4,
+        x + cos(angle - curve) * len * 0.7, y + sin(angle - curve) * len * 0.7,
+        x + cos(angle) * len, y + sin(angle) * len
+      );
+      endShape();
 
-  // Creation and annihilation points
-  fill(col);
-  noStroke();
-  circle(x, y, 4);
-  circle(x, y + size, 4);
+      // Endpoint dot
+      fill(col);
+      noStroke();
+      circle(x + cos(angle) * len, y + sin(angle) * len, 3);
+    }
 
-  // Arrows showing opposite directions
-  if (features.arrowStyle !== "none") {
-    stroke(col);
-    strokeWeight(1);
-    // Left arrow (particle)
-    drawArrow(x - spread * 0.7, y + size * 0.3, HALF_PI + 0.3, 4);
-    // Right arrow (antiparticle) - opposite direction
-    drawArrow(x + spread * 0.7, y + size * 0.3, -HALF_PI - 0.3, 4);
+    // Central creation point
+    fill(col);
+    noStroke();
+    circle(x, y, 5);
+  } else {
+    // Original: two bezier curves forming a bubble
+    const spread = size * 0.6;
+
+    beginShape();
+    vertex(x, y);
+    bezierVertex(
+      x - spread, y - size * 0.5,
+      x - spread, y + size * 0.5,
+      x, y + size
+    );
+    endShape();
+
+    beginShape();
+    vertex(x, y);
+    bezierVertex(
+      x + spread, y - size * 0.5,
+      x + spread, y + size * 0.5,
+      x, y + size
+    );
+    endShape();
+
+    // Creation and annihilation points
+    fill(col);
+    noStroke();
+    circle(x, y, 4);
+    circle(x, y + size, 4);
+
+    // Arrows showing opposite directions
+    if (features.arrowStyle !== "none") {
+      stroke(col);
+      strokeWeight(1);
+      drawArrow(x - spread * 0.7, y + size * 0.3, HALF_PI + 0.3, 4);
+      drawArrow(x + spread * 0.7, y + size * 0.3, -HALF_PI - 0.3, 4);
+    }
   }
 }
 
 function drawUncertaintyCloud(x, y, size, alpha) {
   // Fuzzy cloud representing position uncertainty
+  const variant = rndChoice(["dots", "rings", "haze"]);
   const col = color(COLORS.fluctuation);
 
-  noStroke();
-  for (let i = 0; i < 30; i++) {
-    const a = alpha * rnd(0.05, 0.2);
-    col.setAlpha(a * 255);
-    fill(col);
+  if (variant === "rings") {
+    // Concentric fading rings
+    noFill();
+    for (let i = 0; i < 6; i++) {
+      const r = size * 0.15 * (i + 1) + rnd(-3, 3);
+      const a = alpha * (0.3 - i * 0.04);
+      col.setAlpha(a * 255);
+      stroke(col);
+      strokeWeight(0.6);
+      const wobbleX = rnd(-size * 0.05, size * 0.05);
+      const wobbleY = rnd(-size * 0.05, size * 0.05);
+      ellipse(x + wobbleX, y + wobbleY, r * 2, r * 2 * rnd(0.8, 1));
+    }
+  } else if (variant === "haze") {
+    // Soft radial gradient haze using layered circles
+    noStroke();
+    for (let i = 20; i >= 0; i--) {
+      const r = size * (i / 20);
+      const a = alpha * 0.06 * (1 - i / 20);
+      col.setAlpha(a * 255);
+      fill(col);
+      circle(x + rnd(-2, 2), y + rnd(-2, 2), r * 2);
+    }
+  } else {
+    // Original: gaussian scatter dots
+    noStroke();
+    for (let i = 0; i < 30; i++) {
+      const a = alpha * rnd(0.05, 0.2);
+      col.setAlpha(a * 255);
+      fill(col);
 
-    const ox = rndGaussian(0, size * 0.3);
-    const oy = rndGaussian(0, size * 0.3);
-    const s = rnd(3, 10);
+      const ox = rndGaussian(0, size * 0.3);
+      const oy = rndGaussian(0, size * 0.3);
+      const s = rnd(3, 10);
 
-    ellipse(x + ox, y + oy, s, s);
+      ellipse(x + ox, y + oy, s, s);
+    }
   }
 }
 
@@ -4961,14 +5261,6 @@ function drawCasimirPlates(x, y, alpha) {
     endShape();
   }
 
-  // Label
-  if (features.showLabels) {
-    fill(pal.dim);
-    noStroke();
-    textSize(10);
-    textAlign(CENTER);
-    text("Casimir", x, y + plateHeight/2 + 15);
-  }
 }
 
 // ============================================================
@@ -5017,7 +5309,6 @@ function drawPenguinDiagram(x, y, size, alpha = 1) {
   strokeWeight(features.lineWeight * 0.7);
   drawPhotonPropagator(x - bodyWidth/4, y - bodyHeight/4, x + bodyWidth/4, y - bodyHeight/4, alpha * 0.6);
 
-  if (features.showLabels) drawPhysicsLabel(x, y + bodyHeight/2 + size * 0.5, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -5049,7 +5340,6 @@ function drawTadpoleDiagram(x, y, size, alpha = 1) {
     drawPhotonPropagator(x, y + loopSize/6, x, y + tailLength, alpha * 0.8);
   }
 
-  if (features.showLabels) drawPhysicsLabel(x, y - loopSize, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -5627,9 +5917,6 @@ function drawCouplingConstant(x, y, vertexType) {
   drawPhysicsLabel(x + 10, y - 8, label, 7, 0.85);
 }
 
-function drawCrossSectionFormula() {
-  drawPhysicsLabel(55, height - 30, "\u03C3 = \u222B|\u2133|\u00B2 d\u03A6", 10, 0.8);
-}
 
 function drawMomentumLabel(x, y, isIncoming, index) {
   const base = isIncoming ? "p" : "k";

@@ -39,6 +39,7 @@
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      width: fit-content;
     }
 
     #sketch-holder canvas {
@@ -599,6 +600,8 @@
               <option value="void">Void</option>
               <option value="midnight">Midnight</option>
               <option value="matrix">Matrix</option>
+              <option value="chalk">Chalk</option>
+              <option value="neon">Neon</option>
             </optgroup>
             <optgroup label="Light">
               <option value="paper">Paper</option>
@@ -606,12 +609,18 @@
               <option value="minimal">Minimal</option>
               <option value="lewitt">LeWitt B&W</option>
               <option value="lewittColor">LeWitt Color</option>
+              <option value="pastel">Pastel</option>
+              <option value="arctic">Arctic</option>
+              <option value="earth">Earth</option>
             </optgroup>
             <optgroup label="Colored">
               <option value="blueprint">Blueprint</option>
               <option value="infrared">Infrared</option>
               <option value="plasma">Plasma</option>
               <option value="quantum">Quantum</option>
+              <option value="sunset">Sunset</option>
+              <option value="ocean">Ocean</option>
+              <option value="amber">Amber</option>
             </optgroup>
           </select>
         </div>
@@ -1149,7 +1158,7 @@
       document.getElementById('rarity-panel').style.display = 'none';
 
       const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork', 'electroweak', 'cosmic', 'nuclear', 'topological'];
-      const allPalettes = ['blackboard', 'cosmic', 'void', 'midnight', 'matrix', 'paper', 'parchment', 'minimal', 'lewitt', 'lewittColor', 'blueprint', 'infrared', 'plasma', 'quantum'];
+      const allPalettes = ['blackboard', 'cosmic', 'void', 'midnight', 'matrix', 'chalk', 'neon', 'paper', 'parchment', 'minimal', 'lewitt', 'lewittColor', 'pastel', 'arctic', 'earth', 'blueprint', 'infrared', 'plasma', 'quantum', 'sunset', 'ocean', 'amber'];
       const allCompositions = ['centered', 'scattered', 'flowing', 'layered', 'grid', 'radial', 'collision', 'feynman', 'detector', 'chalkboard', 'symmetryBreaking', 'bilateral', 'radial4', 'radial6', 'radial8'];
       const allPatterns = ['none', 'grid', 'lines', 'dots', 'arcs', 'diagonal', 'crosshatch', 'concentric', 'concentricSquares', 'radialLines', 'wavyLines', 'bands', 'isometric', 'randomArcs', 'nestedArcs', 'allFour'];
       const allBlends = ['single', 'dual', 'triple', 'chaos'];
