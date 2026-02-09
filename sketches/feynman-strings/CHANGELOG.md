@@ -2,6 +2,29 @@
 
 All notable changes to Feynman Strings will be documented in this file.
 
+## [1.8.0] - 2026-02-09
+
+### Added
+- **5 new composition layouts** (total of 11):
+  - `drawCollisionComposition()` - LHC-style beam collision with central vertex cluster, outgoing products, and secondary decay branches
+  - `drawFeynmanDiagramComposition()` - Proper Feynman diagram with incoming/outgoing external legs and interaction vertex layers
+  - `drawDetectorComposition()` - Detector cross-section with concentric rings (tracking, calorimeter, muon chamber)
+  - `drawChalkboardComposition()` - Lecture notes grid with mixed diagram types per cell
+  - `drawSymmetryBreakingComposition()` - Phase transition visualization from ordered to chaotic across canvas
+- **Physics annotations**:
+  - `drawCouplingConstant()` - Shows coupling constants (α, αs, gw, g) at vertices when labels enabled
+  - `drawCrossSectionFormula()` - Renders "σ = ∫|M|²dΦ" for collision/feynman + technical style
+  - `drawMomentumLabel()` - Labels external legs with p₁, p₂... (incoming) and k₁, k₂... (outgoing)
+  - Loop order labels on all 10 Feynman diagram topologies (tree, 1-loop, 2-loop, N-loop)
+  - VEV notation "⟨H⟩=v" on Higgs vertices when labels enabled
+
+### Changed
+- Composition distribution updated for 11 layouts (centered 12%, scattered 12%, flowing 11%, layered 11%, grid 10%, radial 10%, collision 10%, feynman 9%, detector 7%, chalkboard 4%, symmetryBreaking 4%)
+- `drawVertex()` now shows coupling constants at interaction/qcd vertices (15% probability when labels on)
+- `drawHiggsVertex()` now shows VEV notation when labels enabled
+- Dev Random mode and composition dropdown include all 11 compositions
+- Rarity curves updated to display 11 composition options
+
 ## [1.7.0] - 2026-02-09
 
 ### Added

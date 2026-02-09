@@ -1,5 +1,5 @@
 /**
- * Feynman Strings v1.7.0
+ * Feynman Strings v1.8.0
  *
  * Generative art inspired by Feynman diagrams and string theory.
  * From technical particle physics notation to abstract quantum chaos.
@@ -16,7 +16,7 @@
  * - Nuclear: Decay chains, fission/fusion
  * - Topological: Anyons, braiding, knots
  *
- * @version 1.7.0
+ * @version 1.8.0
  */
 
 // ============================================================
@@ -416,21 +416,31 @@ function generateFeatures() {
     style = "maximalist"; // Everything at once
   }
 
-  // Composition
+  // Composition (11 layouts)
   const compositionRoll = R();
   let composition;
-  if (compositionRoll < 0.20) {
+  if (compositionRoll < 0.12) {
     composition = "centered";
-  } else if (compositionRoll < 0.40) {
+  } else if (compositionRoll < 0.24) {
     composition = "scattered";
-  } else if (compositionRoll < 0.55) {
+  } else if (compositionRoll < 0.35) {
     composition = "flowing";
-  } else if (compositionRoll < 0.70) {
+  } else if (compositionRoll < 0.46) {
     composition = "layered";
+  } else if (compositionRoll < 0.56) {
+    composition = "grid";
+  } else if (compositionRoll < 0.66) {
+    composition = "radial";
+  } else if (compositionRoll < 0.76) {
+    composition = "collision";     // LHC-style
   } else if (compositionRoll < 0.85) {
-    composition = "grid";      // Sol LeWitt style systematic grid
+    composition = "feynman";       // Proper Feynman diagram
+  } else if (compositionRoll < 0.92) {
+    composition = "detector";      // Detector cross-section
+  } else if (compositionRoll < 0.96) {
+    composition = "chalkboard";    // Lecture notes
   } else {
-    composition = "radial";    // Exploding from center
+    composition = "symmetryBreaking"; // Phase transition
   }
 
   // Line weight - style dependent
@@ -618,6 +628,21 @@ function drawScene() {
       case "radial":
         drawRadialComposition();
         break;
+      case "collision":
+        drawCollisionComposition();
+        break;
+      case "feynman":
+        drawFeynmanDiagramComposition();
+        break;
+      case "detector":
+        drawDetectorComposition();
+        break;
+      case "chalkboard":
+        drawChalkboardComposition();
+        break;
+      case "symmetryBreaking":
+        drawSymmetryBreakingComposition();
+        break;
     }
   }
 
@@ -637,6 +662,12 @@ function drawScene() {
   // Time axis indicator (flowing composition + labels)
   if (features.showLabels && features.composition === "flowing") {
     drawTimeAxis();
+  }
+
+  // Cross-section formula for collision/feynman + technical style
+  if (features.showLabels && features.style === "technical" &&
+      (features.composition === "collision" || features.composition === "feynman")) {
+    drawCrossSectionFormula();
   }
 
   // Labels overlay
@@ -1246,6 +1277,363 @@ function drawRadialComposition() {
       prevX = x;
       prevY = y;
     }
+  }
+}
+
+function drawCollisionComposition() {
+  // LHC-style collision: two beams colliding at center
+  const cx = width / 2;
+  const cy = height / 2;
+
+  // Beam lines from left and right
+  const leftBeamCount = rndInt(2, 4);
+  const rightBeamCount = rndInt(2, 4);
+  const leftBeam = [];
+  const rightBeam = [];
+
+  for (let i = 0; i < leftBeamCount; i++) {
+    leftBeam.push({ x: 20, y: cy + (i - (leftBeamCount - 1) / 2) * 30 });
+  }
+  for (let i = 0; i < rightBeamCount; i++) {
+    rightBeam.push({ x: width - 20, y: cy + (i - (rightBeamCount - 1) / 2) * 30 });
+  }
+
+  // Central collision vertex cluster
+  const clusterSize = Math.floor(4 + features.density * 4);
+  const cluster = [];
+  for (let i = 0; i < clusterSize; i++) {
+    cluster.push({
+      x: cx + rnd(-40, 40),
+      y: cy + rnd(-40, 40),
+      type: rndChoice(["interaction", "qcd", "creation"])
+    });
+  }
+
+  // Connect beams to cluster
+  leftBeam.forEach(b => {
+    const target = rndChoice(cluster);
+    drawPropagator(b.x, b.y, target.x, target.y, getRandomParticleType());
+  });
+  rightBeam.forEach(b => {
+    const target = rndChoice(cluster);
+    drawPropagator(b.x, b.y, target.x, target.y, getRandomParticleType());
+  });
+
+  // Interconnect cluster
+  drawPropagatorNetwork(cluster);
+  cluster.forEach(v => drawVertex(v.x, v.y, v.type));
+
+  // Outgoing products radiating from cluster
+  const productCount = Math.floor(6 + features.density * 8);
+  for (let i = 0; i < productCount; i++) {
+    const angle = (i / productCount) * TWO_PI + rnd(-0.15, 0.15);
+    const origin = rndChoice(cluster);
+    const rayLen = rnd(120, 300);
+    const ex = origin.x + cos(angle) * rayLen;
+    const ey = origin.y + sin(angle) * rayLen;
+
+    drawPropagator(origin.x, origin.y, ex, ey, getRandomParticleType());
+
+    // Secondary decay branches at 30% probability
+    if (rndBool(0.3)) {
+      const splitT = 0.6;
+      const sx = origin.x + (ex - origin.x) * splitT;
+      const sy = origin.y + (ey - origin.y) * splitT;
+      const branchAngle = angle + rnd(-0.6, 0.6);
+      const branchLen = rnd(40, 100);
+      drawPropagator(sx, sy, sx + cos(branchAngle) * branchLen, sy + sin(branchAngle) * branchLen, getRandomParticleType());
+      drawVertex(sx, sy, "decay");
+    }
+
+    // Loops at collision vertices
+    if (rndBool(features.loopProbability * 0.4)) {
+      drawLoop(origin.x + rnd(-20, 20), origin.y + rnd(-20, 20), rnd(15, 30));
+    }
+  }
+}
+
+function drawFeynmanDiagramComposition() {
+  // Proper Feynman diagram: incoming legs → interaction layers → outgoing legs
+  const inCount = rndInt(2, 3);
+  const outCount = rndInt(3, 5);
+  const layerCount = rndInt(2, 3);
+  const leftX = 80;
+  const rightX = width - 80;
+  const layerSpacing = (rightX - leftX) / (layerCount + 1);
+
+  // Create interaction vertex layers
+  const layers = [];
+  for (let l = 0; l < layerCount; l++) {
+    const layer = [];
+    const verticesInLayer = rndInt(2, 4);
+    const lx = leftX + (l + 1) * layerSpacing + rnd(-20, 20);
+    for (let v = 0; v < verticesInLayer; v++) {
+      layer.push({
+        x: lx + rnd(-15, 15),
+        y: height * (0.2 + (v / (verticesInLayer - 1 || 1)) * 0.6) + rnd(-20, 20),
+        type: rndChoice(["interaction", "qcd"])
+      });
+    }
+    layers.push(layer);
+  }
+
+  // Incoming external legs
+  const incoming = [];
+  for (let i = 0; i < inCount; i++) {
+    const iy = height * (0.25 + (i / (inCount - 1 || 1)) * 0.5);
+    incoming.push({ x: leftX, y: iy });
+    const target = rndChoice(layers[0]);
+    drawPropagator(leftX, iy, target.x, target.y, getRandomParticleType());
+    if (features.showLabels) {
+      drawMomentumLabel(leftX - 15, iy, true, i);
+    }
+  }
+
+  // Connect layers
+  for (let l = 0; l < layerCount - 1; l++) {
+    layers[l].forEach(v1 => {
+      const targets = rndInt(1, 2);
+      for (let t = 0; t < targets; t++) {
+        const v2 = rndChoice(layers[l + 1]);
+        drawPropagator(v1.x, v1.y, v2.x, v2.y, getRandomParticleType());
+      }
+    });
+  }
+
+  // Outgoing external legs
+  const lastLayer = layers[layerCount - 1];
+  for (let i = 0; i < outCount; i++) {
+    const oy = height * (0.15 + (i / (outCount - 1 || 1)) * 0.7);
+    const source = rndChoice(lastLayer);
+    drawPropagator(source.x, source.y, rightX, oy, getRandomParticleType());
+    if (features.showLabels) {
+      drawMomentumLabel(rightX + 15, oy, false, i);
+    }
+  }
+
+  // Draw vertices and loop insertions
+  layers.forEach(layer => {
+    layer.forEach(v => {
+      drawVertex(v.x, v.y, v.type);
+      if (rndBool(features.loopProbability * 0.7)) {
+        drawLoop(v.x + rnd(-15, 15), v.y + rnd(-15, 15), rnd(15, 30));
+      }
+    });
+  });
+}
+
+function drawDetectorComposition() {
+  // Detector cross-section: concentric rings from collision point
+  const cx = width / 2;
+  const cy = height / 2;
+  const innerR = 140;
+  const middleR = 220;
+  const outerR = 300;
+
+  // Subtle ring guides
+  push();
+  noFill();
+  stroke(pal.dim || pal.line);
+  strokeWeight(0.5);
+  drawingContext.setLineDash([4, 6]);
+  ellipse(cx, cy, innerR * 2, innerR * 2);
+  ellipse(cx, cy, middleR * 2, middleR * 2);
+  ellipse(cx, cy, outerR * 2, outerR * 2);
+  drawingContext.setLineDash([]);
+  pop();
+
+  // Central collision vertex
+  drawVertex(cx, cy, "interaction");
+
+  // Inner ring: tracking - straight fermion lines
+  const trackCount = Math.floor(12 + features.density * 8);
+  for (let i = 0; i < trackCount; i++) {
+    const angle = (i / trackCount) * TWO_PI + rnd(-0.05, 0.05);
+    const r = innerR + rnd(-20, 20);
+    const ex = cx + cos(angle) * r;
+    const ey = cy + sin(angle) * r;
+    drawFermionLine(cx, cy, ex, ey, 1);
+  }
+
+  // Middle ring: calorimeter - shower clusters
+  const showerCount = Math.floor(6 + features.density * 4);
+  for (let i = 0; i < showerCount; i++) {
+    const angle = (i / showerCount) * TWO_PI + rnd(-0.2, 0.2);
+    const r = innerR + rnd(10, 30);
+    const sx = cx + cos(angle) * r;
+    const sy = cy + sin(angle) * r;
+    drawVertex(sx, sy, rndChoice(["creation", "decay"]));
+
+    // Shower particles spreading outward
+    const showerParticles = rndInt(3, 5);
+    for (let j = 0; j < showerParticles; j++) {
+      const spread = angle + rnd(-0.3, 0.3);
+      const sLen = rnd(40, middleR - innerR);
+      drawPropagator(sx, sy, sx + cos(spread) * sLen, sy + sin(spread) * sLen, getRandomParticleType());
+    }
+  }
+
+  // Outer ring: muon chamber - long tracks piercing all layers
+  const muonCount = Math.floor(2 + features.density * 2);
+  for (let i = 0; i < muonCount; i++) {
+    const angle = rnd(0, TWO_PI);
+    const ex = cx + cos(angle) * (outerR + rnd(0, 30));
+    const ey = cy + sin(angle) * (outerR + rnd(0, 30));
+    drawPropagator(cx, cy, ex, ey, "muon");
+  }
+
+  // Labels
+  if (features.showLabels) {
+    drawPhysicsLabel(cx, cy - innerR - 12, "Tracking", 7, 0.7);
+    drawPhysicsLabel(cx, cy - middleR - 12, "Calorimeter", 7, 0.7);
+    drawPhysicsLabel(cx, cy - outerR - 12, "Muon", 7, 0.7);
+  }
+}
+
+function drawChalkboardComposition() {
+  // Lecture notes: grid of cells with different diagram types
+  const cols = rndInt(2, 3);
+  const rows = rndInt(2, 3);
+  const cellW = (width - 80) / cols;
+  const cellH = (height - 80) / rows;
+  const margin = 40;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx = margin + c * cellW + cellW / 2;
+      const cy = margin + r * cellH + cellH / 2;
+      const cellSize = Math.min(cellW, cellH) * 0.35;
+
+      push();
+      translate(cx, cy);
+
+      // Each cell gets a different diagram type
+      const cellType = rndChoice(["reaction", "loop", "penguin", "network", "vertices"]);
+
+      switch (cellType) {
+        case "reaction":
+          drawMiniDiagram(0, 0, cellSize / 60, 1.5);
+          break;
+        case "loop": {
+          const topology = rndChoice(["sunset", "box", "triangle"]);
+          if (topology === "sunset") drawSunsetDiagram(0, 0, cellSize);
+          else if (topology === "box") drawBoxDiagram(0, 0, cellSize);
+          else drawTriangleDiagram(0, 0, cellSize);
+          break;
+        }
+        case "penguin":
+          drawPenguinDiagram(0, 0, cellSize);
+          break;
+        case "network": {
+          const verts = [];
+          const nv = rndInt(4, 7);
+          for (let i = 0; i < nv; i++) {
+            verts.push({
+              x: rnd(-cellSize, cellSize),
+              y: rnd(-cellSize, cellSize),
+              type: rndChoice(["interaction", "decay"])
+            });
+          }
+          drawPropagatorNetwork(verts);
+          verts.forEach(v => drawVertex(v.x, v.y, v.type));
+          break;
+        }
+        case "vertices": {
+          const mode = rndChoice(features.modes);
+          const vCount = rndInt(3, 6);
+          for (let i = 0; i < vCount; i++) {
+            const vx = rnd(-cellSize * 0.8, cellSize * 0.8);
+            const vy = rnd(-cellSize * 0.8, cellSize * 0.8);
+            drawVertex(vx, vy, rndChoice(["interaction", "qcd", "creation"]));
+            if (rndBool(features.loopProbability)) {
+              drawLoop(vx, vy, rnd(10, 25));
+            }
+          }
+          break;
+        }
+      }
+
+      pop();
+    }
+  }
+
+  // Decorative equation text between cells when labels are on
+  if (features.showLabels) {
+    const equations = [
+      "\u2202F = j", "L = -\u00BC F\u00B2",
+      "S = \u222BL d\u2074x", "\u0393 = \u2211 diagrams",
+      "\u27E8\u03C6\u27E9 \u2260 0", "Z = \u222B D\u03C6 e^{iS}"
+    ];
+    const eqIdx = rndInt(0, equations.length - 1);
+    drawPhysicsLabel(width / 2, height - 25, equations[eqIdx], 9, 0.7);
+  }
+}
+
+function drawSymmetryBreakingComposition() {
+  // Phase transition: ordered → chaotic across canvas
+  const gridRows = Math.floor(5 + features.density * 2);
+  const gridCols = gridRows * 2;
+  const spacingX = (width - 80) / (gridCols - 1);
+  const spacingY = (height - 80) / (gridRows - 1);
+  const marginX = 40;
+  const marginY = 40;
+
+  const vertices = [];
+  for (let r = 0; r < gridRows; r++) {
+    for (let c = 0; c < gridCols; c++) {
+      const progress = c / (gridCols - 1);
+      const disorder = pow(progress, 2) * 60;
+      vertices.push({
+        r, c,
+        x: marginX + c * spacingX + rnd(-disorder, disorder),
+        y: marginY + r * spacingY + rnd(-disorder, disorder),
+        type: progress > 0.6 ? rndChoice(["interaction", "decay", "creation", "qcd"]) : "interaction"
+      });
+    }
+  }
+
+  // Grid connections with decreasing probability
+  for (let r = 0; r < gridRows; r++) {
+    for (let c = 0; c < gridCols; c++) {
+      const idx = r * gridCols + c;
+      const v = vertices[idx];
+      const progress = c / (gridCols - 1);
+      const connectProb = 0.8 - progress * 0.3;
+
+      // Right neighbor
+      if (c < gridCols - 1 && rndBool(connectProb)) {
+        const right = vertices[idx + 1];
+        drawPropagator(v.x, v.y, right.x, right.y, getRandomParticleType());
+      }
+      // Down neighbor
+      if (r < gridRows - 1 && rndBool(connectProb)) {
+        const down = vertices[idx + gridCols];
+        drawPropagator(v.x, v.y, down.x, down.y, getRandomParticleType());
+      }
+      // Random cross-connections in broken phase
+      if (progress > 0.5 && rndBool(0.15 * features.density)) {
+        const target = vertices[rndInt(0, vertices.length - 1)];
+        const dist = sqrt(pow(v.x - target.x, 2) + pow(v.y - target.y, 2));
+        if (dist < 150 && dist > 20) {
+          drawPropagator(v.x, v.y, target.x, target.y, getRandomParticleType());
+        }
+      }
+
+      drawVertex(v.x, v.y, v.type);
+    }
+  }
+
+  // Dashed vertical line at transition zone
+  if (features.showLabels) {
+    const transX = marginX + 0.5 * (width - 80);
+    push();
+    stroke(pal.dim || pal.line);
+    strokeWeight(0.8);
+    drawingContext.setLineDash([6, 4]);
+    line(transX, 20, transX, height - 20);
+    drawingContext.setLineDash([]);
+    pop();
+    drawPhysicsLabel(transX, 15, "\u27E8\u03C6\u27E9 = 0 \u2192 \u27E8\u03C6\u27E9 \u2260 0", 8, 0.8);
   }
 }
 
@@ -2084,6 +2472,11 @@ function drawVertex(x, y, type) {
       noStroke();
       circle(x, y, size);
   }
+
+  // Coupling constant annotation
+  if (features.showLabels && (type === "interaction" || type === "qcd") && rndBool(0.15)) {
+    drawCouplingConstant(x, y, type);
+  }
 }
 
 function drawArrow(x, y, angle, size) {
@@ -2188,6 +2581,8 @@ function drawSunsetDiagram(x, y, size, alpha = 1) {
   noStroke();
   circle(x - size * 0.5, y, 5);
   circle(x + size * 0.5, y, 5);
+
+  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "2-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2225,6 +2620,8 @@ function drawBoxDiagram(x, y, size, alpha = 1) {
   circle(x + half, y - half, 5);
   circle(x + half, y + half, 5);
   circle(x - half, y + half, 5);
+
+  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2261,6 +2658,8 @@ function drawTriangleDiagram(x, y, size, alpha = 1) {
   circle(v1.x, v1.y, 5);
   circle(v2.x, v2.y, 5);
   circle(v3.x, v3.y, 5);
+
+  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2302,6 +2701,8 @@ function drawLadderDiagram(x, y, size, rungs = 3, alpha = 1) {
   line(x - size/2 - size * 0.2, y + halfHeight, x - size/2, y + halfHeight);
   line(x + size/2, y - halfHeight, x + size/2 + size * 0.2, y - halfHeight);
   line(x + size/2, y + halfHeight, x + size/2 + size * 0.2, y + halfHeight);
+
+  if (features.showLabels) drawPhysicsLabel(x, y - halfHeight - 12, rungs + "-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2375,6 +2776,8 @@ function drawComptonDiagram(x, y, size, alpha = 1) {
   drawArrow(x - size * 0.65, y, 0, 4);
   drawArrow(x, y, 0, 4);
   drawArrow(x + size * 0.65, y, 0, 4);
+
+  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "tree", 8, alpha * 0.9);
 }
 
 /**
@@ -2410,6 +2813,8 @@ function drawBremsstrahlungDiagram(x, y, size, alpha = 1) {
   const outAngle = atan2(size * 0.3, size);
   drawArrow(x - size * 0.5, y + size * 0.15, inAngle, 4);
   drawArrow(x + size * 0.5, y + size * 0.15, outAngle, 4);
+
+  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "tree", 8, alpha * 0.9);
 }
 
 /**
@@ -2451,6 +2856,8 @@ function drawVertexCorrection(x, y, size, alpha = 1) {
   noStroke();
   circle(x - size * 0.2, y, 5);
   circle(x + size * 0.2, y, 5);
+
+  if (features.showLabels) drawPhysicsLabel(x, y + size * 0.7, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -2481,6 +2888,8 @@ function drawCrossedDiagram(x, y, size, alpha = 1) {
   drawArrow(x + size * 0.5, y - size * 0.25, atan2(size * 0.5, -size), 4);
   drawArrow(x - size * 0.5, y + size * 0.25, atan2(-size * 0.5, size), 4);
   drawArrow(x + size * 0.5, y + size * 0.25, atan2(-size * 0.5, -size), 4);
+
+  if (features.showLabels) drawPhysicsLabel(x, y - size * 0.8, "tree", 8, alpha * 0.9);
 }
 
 // ============================================================
@@ -3700,6 +4109,11 @@ function drawHiggsVertex(x, y, size, alpha = 1) {
   strokeWeight(1);
   noFill();
   circle(x, y - size * 0.3, 4);
+
+  // VEV notation
+  if (features.showLabels) {
+    drawPhysicsLabel(x, y + size * 0.4, "\u27E8H\u27E9=v", 7, alpha * 0.8);
+  }
 }
 
 /**
@@ -4627,6 +5041,8 @@ function drawPenguinDiagram(x, y, size, alpha = 1) {
   stroke(col);
   strokeWeight(features.lineWeight * 0.7);
   drawPhotonPropagator(x - bodyWidth/4, y - bodyHeight/4, x + bodyWidth/4, y - bodyHeight/4, alpha * 0.6);
+
+  if (features.showLabels) drawPhysicsLabel(x, y + bodyHeight/2 + size * 0.5, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -4657,6 +5073,8 @@ function drawTadpoleDiagram(x, y, size, alpha = 1) {
     stroke(color(COLORS.photon));
     drawPhotonPropagator(x, y + loopSize/6, x, y + tailLength, alpha * 0.8);
   }
+
+  if (features.showLabels) drawPhysicsLabel(x, y - loopSize, "1-loop", 8, alpha * 0.9);
 }
 
 /**
@@ -5216,6 +5634,35 @@ function drawPropagatorLabel(x1, y1, x2, y2, particleType) {
   drawPhysicsLabel(mx + ox, my + oy, label, 9);
 }
 
+function drawCouplingConstant(x, y, vertexType) {
+  const hasQED = features.modes.some(m => m === "qed");
+  const hasQCD = features.modes.some(m => m === "qcd");
+  const hasEW = features.modes.some(m => m === "electroweak");
+
+  let label;
+  if (vertexType === "qcd") {
+    label = "\u03B1s";
+  } else if (hasEW && vertexType === "interaction") {
+    label = "gw";
+  } else if (hasQED) {
+    label = "\u03B1";
+  } else {
+    label = "g";
+  }
+  drawPhysicsLabel(x + 10, y - 8, label, 7, 0.85);
+}
+
+function drawCrossSectionFormula() {
+  drawPhysicsLabel(55, height - 30, "\u03C3 = \u222B|\u2133|\u00B2 d\u03A6", 10, 0.8);
+}
+
+function drawMomentumLabel(x, y, isIncoming, index) {
+  const base = isIncoming ? "p" : "k";
+  const subscripts = ["\u2081", "\u2082", "\u2083", "\u2084", "\u2085"];
+  const label = base + (subscripts[index] || (index + 1));
+  drawPhysicsLabel(x, y, label, 8, 0.85);
+}
+
 function drawParticleLabels() {
   // Mode names at bottom
   fill(pal.dim);
@@ -5715,8 +6162,8 @@ const RARITY_CURVES = {
     probabilities: [0.15, 0.20, 0.20, 0.20, 0.15, 0.10]
   },
   composition: {
-    labels: ["centered", "scattered", "flowing", "layered", "grid", "radial"],
-    probabilities: [0.20, 0.20, 0.15, 0.15, 0.15, 0.15]
+    labels: ["centered", "scattered", "flowing", "layered", "grid", "radial", "collision", "feynman", "detector", "chalkboard", "symBreak"],
+    probabilities: [0.12, 0.12, 0.11, 0.11, 0.10, 0.10, 0.10, 0.09, 0.07, 0.04, 0.04]
   }
 };
 

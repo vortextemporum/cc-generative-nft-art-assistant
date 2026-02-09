@@ -1,11 +1,11 @@
-# Feynman Strings v1.7.0 - AI Assistant Guide
+# Feynman Strings v1.8.0 - AI Assistant Guide
 
 ## Project Overview
 
 Generative art inspired by **Feynman diagrams** and **string theory**. The piece ranges from technical physics notation to abstract quantum chaos, featuring particle interactions, worldsheets, and vacuum fluctuations.
 
 **Framework:** p5.js
-**Current Version:** 1.7.0
+**Current Version:** 1.8.0
 **Canvas:** 700x700
 
 ## The 10 Physics Modes
@@ -112,6 +112,22 @@ feynman-strings/
 | `drawScatteredComposition()` | Multiple mini-diagrams |
 | `drawFlowingComposition()` | Left-to-right reaction |
 | `drawLayeredComposition()` | Overlapping depth layers |
+| `drawGridComposition()` | Sol LeWitt style systematic grid |
+| `drawRadialComposition()` | Explosion from center |
+| `drawCollisionComposition()` | LHC-style beam collision |
+| `drawFeynmanDiagramComposition()` | Proper Feynman diagram with external legs |
+| `drawDetectorComposition()` | Detector cross-section (tracking/calorimeter/muon) |
+| `drawChalkboardComposition()` | Lecture notes grid of diagrams |
+| `drawSymmetryBreakingComposition()` | Phase transition ordered→chaotic |
+
+### Annotations
+
+| Function | Description |
+|----------|-------------|
+| `drawCouplingConstant()` | α, αs, gw at vertices |
+| `drawCrossSectionFormula()` | σ = ∫|M|²dΦ for collision/feynman |
+| `drawMomentumLabel()` | p₁, k₁ on external legs |
+| Loop order labels | tree/1-loop/2-loop on all diagram topologies |
 
 ## Feature System
 
@@ -120,7 +136,7 @@ feynman-strings/
 | **modeBlend** | single / dual / triple / chaos | 40% / 30% / 20% / 10% |
 | **density** | minimal / sparse / moderate / dense / chaotic | 20% / 30% / 30% / 15% / 5% |
 | **style** | technical / artistic / abstract / chaotic | 30% / 30% / 25% / 15% |
-| **composition** | centered / scattered / flowing / layered | 35% / 25% / 20% / 20% |
+| **composition** | centered / scattered / flowing / layered / grid / radial / collision / feynman / detector / chalkboard / symmetryBreaking | 12/12/11/11/10/10/10/9/7/4/4% |
 | **hasHiggs** | true/false | 5% |
 | **hasCalabiYau** | true/false | 3% |
 | **hasGraviton** | true/false | 2% |
