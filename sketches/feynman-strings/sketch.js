@@ -597,6 +597,30 @@ function drawScene() {
   pal = PALETTES[features.palette];
   background(pal.background);
 
+  // Style-dependent rendering modifiers
+  // Scale lineWeight so style has immediate visual impact
+  const baseWeight = features.lineWeight;
+  switch (features.style) {
+    case "technical":
+      features.lineWeight = baseWeight * 0.6;
+      break;
+    case "geometric":
+      features.lineWeight = baseWeight * 0.9;
+      break;
+    case "artistic":
+      features.lineWeight = baseWeight * 1.1;
+      break;
+    case "abstract":
+      features.lineWeight = baseWeight * 0.5;
+      break;
+    case "chaotic":
+      features.lineWeight = baseWeight * 1.6;
+      break;
+    case "maximalist":
+      features.lineWeight = baseWeight * 2.0;
+      break;
+  }
+
   // Draw background pattern (Sol LeWitt style)
   if (features.backgroundPattern !== "none") {
     drawBackgroundPattern();
@@ -608,6 +632,12 @@ function drawScene() {
     drawingContext.globalAlpha = 0.15;
     drawRandomDiagrams(Math.floor(features.density * 3), 0.5);
     pop();
+  }
+
+  // Abstract/artistic: apply global alpha for softer rendering
+  if (features.style === "abstract") {
+    push();
+    drawingContext.globalAlpha = 0.65;
   }
 
   // Draw based on composition
@@ -671,16 +701,19 @@ function drawScene() {
     drawTimeAxis();
   }
 
+  // Close abstract alpha scope
+  if (features.style === "abstract") {
+    pop();
+  }
+
   // Cross-section formula for collision/feynman + technical style
   if (features.showLabels && features.style === "technical" &&
       (features.composition === "collision" || features.composition === "feynman")) {
     drawCrossSectionFormula();
   }
 
-  // Labels overlay
-  if (features.showLabels) {
-    drawParticleLabels();
-  }
+  // Restore original lineWeight
+  features.lineWeight = baseWeight;
 }
 
 // ============================================================
@@ -5668,25 +5701,6 @@ function drawMomentumLabel(x, y, isIncoming, index) {
   const subscripts = ["\u2081", "\u2082", "\u2083", "\u2084", "\u2085"];
   const label = base + (subscripts[index] || (index + 1));
   drawPhysicsLabel(x, y, label, 8, 0.85);
-}
-
-function drawParticleLabels() {
-  // Mode names at bottom
-  fill(pal.dim);
-  noStroke();
-  textSize(9);
-  textAlign(CENTER);
-  textFont('monospace');
-
-  const modeNames = features.modes.map(m => MODES[m].name).join(" + ");
-  text(modeNames, width/2, height - 20);
-
-  // Style label
-  if (features.showLabels) {
-    textSize(8);
-    const styleText = features.style + " / " + features.palette;
-    text(styleText, width/2, height - 8);
-  }
 }
 
 // ============================================================
