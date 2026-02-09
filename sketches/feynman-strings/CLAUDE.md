@@ -136,7 +136,7 @@ feynman-strings/
 | **modeBlend** | single / dual / triple / chaos | 40% / 30% / 20% / 10% |
 | **density** | minimal / sparse / moderate / dense / chaotic | 20% / 30% / 30% / 15% / 5% |
 | **style** | technical / artistic / abstract / chaotic | 30% / 30% / 25% / 15% |
-| **composition** | centered / scattered / flowing / layered / grid / radial / collision / feynman / detector / chalkboard / symmetryBreaking | 12/12/11/11/10/10/10/9/7/4/4% |
+| **composition** | 15 options: centered, scattered, flowing, layered, grid, radial, collision, feynman, detector, chalkboard, symmetryBreaking, bilateral, radial4, radial6, radial8 | see rarity curves |
 | **hasHiggs** | true/false | 5% |
 | **hasCalabiYau** | true/false | 3% |
 | **hasGraviton** | true/false | 2% |

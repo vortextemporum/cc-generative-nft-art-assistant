@@ -416,31 +416,39 @@ function generateFeatures() {
     style = "maximalist"; // Everything at once
   }
 
-  // Composition (11 layouts)
+  // Composition (15 layouts including symmetry variants)
   const compositionRoll = R();
   let composition;
-  if (compositionRoll < 0.12) {
+  if (compositionRoll < 0.10) {
     composition = "centered";
-  } else if (compositionRoll < 0.24) {
+  } else if (compositionRoll < 0.20) {
     composition = "scattered";
-  } else if (compositionRoll < 0.35) {
+  } else if (compositionRoll < 0.29) {
     composition = "flowing";
-  } else if (compositionRoll < 0.46) {
+  } else if (compositionRoll < 0.37) {
     composition = "layered";
-  } else if (compositionRoll < 0.56) {
+  } else if (compositionRoll < 0.44) {
     composition = "grid";
-  } else if (compositionRoll < 0.66) {
+  } else if (compositionRoll < 0.51) {
     composition = "radial";
-  } else if (compositionRoll < 0.76) {
-    composition = "collision";     // LHC-style
-  } else if (compositionRoll < 0.85) {
-    composition = "feynman";       // Proper Feynman diagram
-  } else if (compositionRoll < 0.92) {
-    composition = "detector";      // Detector cross-section
-  } else if (compositionRoll < 0.96) {
-    composition = "chalkboard";    // Lecture notes
+  } else if (compositionRoll < 0.58) {
+    composition = "collision";
+  } else if (compositionRoll < 0.64) {
+    composition = "feynman";
+  } else if (compositionRoll < 0.69) {
+    composition = "detector";
+  } else if (compositionRoll < 0.73) {
+    composition = "chalkboard";
+  } else if (compositionRoll < 0.77) {
+    composition = "symmetryBreaking";
+  } else if (compositionRoll < 0.83) {
+    composition = "bilateral";
+  } else if (compositionRoll < 0.89) {
+    composition = "radial4";
+  } else if (compositionRoll < 0.94) {
+    composition = "radial6";
   } else {
-    composition = "symmetryBreaking"; // Phase transition
+    composition = "radial8";
   }
 
   // Line weight - style dependent
@@ -503,7 +511,6 @@ function generateFeatures() {
   // Extra complexity features
   const hasBackgroundDiagrams = rndBool(0.4 * density);
   const hasOverlappingLayers = rndBool(0.5 * density);
-  const symmetry = rndChoice(["none", "bilateral", "radial4", "radial6", "radial8"]);
 
   features = {
     modes: selectedModes,
@@ -532,8 +539,7 @@ function generateFeatures() {
     showVertexGlow,
     arrowStyle,
     hasBackgroundDiagrams,
-    hasOverlappingLayers,
-    symmetry
+    hasOverlappingLayers
   };
 
   originalFeatures = { ...features };
@@ -604,46 +610,47 @@ function drawScene() {
     pop();
   }
 
-  // Apply symmetry if needed
-  if (features.symmetry !== "none") {
-    drawWithSymmetry();
-  } else {
-    // Draw based on composition
-    switch (features.composition) {
-      case "centered":
-        drawCenteredComposition();
-        break;
-      case "scattered":
-        drawScatteredComposition();
-        break;
-      case "flowing":
-        drawFlowingComposition();
-        break;
-      case "layered":
-        drawLayeredComposition();
-        break;
-      case "grid":
-        drawGridComposition();
-        break;
-      case "radial":
-        drawRadialComposition();
-        break;
-      case "collision":
-        drawCollisionComposition();
-        break;
-      case "feynman":
-        drawFeynmanDiagramComposition();
-        break;
-      case "detector":
-        drawDetectorComposition();
-        break;
-      case "chalkboard":
-        drawChalkboardComposition();
-        break;
-      case "symmetryBreaking":
-        drawSymmetryBreakingComposition();
-        break;
-    }
+  // Draw based on composition
+  switch (features.composition) {
+    case "centered":
+      drawCenteredComposition();
+      break;
+    case "scattered":
+      drawScatteredComposition();
+      break;
+    case "flowing":
+      drawFlowingComposition();
+      break;
+    case "layered":
+      drawLayeredComposition();
+      break;
+    case "grid":
+      drawGridComposition();
+      break;
+    case "radial":
+      drawRadialComposition();
+      break;
+    case "collision":
+      drawCollisionComposition();
+      break;
+    case "feynman":
+      drawFeynmanDiagramComposition();
+      break;
+    case "detector":
+      drawDetectorComposition();
+      break;
+    case "chalkboard":
+      drawChalkboardComposition();
+      break;
+    case "symmetryBreaking":
+      drawSymmetryBreakingComposition();
+      break;
+    case "bilateral":
+    case "radial4":
+    case "radial6":
+    case "radial8":
+      drawWithSymmetry();
+      break;
   }
 
   // Draw overlapping layers
@@ -913,7 +920,7 @@ function drawWithSymmetry() {
   const cy = height / 2;
 
   let folds;
-  switch (features.symmetry) {
+  switch (features.composition) {
     case "bilateral": folds = 2; break;
     case "radial4": folds = 4; break;
     case "radial6": folds = 6; break;
@@ -6162,8 +6169,8 @@ const RARITY_CURVES = {
     probabilities: [0.15, 0.20, 0.20, 0.20, 0.15, 0.10]
   },
   composition: {
-    labels: ["centered", "scattered", "flowing", "layered", "grid", "radial", "collision", "feynman", "detector", "chalkboard", "symBreak"],
-    probabilities: [0.12, 0.12, 0.11, 0.11, 0.10, 0.10, 0.10, 0.09, 0.07, 0.04, 0.04]
+    labels: ["centered", "scattered", "flowing", "layered", "grid", "radial", "collision", "feynman", "detector", "chalk", "symBreak", "bilateral", "rad4", "rad6", "rad8"],
+    probabilities: [0.10, 0.10, 0.09, 0.08, 0.07, 0.07, 0.07, 0.06, 0.05, 0.04, 0.04, 0.06, 0.06, 0.05, 0.06]
   }
 };
 

@@ -646,6 +646,10 @@
             <option value="detector">Detector</option>
             <option value="chalkboard">Chalkboard</option>
             <option value="symmetryBreaking">Symmetry Breaking</option>
+            <option value="bilateral">Bilateral Symmetry</option>
+            <option value="radial4">Radial 4-fold</option>
+            <option value="radial6">Radial 6-fold</option>
+            <option value="radial8">Radial 8-fold</option>
           </select>
         </div>
 
@@ -676,19 +680,6 @@
               <option value="isometric">Isometric</option>
               <option value="randomArcs">Random Arcs</option>
             </optgroup>
-          </select>
-        </div>
-
-        <div class="slider-group">
-          <div class="slider-label">
-            <span>Symmetry</span>
-          </div>
-          <select id="symmetry-select">
-            <option value="none">None</option>
-            <option value="bilateral">Bilateral</option>
-            <option value="radial4">Radial 4</option>
-            <option value="radial6">Radial 6</option>
-            <option value="radial8">Radial 8</option>
           </select>
         </div>
 
@@ -900,13 +891,6 @@
           <span class="feature-value">${features.backgroundPattern}</span>
         </div>`;
       }
-      if (features.symmetry && features.symmetry !== "none") {
-        html += `<div class="feature-row">
-          <span class="feature-name">Symmetry</span>
-          <span class="feature-value">${features.symmetry}</span>
-        </div>`;
-      }
-
       table.innerHTML = html;
 
       // Update slider values
@@ -926,7 +910,6 @@
       document.getElementById('palette-select').value = features.palette;
       document.getElementById('composition-select').value = features.composition;
       document.getElementById('bgPattern-select').value = features.backgroundPattern || 'none';
-      document.getElementById('symmetry-select').value = features.symmetry || 'none';
     }
 
     function updateToggles() {
@@ -1127,11 +1110,6 @@
         window.render();
       });
 
-      // Symmetry select
-      document.getElementById('symmetry-select').addEventListener('change', (e) => {
-        window.setParameter('symmetry', e.target.value);
-        window.render();
-      });
     }
 
     function getRandomMode(exclude = []) {
@@ -1204,9 +1182,8 @@
       const allModes = ['qed', 'qcd', 'string', 'vacuum', 'bubble', 'spinNetwork', 'electroweak', 'cosmic', 'nuclear', 'topological'];
       const allStyles = ['technical', 'geometric', 'artistic', 'abstract', 'chaotic', 'maximalist'];
       const allPalettes = ['blackboard', 'cosmic', 'void', 'midnight', 'matrix', 'paper', 'parchment', 'minimal', 'lewitt', 'lewittColor', 'blueprint', 'infrared', 'plasma', 'quantum'];
-      const allCompositions = ['centered', 'scattered', 'flowing', 'layered', 'grid', 'radial', 'collision', 'feynman', 'detector', 'chalkboard', 'symmetryBreaking'];
+      const allCompositions = ['centered', 'scattered', 'flowing', 'layered', 'grid', 'radial', 'collision', 'feynman', 'detector', 'chalkboard', 'symmetryBreaking', 'bilateral', 'radial4', 'radial6', 'radial8'];
       const allPatterns = ['none', 'grid', 'lines', 'dots', 'arcs', 'diagonal', 'crosshatch', 'concentric', 'concentricSquares', 'radialLines', 'wavyLines', 'bands', 'isometric', 'randomArcs', 'nestedArcs', 'allFour'];
-      const allSymmetries = ['none', 'bilateral', 'radial4', 'radial6', 'radial8'];
       const allBlends = ['single', 'dual', 'triple', 'chaos'];
 
       // Random blend type
@@ -1233,7 +1210,6 @@
       window.setParameter('palette', allPalettes[Math.floor(Math.random() * allPalettes.length)]);
       window.setParameter('composition', allCompositions[Math.floor(Math.random() * allCompositions.length)]);
       window.setParameter('backgroundPattern', allPatterns[Math.floor(Math.random() * allPatterns.length)]);
-      window.setParameter('symmetry', allSymmetries[Math.floor(Math.random() * allSymmetries.length)]);
       window.setParameter('density', 0.3 + Math.random() * 3.5);
       window.setParameter('lineWeight', 0.5 + Math.random() * 2.0);  // Lower range for cleaner look
       window.setParameter('loopProbability', Math.random() * 1.5);
