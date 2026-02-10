@@ -1,13 +1,10 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v2.2 - Isometric Heightmap
+//   Based on GenDSP v2.1
 // ==========================================
 
 let canvas;
 const DISPLAY_SIZE = 700;
-
-// View mode: '2d' or 'iso'
-let viewMode = '2d';
 
 // Resolution options (render size, then scale up)
 const RESOLUTIONS = [64, 128, 256, 350, 512];
@@ -149,11 +146,7 @@ function draw() {
   }
 
   // Always draw the buffer (scaled up)
-  if (viewMode === '2d') {
-    image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
-  } else {
-    renderIsometric();
-  }
+  image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
 }
 
 // --- ANIMATION SYSTEM ---
@@ -337,121 +330,6 @@ function getColorFromPalette(t, palette) {
     lerp(c1[1], c2[1], frac),
     lerp(c1[2], c2[2], frac)
   ];
-}
-
-// --- ISOMETRIC HEIGHTMAP VIEW ---
-function renderIsometric() {
-  background(10, 10, 15);
-
-  let palette = palettes[currentPalette];
-  let gridRes = min(renderSize, 128); // cap grid for perf
-
-  // Isometric projection params
-  let heightScale = 120; // max height in pixels
-  let originX = DISPLAY_SIZE * 0.5;
-  let originY = DISPLAY_SIZE * 0.82;
-  let scaleX = DISPLAY_SIZE * 0.7 / gridRes;
-  let scaleY = DISPLAY_SIZE * 0.35 / gridRes;
-
-  // Pre-compute the sample grid
-  let grid = [];
-  for (let gy = 0; gy <= gridRes; gy++) {
-    let row = [];
-    for (let gx = 0; gx <= gridRes; gx++) {
-      let phase = gx / gridRes;
-      let scan = gy / gridRes;
-      let sample = generateSample(phase, scan);
-      row.push(sample);
-    }
-    grid.push(row);
-  }
-
-  // Transform grid point to isometric screen coords
-  function toIso(gx, gy, h) {
-    let x = (gx - gy) * scaleX;
-    let y = (gx + gy) * scaleY - h * heightScale;
-    return { x: originX + x, y: originY + y };
-  }
-
-  // Draw back-to-front for proper occlusion
-  push();
-  strokeWeight(0.5);
-
-  for (let gy = 0; gy < gridRes; gy++) {
-    for (let gx = 0; gx < gridRes; gx++) {
-      let s00 = grid[gy][gx];
-      let s10 = grid[gy][gx + 1];
-      let s01 = grid[gy + 1][gx];
-      let s11 = grid[gy + 1][gx + 1];
-
-      let avgSample = (s00 + s10 + s01 + s11) * 0.25;
-      let colorVal = (avgSample + 1) * 0.5;
-      let col = getColorFromPalette(colorVal, palette);
-
-      // Height values (0 to 1 range)
-      let h00 = (s00 + 1) * 0.5;
-      let h10 = (s10 + 1) * 0.5;
-      let h01 = (s01 + 1) * 0.5;
-      let h11 = (s11 + 1) * 0.5;
-
-      let p00 = toIso(gx, gy, h00);
-      let p10 = toIso(gx + 1, gy, h10);
-      let p01 = toIso(gx, gy + 1, h01);
-      let p11 = toIso(gx + 1, gy + 1, h11);
-
-      // Shading based on surface normal (simple approximation)
-      let dx = (s10 - s00 + s11 - s01) * 0.5;
-      let dy = (s01 - s00 + s11 - s10) * 0.5;
-      let shade = map(dx - dy, -1, 1, 0.5, 1.3);
-      shade = constrain(shade, 0.4, 1.4);
-
-      fill(
-        constrain(col[0] * shade, 0, 255),
-        constrain(col[1] * shade, 0, 255),
-        constrain(col[2] * shade, 0, 255)
-      );
-      stroke(
-        constrain(col[0] * shade * 0.6, 0, 255),
-        constrain(col[1] * shade * 0.6, 0, 255),
-        constrain(col[2] * shade * 0.6, 0, 255),
-        80
-      );
-
-      // Draw quad
-      beginShape();
-      vertex(p00.x, p00.y);
-      vertex(p10.x, p10.y);
-      vertex(p11.x, p11.y);
-      vertex(p01.x, p01.y);
-      endShape(CLOSE);
-    }
-  }
-
-  pop();
-
-  // Draw axis labels
-  push();
-  noStroke();
-  fill(255, 255, 255, 120);
-  textSize(11);
-  textFont('monospace');
-
-  // Phase arrow (X)
-  let pStart = toIso(0, 0, 0);
-  let pEnd = toIso(gridRes, 0, 0);
-  fill(255, 107, 107, 180);
-  textAlign(CENTER);
-  text('Phase \u2192', (pStart.x + pEnd.x) * 0.5, pStart.y + 20);
-
-  // Morph arrow (Y)
-  let mEnd = toIso(0, gridRes, 0);
-  fill(78, 205, 196, 180);
-  push();
-  translate((pStart.x + mEnd.x) * 0.5 - 20, (pStart.y + mEnd.y) * 0.5);
-  text('Morph \u2192', 0, 0);
-  pop();
-
-  pop();
 }
 
 // --- UTILITY FUNCTIONS ---
@@ -677,15 +555,6 @@ window.saveImage = function() {
   saveCanvas('glix-wavetable-' + timestamp, 'png');
 };
 
-window.toggleView = function() {
-  viewMode = viewMode === '2d' ? 'iso' : '2d';
-  let btn = document.getElementById('view-btn-text');
-  if (btn) btn.textContent = viewMode === '2d' ? '3D View' : '2D View';
-  let indicator = document.getElementById('view-indicator');
-  if (indicator) indicator.textContent = viewMode === '2d' ? '2D Color' : 'Isometric';
-  needsRender = true;
-};
-
 function nextPalette() {
   let idx = paletteNames.indexOf(currentPalette);
   idx = (idx + 1) % paletteNames.length;
@@ -783,10 +652,6 @@ function keyPressed() {
     case 'F':
       targetParams.fx_fold = min(10000, params.fx_fold + 500);
       needsRender = true;
-      break;
-    case 'v':
-    case 'V':
-      toggleView();
       break;
     case '[':
       cycleResolution(-1);

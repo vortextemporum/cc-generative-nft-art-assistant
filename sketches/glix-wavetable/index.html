@@ -367,6 +367,9 @@
           <button class="btn btn-secondary" onclick="toggleAnimation()">
             <span id="anim-btn-text">Pause</span>
           </button>
+          <button class="btn btn-secondary" onclick="toggleView()">
+            <span id="view-btn-text">3D View</span>
+          </button>
           <button class="btn btn-secondary" onclick="saveImage()">Save</button>
         </div>
       </div>
@@ -465,7 +468,7 @@
       </div>
 
       <div class="panel">
-        <div class="section-title">Resolution <span class="mode-indicator" id="res-display">128px</span></div>
+        <div class="section-title">View <span class="mode-indicator" id="view-indicator">2D Color</span> &nbsp; Resolution <span class="mode-indicator" id="res-display">128px</span></div>
         <div class="param-group">
           <div class="shape-buttons">
             <button class="shape-btn res-btn" data-res="0" onclick="setResolution(0)">64</button>
@@ -502,12 +505,13 @@
           <div class="shortcut"><kbd>S</kbd><span>Save</span></div>
           <div class="shortcut"><kbd>1-4</kbd><span>Wave shape</span></div>
           <div class="shortcut"><kbd>C</kbd><span>Next color</span></div>
+          <div class="shortcut"><kbd>V</kbd><span>Toggle view</span></div>
           <div class="shortcut"><kbd>+/-</kbd><span>Speed</span></div>
           <div class="shortcut"><kbd>[ ]</kbd><span>Resolution</span></div>
         </div>
         <div class="footer">
           <span>Based on GenDSP</span>
-          <span>v2.1</span>
+          <span>v2.2</span>
         </div>
       </div>
     </div>
