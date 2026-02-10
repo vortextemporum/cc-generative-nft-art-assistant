@@ -116,6 +116,142 @@ const palettes = {
     [255, 255, 0],
     [255, 150, 0],
     [255, 50, 50]
+  ],
+  // --- NEW PALETTES ---
+  inferno: [
+    [0, 0, 4],
+    [40, 11, 84],
+    [101, 21, 110],
+    [159, 42, 99],
+    [212, 72, 66],
+    [245, 125, 21],
+    [252, 255, 164]
+  ],
+  viridis: [
+    [68, 1, 84],
+    [72, 35, 116],
+    [49, 104, 142],
+    [33, 145, 140],
+    [53, 183, 121],
+    [144, 215, 67],
+    [253, 231, 37]
+  ],
+  magma: [
+    [0, 0, 4],
+    [28, 16, 68],
+    [79, 18, 123],
+    [136, 34, 106],
+    [199, 56, 80],
+    [243, 117, 75],
+    [252, 253, 191]
+  ],
+  arctic: [
+    [10, 20, 40],
+    [20, 50, 90],
+    [40, 100, 160],
+    [100, 180, 220],
+    [180, 220, 240],
+    [220, 240, 250],
+    [245, 250, 255]
+  ],
+  ember: [
+    [20, 5, 0],
+    [60, 10, 0],
+    [140, 30, 0],
+    [200, 60, 0],
+    [255, 120, 20],
+    [255, 200, 60],
+    [255, 240, 180]
+  ],
+  toxic: [
+    [5, 10, 5],
+    [10, 40, 10],
+    [20, 80, 15],
+    [40, 140, 20],
+    [80, 200, 30],
+    [160, 240, 60],
+    [220, 255, 150]
+  ],
+  cyberpunk: [
+    [10, 0, 20],
+    [30, 0, 60],
+    [80, 0, 160],
+    [180, 0, 255],
+    [255, 0, 200],
+    [255, 80, 120],
+    [255, 200, 220]
+  ],
+  forest: [
+    [10, 15, 8],
+    [20, 40, 15],
+    [35, 70, 25],
+    [55, 110, 40],
+    [80, 150, 55],
+    [130, 190, 80],
+    [200, 230, 150]
+  ],
+  lavender: [
+    [15, 10, 25],
+    [40, 20, 70],
+    [80, 50, 130],
+    [130, 90, 180],
+    [170, 130, 210],
+    [210, 180, 235],
+    [240, 225, 255]
+  ],
+  rust: [
+    [20, 10, 5],
+    [60, 25, 10],
+    [120, 50, 20],
+    [170, 80, 30],
+    [200, 120, 50],
+    [220, 170, 100],
+    [240, 220, 180]
+  ],
+  ice: [
+    [240, 250, 255],
+    [200, 230, 255],
+    [150, 200, 240],
+    [100, 160, 220],
+    [60, 120, 200],
+    [30, 70, 160],
+    [10, 30, 80]
+  ],
+  bloodmoon: [
+    [5, 0, 0],
+    [40, 0, 5],
+    [100, 5, 10],
+    [160, 15, 20],
+    [200, 40, 30],
+    [230, 100, 60],
+    [255, 200, 150]
+  ],
+  mint: [
+    [10, 20, 20],
+    [20, 60, 55],
+    [40, 110, 100],
+    [80, 170, 150],
+    [140, 210, 190],
+    [200, 240, 220],
+    [240, 255, 245]
+  ],
+  noir: [
+    [0, 0, 0],
+    [15, 15, 20],
+    [35, 30, 40],
+    [60, 50, 65],
+    [90, 75, 95],
+    [130, 110, 140],
+    [180, 170, 190]
+  ],
+  solar: [
+    [10, 5, 0],
+    [50, 20, 0],
+    [120, 50, 5],
+    [200, 100, 10],
+    [255, 180, 30],
+    [255, 230, 100],
+    [255, 255, 200]
   ]
 };
 
@@ -253,18 +389,36 @@ function generateSample(raw_phase, scan_pos) {
   let samp = 0.0;
 
   if (sel === 0) {
-    // SINE WAVE
+    // SINE
     samp = sin(shifted_phase * TWO_PI);
   } else if (sel === 1) {
-    // TRIANGLE WAVE
+    // TRIANGLE
     samp = 1.0 - abs((shifted_phase * 2.0) - 1.0) * 2.0;
   } else if (sel === 2) {
-    // SAWTOOTH WAVE
+    // SAWTOOTH
     samp = (shifted_phase * 2.0) - 1.0;
-  } else {
-    // PULSE WAVE
+  } else if (sel === 3) {
+    // PULSE
     let current_width = constrain(params.pw + morph_amt, 0.0, 1.0);
     samp = final_phase < current_width ? 1.0 : -1.0;
+  } else if (sel === 4) {
+    // HALF-RECTIFIED SINE
+    samp = sin(shifted_phase * TWO_PI);
+    samp = samp > 0 ? samp * 2.0 - 1.0 : -1.0;
+  } else if (sel === 5) {
+    // STAIRCASE (4-step quantized sine)
+    samp = sin(shifted_phase * TWO_PI);
+    samp = floor(samp * 4.0) / 4.0;
+  } else if (sel === 6) {
+    // PARABOLIC (rounded triangle)
+    let t = shifted_phase * 2.0 - 1.0;
+    samp = 1.0 - 2.0 * t * t;
+  } else if (sel === 7) {
+    // SUPERSAW (3 detuned saws mixed)
+    let s1 = fract(shifted_phase) * 2.0 - 1.0;
+    let s2 = fract(shifted_phase * 1.006 + 0.1) * 2.0 - 1.0;
+    let s3 = fract(shifted_phase * 0.994 + 0.2) * 2.0 - 1.0;
+    samp = (s1 + s2 + s3) / 3.0;
   }
 
   // Soft Saturation
@@ -309,10 +463,10 @@ function renderWavetable() {
   let size = renderSize;
 
   for (let y = 0; y < size; y++) {
-    let scan_pos = y / size;
+    let scan_pos = (y + 1) / (size + 1);
 
     for (let x = 0; x < size; x++) {
-      let raw_phase = x / size;
+      let raw_phase = (x + 1) / (size + 1);
       let sample = generateSample(raw_phase, scan_pos);
 
       // Map sample (-1 to 1) to color
@@ -388,8 +542,8 @@ function renderIsometric() {
     let row = [];
     let projRow = [];
     for (let gx = 0; gx <= gridRes; gx++) {
-      let phase = gx / gridRes;
-      let scan = gy / gridRes;
+      let phase = (gx + 1) / (gridRes + 2);
+      let scan = (gy + 1) / (gridRes + 2);
       let sample = generateSample(phase, scan);
       row.push(sample);
 
@@ -464,30 +618,6 @@ function renderIsometric() {
     vertex(p01.x, p01.y);
     endShape(CLOSE);
   }
-
-  pop();
-
-  // Axis labels at corners
-  push();
-  noStroke();
-  textSize(11);
-  textFont('monospace');
-  textAlign(CENTER);
-
-  let origin = projectPoint(-0.5, -0.5, 0);
-  let phaseEnd = projectPoint(0.5, -0.5, 0);
-  let morphEnd = projectPoint(-0.5, 0.5, 0);
-
-  fill(255, 107, 107, 200);
-  text('Phase', (origin.x + phaseEnd.x) * 0.5, (origin.y + phaseEnd.y) * 0.5 + 16);
-  fill(78, 205, 196, 200);
-  text('Morph', (origin.x + morphEnd.x) * 0.5 - 16, (origin.y + morphEnd.y) * 0.5);
-
-  // Controls hint
-  fill(255, 255, 255, 60);
-  textSize(10);
-  textAlign(LEFT);
-  text('Drag: rotate  |  Shift+Drag: pan  |  Scroll: zoom', 12, DISPLAY_SIZE - 12);
 
   pop();
 }
@@ -704,20 +834,22 @@ function updateColorPreview() {
 
 // --- GLOBAL FUNCTIONS ---
 window.randomizeAll = function() {
-  targetParams.shape = floor(random(4));
-  params.shape = targetParams.shape;
-  updateShapeButtons();
+  params.shape = floor(random(8));
+  params.pw = random(0.0, 1.0);
+  params.soften = random(0.5, 50);
+  params.y_bend = random(-0.25, 1.0);
+  params.fx_bend = random(-1, 1000);
+  params.fx_noise = random(0, 1.0);
+  params.fx_quantize = random(0, 1.0);
+  params.pw_morph = random(-50, 50);
+  params.fx_fold = random(0, 10000);
+  params.fx_crush = random(0, 10000);
+  params.edge_fade = random(0, 0.5);
 
-  targetParams.pw = random(0.2, 1.0);
-  targetParams.soften = random(1, 30);
-  targetParams.y_bend = random(-0.25, 1.0);
-  targetParams.fx_bend = random(0, 500);
-  targetParams.fx_noise = random(0, 0.5);
-  targetParams.fx_quantize = random(0, 0.5);
-  targetParams.pw_morph = random(-30, 30);
-  targetParams.fx_fold = random(50, 3000);
-  targetParams.fx_crush = random(0, 1000);
-  targetParams.edge_fade = random(0, 0.3);
+  // Snap targets to match (no slow interpolation)
+  targetParams = { ...params };
+  updateShapeButtons();
+  updateUIValues();
 
   // Random palette
   currentPalette = random(paletteNames);
@@ -832,27 +964,10 @@ function keyPressed() {
     case '0':
       resetParams();
       break;
-    case '1':
-      params.shape = 0;
-      targetParams.shape = 0;
-      updateShapeButtons();
-      needsRender = true;
-      break;
-    case '2':
-      params.shape = 1;
-      targetParams.shape = 1;
-      updateShapeButtons();
-      needsRender = true;
-      break;
-    case '3':
-      params.shape = 2;
-      targetParams.shape = 2;
-      updateShapeButtons();
-      needsRender = true;
-      break;
-    case '4':
-      params.shape = 3;
-      targetParams.shape = 3;
+    case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8':
+      params.shape = parseInt(key) - 1;
+      targetParams.shape = params.shape;
       updateShapeButtons();
       needsRender = true;
       break;

@@ -378,11 +378,15 @@
       <div class="panel">
         <div class="section-title">Oscillator</div>
         <div class="param-group">
-          <div class="shape-buttons" id="shape-buttons">
+          <div class="shape-buttons" id="shape-buttons" style="flex-wrap: wrap;">
             <button class="shape-btn active" data-shape="0">Sine</button>
             <button class="shape-btn" data-shape="1">Triangle</button>
             <button class="shape-btn" data-shape="2">Saw</button>
             <button class="shape-btn" data-shape="3">Pulse</button>
+            <button class="shape-btn" data-shape="4">HalfRect</button>
+            <button class="shape-btn" data-shape="5">Stair</button>
+            <button class="shape-btn" data-shape="6">Parabolic</button>
+            <button class="shape-btn" data-shape="7">SuperSaw</button>
           </div>
           <div class="param-row" style="margin-top: 12px;">
             <span class="param-label">PW / Shift</span>
@@ -462,6 +466,21 @@
               <option value="monochrome">Monochrome</option>
               <option value="plasma">Plasma</option>
               <option value="rainbow">Rainbow</option>
+              <option value="inferno">Inferno</option>
+              <option value="viridis">Viridis</option>
+              <option value="magma">Magma</option>
+              <option value="arctic">Arctic</option>
+              <option value="ember">Ember</option>
+              <option value="toxic">Toxic</option>
+              <option value="cyberpunk">Cyberpunk</option>
+              <option value="forest">Forest</option>
+              <option value="lavender">Lavender</option>
+              <option value="rust">Rust</option>
+              <option value="ice">Ice</option>
+              <option value="bloodmoon">Bloodmoon</option>
+              <option value="mint">Mint</option>
+              <option value="noir">Noir</option>
+              <option value="solar">Solar</option>
             </select>
           </div>
           <div id="color-preview" class="color-preview"></div>
@@ -504,7 +523,7 @@
           <div class="shortcut"><kbd>R</kbd><span>Randomize</span></div>
           <div class="shortcut"><kbd>0</kbd><span>Reset</span></div>
           <div class="shortcut"><kbd>S</kbd><span>Save</span></div>
-          <div class="shortcut"><kbd>1-4</kbd><span>Wave shape</span></div>
+          <div class="shortcut"><kbd>1-8</kbd><span>Wave shape</span></div>
           <div class="shortcut"><kbd>C</kbd><span>Next color</span></div>
           <div class="shortcut"><kbd>V</kbd><span>Toggle view</span></div>
           <div class="shortcut"><kbd>+/-</kbd><span>Speed</span></div>
