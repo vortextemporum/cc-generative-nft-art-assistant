@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v2.3 - WebGL Shader
+//   Based on GenDSP v2.4 - Animation Modes
 // ==========================================
 
 let canvas;
@@ -40,8 +40,7 @@ let params = {
   fx_quantize: 0.0,   // Pixelate (0-1)
   pw_morph: 0.0,      // Spiraling / PWM shift (-50 to 50)
   fx_fold: 100.0,     // Wavefolder (0-10000)
-  fx_crush: 0.0,      // Bitcrush (0-10000)
-  edge_fade: 0.0      // De-clicker (0-0.5)
+  fx_crush: 0.0       // Bitcrush (0-10000)
 };
 
 // Animation targets (for smooth interpolation)
@@ -50,6 +49,34 @@ let animSpeed = 0.3;
 let driftAmount = 0.5;
 let isAnimating = true;
 let animTime = 0;
+
+// Animation modes: 'drift', 'lfo', 'chaos', 'sequencer', 'bounce'
+let animMode = 'drift';
+const ANIM_MODES = ['drift', 'lfo', 'chaos', 'sequencer', 'bounce'];
+
+// Chaos (Lorenz attractor state)
+let lorenzX = 1.0, lorenzY = 1.0, lorenzZ = 1.0;
+
+// Sequencer state
+let seqStep = 0;
+let seqTimer = 0;
+const SEQ_PRESETS = [
+  { shape:0, pw:0.5, soften:5, y_bend:0, fx_bend:0, fx_noise:0, fx_quantize:0, pw_morph:0, fx_fold:100, fx_crush:0 },
+  { shape:0, pw:0.5, soften:3, y_bend:0.5, fx_bend:200, fx_noise:0, fx_quantize:0, pw_morph:10, fx_fold:500, fx_crush:0 },
+  { shape:2, pw:0.3, soften:8, y_bend:0.2, fx_bend:0, fx_noise:0.3, fx_quantize:0.4, pw_morph:-20, fx_fold:2000, fx_crush:0 },
+  { shape:7, pw:0.8, soften:15, y_bend:-0.1, fx_bend:400, fx_noise:0, fx_quantize:0, pw_morph:30, fx_fold:100, fx_crush:3000 },
+  { shape:1, pw:0.6, soften:2, y_bend:0.8, fx_bend:100, fx_noise:0.1, fx_quantize:0.2, pw_morph:-15, fx_fold:4000, fx_crush:0 },
+  { shape:4, pw:0.4, soften:25, y_bend:0, fx_bend:600, fx_noise:0, fx_quantize:0, pw_morph:0, fx_fold:800, fx_crush:5000 },
+  { shape:6, pw:0.9, soften:1, y_bend:0.3, fx_bend:0, fx_noise:0.5, fx_quantize:0.6, pw_morph:40, fx_fold:6000, fx_crush:0 },
+  { shape:5, pw:0.2, soften:40, y_bend:-0.2, fx_bend:800, fx_noise:0, fx_quantize:0, pw_morph:-40, fx_fold:200, fx_crush:8000 },
+];
+
+// Bounce state
+let bouncePhases = {};
+(function() {
+  let keys = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush'];
+  for (let k of keys) bouncePhases[k] = Math.random() * Math.PI * 2;
+})();
 
 // Rendering throttle (30fps max for wavetable)
 const TARGET_UPDATE_FPS = 30;
@@ -377,7 +404,6 @@ uniform float u_fx_quantize;
 uniform float u_pw_morph;
 uniform float u_fx_fold;
 uniform float u_fx_crush;
-uniform float u_edge_fade;
 uniform float u_size;
 uniform vec3 u_palette[7];
 
@@ -483,13 +509,6 @@ float generateSample(float raw_phase, float scan_pos) {
     samp = sin(safe_in);
   }
 
-  // EDGE FADE
-  if (u_edge_fade > 0.0) {
-    float f_in = smoothstep2(0.0, u_edge_fade, raw_phase);
-    float f_out = smoothstep2(1.0, 1.0 - u_edge_fade, raw_phase);
-    samp = samp * f_in * f_out;
-  }
-
   return clamp(samp, -1.0, 1.0);
 }
 
@@ -567,7 +586,7 @@ function initWebGL() {
 
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
-               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fx_crush','u_edge_fade','u_size'];
+               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fx_crush','u_size'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
   for (let i = 0; i < 7; i++) {
     uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
@@ -630,10 +649,11 @@ function draw() {
   // Always draw the buffer (scaled up)
   if (viewMode === '2d') {
     if (useWebGL) {
-      // Draw WebGL canvas onto p5 canvas (crisp upscale)
-      drawingContext.imageSmoothingEnabled = false;
+      drawingContext.imageSmoothingEnabled = smoothUpscale;
       drawingContext.drawImage(glCanvas, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
     } else {
+      if (smoothUpscale) drawingContext.imageSmoothingEnabled = true;
+      else drawingContext.imageSmoothingEnabled = false;
       image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
     }
   } else {
@@ -643,12 +663,20 @@ function draw() {
 
 // --- ANIMATION SYSTEM ---
 function updateAnimation() {
-  // Slowly drift target parameters using noise
+  switch (animMode) {
+    case 'drift': animDrift(); break;
+    case 'lfo': animLFO(); break;
+    case 'chaos': animChaos(); break;
+    case 'sequencer': animSequencer(); break;
+    case 'bounce': animBounce(); break;
+  }
+}
+
+// MODE: Perlin noise drift (original)
+function animDrift() {
   let drift = driftAmount;
   let speed = animSpeed * 0.1;
-
-  // Different parameters drift at different rates
-  targetParams.y_bend = map(noise(animTime * speed * 0.3), 0, 1, -0.25, 1.0) * drift + params.y_bend * (1 - drift * 0.01);
+  targetParams.y_bend = map(noise(animTime * speed * 0.3), 0, 1, -0.25, 1.0) * drift;
   targetParams.fx_bend = map(noise(animTime * speed * 0.2 + 100), 0, 1, 0, 500) * drift;
   targetParams.pw_morph = map(noise(animTime * speed * 0.4 + 200), 0, 1, -25, 25) * drift;
   targetParams.fx_fold = map(noise(animTime * speed * 0.15 + 300), 0, 1, 50, 2000) * drift + 100 * (1 - drift);
@@ -656,15 +684,90 @@ function updateAnimation() {
   targetParams.fx_noise = map(noise(animTime * speed * 0.25 + 500), 0, 1, 0, 0.3) * drift;
   targetParams.fx_quantize = map(noise(animTime * speed * 0.2 + 600), 0, 1, 0, 0.5) * drift;
   targetParams.soften = map(noise(animTime * speed * 0.35 + 700), 0, 1, 1, 20);
-  targetParams.edge_fade = map(noise(animTime * speed * 0.1 + 800), 0, 1, 0, 0.2) * drift;
+}
+
+// MODE: Synced LFO oscillation (rhythmic, musical)
+function animLFO() {
+  let t = animTime * animSpeed * 0.5;
+  let d = driftAmount;
+  targetParams.pw = 0.5 + Math.sin(t * 0.7) * 0.4 * d;
+  targetParams.soften = 10 + Math.sin(t * 0.3) * 9 * d;
+  targetParams.y_bend = Math.sin(t * 0.2) * 0.5 * d;
+  targetParams.fx_bend = (Math.sin(t * 0.15) * 0.5 + 0.5) * 400 * d;
+  targetParams.pw_morph = Math.sin(t * 0.4) * 30 * d;
+  targetParams.fx_fold = 100 + (Math.sin(t * 0.1) * 0.5 + 0.5) * 3000 * d;
+  targetParams.fx_noise = (Math.sin(t * 0.6) * 0.5 + 0.5) * 0.3 * d;
+  targetParams.fx_quantize = (Math.sin(t * 0.25) * 0.5 + 0.5) * 0.4 * d;
+  targetParams.fx_crush = (Math.sin(t * 0.08) * 0.5 + 0.5) * 2000 * d;
+}
+
+// MODE: Lorenz attractor (chaotic, unpredictable but structured)
+function animChaos() {
+  let dt = 0.005 * animSpeed;
+  let sigma = 10, rho = 28, beta = 8/3;
+  let d = driftAmount;
+  let dx = sigma * (lorenzY - lorenzX) * dt;
+  let dy = (lorenzX * (rho - lorenzZ) - lorenzY) * dt;
+  let dz = (lorenzX * lorenzY - beta * lorenzZ) * dt;
+  lorenzX += dx; lorenzY += dy; lorenzZ += dz;
+  let nx = lorenzX / 20, ny = lorenzY / 25, nz = (lorenzZ - 25) / 20;
+  targetParams.pw = 0.5 + nx * 0.4 * d;
+  targetParams.soften = 10 + ny * 15 * d;
+  targetParams.y_bend = nx * 0.5 * d;
+  targetParams.fx_bend = (nz + 1) * 250 * d;
+  targetParams.pw_morph = ny * 30 * d;
+  targetParams.fx_fold = 500 + nz * 2000 * d;
+  targetParams.fx_noise = Math.abs(nx) * 0.3 * d;
+  targetParams.fx_quantize = Math.abs(ny) * 0.4 * d;
+  targetParams.fx_crush = Math.abs(nz) * 3000 * d;
+}
+
+// MODE: Step sequencer (morph between presets)
+function animSequencer() {
+  let stepDur = 4.0 / animSpeed;
+  seqTimer += deltaTime * 0.001;
+  if (seqTimer >= stepDur) {
+    seqTimer -= stepDur;
+    seqStep = (seqStep + 1) % SEQ_PRESETS.length;
+  }
+  let preset = SEQ_PRESETS[seqStep];
+  let nextPreset = SEQ_PRESETS[(seqStep + 1) % SEQ_PRESETS.length];
+  let t = seqTimer / stepDur;
+  t = t * t * (3 - 2 * t); // smoothstep ease
+  let d = driftAmount;
+
+  targetParams.shape = preset.shape;
+  params.shape = preset.shape;
+  updateShapeButtons();
+  targetParams.pw = lerp(preset.pw, nextPreset.pw, t * d);
+  targetParams.soften = lerp(preset.soften, nextPreset.soften, t * d);
+  targetParams.y_bend = lerp(preset.y_bend, nextPreset.y_bend, t * d);
+  targetParams.fx_bend = lerp(preset.fx_bend, nextPreset.fx_bend, t * d);
+  targetParams.fx_noise = lerp(preset.fx_noise, nextPreset.fx_noise, t * d);
+  targetParams.fx_quantize = lerp(preset.fx_quantize, nextPreset.fx_quantize, t * d);
+  targetParams.pw_morph = lerp(preset.pw_morph, nextPreset.pw_morph, t * d);
+  targetParams.fx_fold = lerp(preset.fx_fold, nextPreset.fx_fold, t * d);
+  targetParams.fx_crush = lerp(preset.fx_crush, nextPreset.fx_crush, t * d);
+}
+
+// MODE: Bounce (params ping-pong at different prime-ratio rates)
+function animBounce() {
+  let t = animTime * animSpeed * 0.3;
+  let d = driftAmount;
+  targetParams.pw = map(Math.abs(Math.sin(t * 1.0 + bouncePhases.pw)), 0, 1, 0.1, 0.95) * d + 0.5 * (1 - d);
+  targetParams.soften = map(Math.abs(Math.sin(t * 0.7 + bouncePhases.soften)), 0, 1, 1, 40);
+  targetParams.y_bend = Math.sin(t * 0.3 + bouncePhases.y_bend) * 0.6 * d;
+  targetParams.fx_bend = Math.abs(Math.sin(t * 0.2 + bouncePhases.fx_bend)) * 700 * d;
+  targetParams.fx_noise = Math.abs(Math.sin(t * 1.3 + bouncePhases.fx_noise)) * 0.5 * d;
+  targetParams.fx_quantize = Math.abs(Math.sin(t * 0.9 + bouncePhases.fx_quantize)) * 0.6 * d;
+  targetParams.pw_morph = Math.sin(t * 0.5 + bouncePhases.pw_morph) * 40 * d;
+  targetParams.fx_fold = Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)) * 8000 * d + 50;
+  targetParams.fx_crush = Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)) * 6000 * d;
 }
 
 function interpolateParams() {
-  // Very gradual interpolation for smooth 30fps updates
-  // Using frame-rate independent lerp factor
-  let dt = deltaTime * 0.001; // seconds
+  let dt = deltaTime * 0.001;
   let lerp_speed = 1.0 - pow(0.5, dt * animSpeed * 2);
-
   params.y_bend = lerp(params.y_bend, targetParams.y_bend, lerp_speed);
   params.fx_bend = lerp(params.fx_bend, targetParams.fx_bend, lerp_speed);
   params.pw_morph = lerp(params.pw_morph, targetParams.pw_morph, lerp_speed);
@@ -673,8 +776,7 @@ function interpolateParams() {
   params.fx_noise = lerp(params.fx_noise, targetParams.fx_noise, lerp_speed);
   params.fx_quantize = lerp(params.fx_quantize, targetParams.fx_quantize, lerp_speed);
   params.soften = lerp(params.soften, targetParams.soften, lerp_speed);
-  params.edge_fade = lerp(params.edge_fade, targetParams.edge_fade, lerp_speed);
-
+  params.fx_crush = lerp(params.fx_crush, targetParams.fx_crush, lerp_speed);
   updateUIValues();
 }
 
@@ -781,13 +883,6 @@ function generateSample(raw_phase, scan_pos) {
     samp = sin(safe_in);
   }
 
-  // EDGE FADE (DE-CLICKER)
-  if (params.edge_fade > 0.0) {
-    let f_in = smoothstep(0.0, params.edge_fade, raw_phase);
-    let f_out = smoothstep(1.0, 1.0 - params.edge_fade, raw_phase);
-    samp = samp * f_in * f_out;
-  }
-
   // NaN check
   if (isNaN(samp)) samp = 0.0;
 
@@ -819,7 +914,6 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_pw_morph, params.pw_morph);
   gl.uniform1f(uLocations.u_fx_fold, params.fx_fold);
   gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
-  gl.uniform1f(uLocations.u_edge_fade, params.edge_fade);
   gl.uniform1f(uLocations.u_size, renderSize);
 
   // Set palette colors (normalized 0-1)
@@ -1117,11 +1211,6 @@ function setupUI() {
     targetParams.fx_crush = params.fx_crush;
   }, v => map(v, 0, 100, 0, 10000).toFixed(0));
 
-  setupSlider('edge', 0, 100, v => {
-    params.edge_fade = v / 200;
-    targetParams.edge_fade = params.edge_fade;
-  }, v => (v / 200).toFixed(2));
-
   setupSlider('speed', 1, 100, v => {
     animSpeed = v / 100;
   }, v => (v / 100).toFixed(2));
@@ -1192,8 +1281,6 @@ function updateUIValues() {
   document.getElementById('param-crush').value = crushVal;
   document.getElementById('val-crush').textContent = params.fx_crush.toFixed(0);
 
-  document.getElementById('param-edge').value = params.edge_fade * 200;
-  document.getElementById('val-edge').textContent = params.edge_fade.toFixed(2);
 }
 
 function updateColorPreview() {
@@ -1217,8 +1304,6 @@ window.randomizeAll = function() {
   params.pw_morph = random(-50, 50);
   params.fx_fold = random(0, 10000);
   params.fx_crush = random(0, 10000);
-  params.edge_fade = random(0, 0.5);
-
   // Snap targets to match (no slow interpolation)
   targetParams = { ...params };
   updateShapeButtons();
@@ -1242,8 +1327,7 @@ window.resetParams = function() {
     fx_quantize: 0.0,
     pw_morph: 0.0,
     fx_fold: 100.0,
-    fx_crush: 0.0,
-    edge_fade: 0.0
+    fx_crush: 0.0
   };
   targetParams = { ...params };
   updateShapeButtons();
@@ -1281,6 +1365,45 @@ window.resetCamera = function() {
   isoZoom = 1.0;
   isoPanX = 0;
   isoPanY = 0;
+  needsRender = true;
+};
+
+window.setAnimMode = function(mode) {
+  animMode = mode;
+  if (animMode === 'chaos') { lorenzX = 1; lorenzY = 1; lorenzZ = 1; }
+  if (animMode === 'sequencer') { seqStep = 0; seqTimer = 0; }
+  let el = document.getElementById('anim-mode-display');
+  if (el) el.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+  // Update button active states
+  let btns = document.querySelectorAll('.panel .shape-buttons button');
+  // Find the animation mode buttons by parent context
+  let animPanel = el ? el.closest('.panel') : null;
+  if (animPanel) {
+    animPanel.querySelectorAll('.shape-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase() === mode ||
+        (mode === 'sequencer' && btn.textContent === 'Seq'));
+    });
+  }
+  needsRender = true;
+};
+
+window.cycleAnimMode = function() {
+  let idx = ANIM_MODES.indexOf(animMode);
+  idx = (idx + 1) % ANIM_MODES.length;
+  animMode = ANIM_MODES[idx];
+  // Reset chaos attractor on switch
+  if (animMode === 'chaos') { lorenzX = 1; lorenzY = 1; lorenzZ = 1; }
+  if (animMode === 'sequencer') { seqStep = 0; seqTimer = 0; }
+  let el = document.getElementById('anim-mode-display');
+  if (el) el.textContent = animMode.charAt(0).toUpperCase() + animMode.slice(1);
+  needsRender = true;
+};
+
+let smoothUpscale = false;
+window.toggleSmooth = function() {
+  smoothUpscale = !smoothUpscale;
+  let el = document.getElementById('smooth-btn');
+  if (el) el.textContent = smoothUpscale ? 'Smooth: On' : 'Smooth: Off';
   needsRender = true;
 };
 
@@ -1347,6 +1470,10 @@ function keyPressed() {
     case 'c':
     case 'C':
       nextPalette();
+      break;
+    case 'm':
+    case 'M':
+      cycleAnimMode();
       break;
     case '=':
     case '+':

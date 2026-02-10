@@ -371,6 +371,7 @@
             <span id="view-btn-text">3D View</span>
           </button>
           <button class="btn btn-secondary" onclick="resetCamera()">Reset Cam</button>
+          <button class="btn btn-secondary" id="smooth-btn" onclick="toggleSmooth()">Smooth: Off</button>
           <button class="btn btn-secondary" onclick="saveImage()">Save</button>
         </div>
       </div>
@@ -445,11 +446,6 @@
             <input type="range" class="param-slider" id="param-crush" min="0" max="100" value="0">
             <span class="param-value" id="val-crush">0.00</span>
           </div>
-          <div class="param-row">
-            <span class="param-label">Edge Fade</span>
-            <input type="range" class="param-slider" id="param-edge" min="0" max="100" value="0">
-            <span class="param-value" id="val-edge">0.00</span>
-          </div>
         </div>
       </div>
 
@@ -512,8 +508,15 @@
       </div>
 
       <div class="panel">
-        <div class="section-title">Animation <span class="mode-indicator" id="anim-status">Running</span></div>
+        <div class="section-title">Animation <span class="mode-indicator" id="anim-status">Running</span> <span class="mode-indicator" id="anim-mode-display">Drift</span></div>
         <div class="param-group">
+          <div class="shape-buttons" style="margin-bottom: 10px;">
+            <button class="shape-btn active" onclick="setAnimMode('drift')">Drift</button>
+            <button class="shape-btn" onclick="setAnimMode('lfo')">LFO</button>
+            <button class="shape-btn" onclick="setAnimMode('chaos')">Chaos</button>
+            <button class="shape-btn" onclick="setAnimMode('sequencer')">Seq</button>
+            <button class="shape-btn" onclick="setAnimMode('bounce')">Bounce</button>
+          </div>
           <div class="param-row">
             <span class="param-label">Speed</span>
             <input type="range" class="param-slider" id="param-speed" min="1" max="100" value="30">
@@ -536,13 +539,14 @@
           <div class="shortcut"><kbd>S</kbd><span>Save</span></div>
           <div class="shortcut"><kbd>1-8</kbd><span>Wave shape</span></div>
           <div class="shortcut"><kbd>C</kbd><span>Next color</span></div>
+          <div class="shortcut"><kbd>M</kbd><span>Anim mode</span></div>
           <div class="shortcut"><kbd>V</kbd><span>Toggle view</span></div>
           <div class="shortcut"><kbd>+/-</kbd><span>Speed</span></div>
           <div class="shortcut"><kbd>[ ]</kbd><span>Resolution</span></div>
         </div>
         <div class="footer">
           <span id="renderer-indicator">Based on GenDSP</span>
-          <span>v2.3</span>
+          <span>v2.4</span>
         </div>
       </div>
     </div>
