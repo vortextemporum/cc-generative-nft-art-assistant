@@ -9,6 +9,17 @@ const DISPLAY_SIZE = 700;
 // View mode: '2d' or 'iso'
 let viewMode = '2d';
 
+// Isometric camera state
+let isoRotation = -0.7;   // rotation around Y axis (radians)
+let isoTilt = 0.65;       // tilt angle (0=top-down, PI/2=side)
+let isoZoom = 1.0;
+let isoPanX = 0;
+let isoPanY = 0;
+let isoDragging = false;
+let isoPanning = false;
+let isoDragStartX = 0;
+let isoDragStartY = 0;
+
 // Resolution options (render size, then scale up)
 const RESOLUTIONS = [64, 128, 256, 350, 512];
 let resolutionIndex = 1; // Default 128
@@ -340,118 +351,191 @@ function getColorFromPalette(t, palette) {
 }
 
 // --- ISOMETRIC HEIGHTMAP VIEW ---
+function projectPoint(nx, ny, nz) {
+  // nx, ny, nz are normalized (-0.5 to 0.5) centered coordinates
+  // Rotate around Y axis
+  let cosR = Math.cos(isoRotation);
+  let sinR = Math.sin(isoRotation);
+  let rx = nx * cosR - ny * sinR;
+  let ry = nx * sinR + ny * cosR;
+  let rz = nz;
+
+  // Tilt (rotate around X axis)
+  let cosT = Math.cos(isoTilt);
+  let sinT = Math.sin(isoTilt);
+  let ty = ry * cosT - rz * sinT;
+  let tz = ry * sinT + rz * cosT;
+
+  // Project to screen with zoom + pan
+  let scale = DISPLAY_SIZE * 0.75 * isoZoom;
+  let sx = DISPLAY_SIZE * 0.5 + rx * scale + isoPanX;
+  let sy = DISPLAY_SIZE * 0.5 + ty * scale + isoPanY;
+
+  return { x: sx, y: sy, z: tz };
+}
+
 function renderIsometric() {
   background(10, 10, 15);
 
   let palette = palettes[currentPalette];
   let gridRes = min(renderSize, 128); // cap grid for perf
+  let heightAmt = 0.3; // height relative to grid size
 
-  // Isometric projection params
-  let heightScale = 120; // max height in pixels
-  let originX = DISPLAY_SIZE * 0.5;
-  let originY = DISPLAY_SIZE * 0.82;
-  let scaleX = DISPLAY_SIZE * 0.7 / gridRes;
-  let scaleY = DISPLAY_SIZE * 0.35 / gridRes;
-
-  // Pre-compute the sample grid
+  // Pre-compute the sample grid + projected points
   let grid = [];
+  let projected = [];
   for (let gy = 0; gy <= gridRes; gy++) {
     let row = [];
+    let projRow = [];
     for (let gx = 0; gx <= gridRes; gx++) {
       let phase = gx / gridRes;
       let scan = gy / gridRes;
       let sample = generateSample(phase, scan);
       row.push(sample);
+
+      // Map grid to centered normalized coords
+      let nx = (gx / gridRes) - 0.5;
+      let ny = (gy / gridRes) - 0.5;
+      let nz = ((sample + 1) * 0.5) * heightAmt;
+      projRow.push(projectPoint(nx, ny, nz));
     }
     grid.push(row);
+    projected.push(projRow);
   }
 
-  // Transform grid point to isometric screen coords
-  function toIso(gx, gy, h) {
-    let x = (gx - gy) * scaleX;
-    let y = (gx + gy) * scaleY - h * heightScale;
-    return { x: originX + x, y: originY + y };
+  // Determine draw order: sort quads by average depth (z), back to front
+  let quads = [];
+  for (let gy = 0; gy < gridRes; gy++) {
+    for (let gx = 0; gx < gridRes; gx++) {
+      let avgZ = (projected[gy][gx].z + projected[gy][gx+1].z +
+                  projected[gy+1][gx].z + projected[gy+1][gx+1].z) * 0.25;
+      quads.push({ gx, gy, z: avgZ });
+    }
   }
+  quads.sort((a, b) => a.z - b.z); // back to front
 
-  // Draw back-to-front for proper occlusion
+  // Draw quads
   push();
   strokeWeight(0.5);
 
-  for (let gy = 0; gy < gridRes; gy++) {
-    for (let gx = 0; gx < gridRes; gx++) {
-      let s00 = grid[gy][gx];
-      let s10 = grid[gy][gx + 1];
-      let s01 = grid[gy + 1][gx];
-      let s11 = grid[gy + 1][gx + 1];
+  for (let q of quads) {
+    let gx = q.gx;
+    let gy = q.gy;
 
-      let avgSample = (s00 + s10 + s01 + s11) * 0.25;
-      let colorVal = (avgSample + 1) * 0.5;
-      let col = getColorFromPalette(colorVal, palette);
+    let s00 = grid[gy][gx];
+    let s10 = grid[gy][gx + 1];
+    let s01 = grid[gy + 1][gx];
+    let s11 = grid[gy + 1][gx + 1];
 
-      // Height values (0 to 1 range)
-      let h00 = (s00 + 1) * 0.5;
-      let h10 = (s10 + 1) * 0.5;
-      let h01 = (s01 + 1) * 0.5;
-      let h11 = (s11 + 1) * 0.5;
+    let avgSample = (s00 + s10 + s01 + s11) * 0.25;
+    let colorVal = (avgSample + 1) * 0.5;
+    let col = getColorFromPalette(colorVal, palette);
 
-      let p00 = toIso(gx, gy, h00);
-      let p10 = toIso(gx + 1, gy, h10);
-      let p01 = toIso(gx, gy + 1, h01);
-      let p11 = toIso(gx + 1, gy + 1, h11);
+    let p00 = projected[gy][gx];
+    let p10 = projected[gy][gx + 1];
+    let p01 = projected[gy + 1][gx];
+    let p11 = projected[gy + 1][gx + 1];
 
-      // Shading based on surface normal (simple approximation)
-      let dx = (s10 - s00 + s11 - s01) * 0.5;
-      let dy = (s01 - s00 + s11 - s10) * 0.5;
-      let shade = map(dx - dy, -1, 1, 0.5, 1.3);
-      shade = constrain(shade, 0.4, 1.4);
+    // Shading from surface normal approximation
+    let dx = (s10 - s00 + s11 - s01) * 0.5;
+    let dy = (s01 - s00 + s11 - s10) * 0.5;
+    // Light direction affected by rotation
+    let lightX = Math.cos(isoRotation + 0.8);
+    let lightY = Math.sin(isoRotation + 0.8);
+    let shade = 0.85 + (dx * lightX + dy * lightY) * 0.5;
+    shade = constrain(shade, 0.35, 1.5);
 
-      fill(
-        constrain(col[0] * shade, 0, 255),
-        constrain(col[1] * shade, 0, 255),
-        constrain(col[2] * shade, 0, 255)
-      );
-      stroke(
-        constrain(col[0] * shade * 0.6, 0, 255),
-        constrain(col[1] * shade * 0.6, 0, 255),
-        constrain(col[2] * shade * 0.6, 0, 255),
-        80
-      );
+    fill(
+      constrain(col[0] * shade, 0, 255),
+      constrain(col[1] * shade, 0, 255),
+      constrain(col[2] * shade, 0, 255)
+    );
+    stroke(
+      constrain(col[0] * shade * 0.5, 0, 255),
+      constrain(col[1] * shade * 0.5, 0, 255),
+      constrain(col[2] * shade * 0.5, 0, 255),
+      60
+    );
 
-      // Draw quad
-      beginShape();
-      vertex(p00.x, p00.y);
-      vertex(p10.x, p10.y);
-      vertex(p11.x, p11.y);
-      vertex(p01.x, p01.y);
-      endShape(CLOSE);
-    }
+    beginShape();
+    vertex(p00.x, p00.y);
+    vertex(p10.x, p10.y);
+    vertex(p11.x, p11.y);
+    vertex(p01.x, p01.y);
+    endShape(CLOSE);
   }
 
   pop();
 
-  // Draw axis labels
+  // Axis labels at corners
   push();
   noStroke();
-  fill(255, 255, 255, 120);
   textSize(11);
   textFont('monospace');
-
-  // Phase arrow (X)
-  let pStart = toIso(0, 0, 0);
-  let pEnd = toIso(gridRes, 0, 0);
-  fill(255, 107, 107, 180);
   textAlign(CENTER);
-  text('Phase \u2192', (pStart.x + pEnd.x) * 0.5, pStart.y + 20);
 
-  // Morph arrow (Y)
-  let mEnd = toIso(0, gridRes, 0);
-  fill(78, 205, 196, 180);
-  push();
-  translate((pStart.x + mEnd.x) * 0.5 - 20, (pStart.y + mEnd.y) * 0.5);
-  text('Morph \u2192', 0, 0);
-  pop();
+  let origin = projectPoint(-0.5, -0.5, 0);
+  let phaseEnd = projectPoint(0.5, -0.5, 0);
+  let morphEnd = projectPoint(-0.5, 0.5, 0);
+
+  fill(255, 107, 107, 200);
+  text('Phase', (origin.x + phaseEnd.x) * 0.5, (origin.y + phaseEnd.y) * 0.5 + 16);
+  fill(78, 205, 196, 200);
+  text('Morph', (origin.x + morphEnd.x) * 0.5 - 16, (origin.y + morphEnd.y) * 0.5);
+
+  // Controls hint
+  fill(255, 255, 255, 60);
+  textSize(10);
+  textAlign(LEFT);
+  text('Drag: rotate  |  Shift+Drag: pan  |  Scroll: zoom', 12, DISPLAY_SIZE - 12);
 
   pop();
+}
+
+// --- MOUSE CONTROLS FOR ISO VIEW ---
+function mousePressed() {
+  if (viewMode !== 'iso') return;
+  if (mouseX < 0 || mouseX > DISPLAY_SIZE || mouseY < 0 || mouseY > DISPLAY_SIZE) return;
+
+  if (keyIsPressed && keyCode === SHIFT) {
+    isoPanning = true;
+  } else {
+    isoDragging = true;
+  }
+  isoDragStartX = mouseX;
+  isoDragStartY = mouseY;
+}
+
+function mouseDragged() {
+  if (viewMode !== 'iso') return;
+
+  let dx = mouseX - isoDragStartX;
+  let dy = mouseY - isoDragStartY;
+  isoDragStartX = mouseX;
+  isoDragStartY = mouseY;
+
+  if (isoPanning) {
+    isoPanX += dx;
+    isoPanY += dy;
+  } else if (isoDragging) {
+    isoRotation += dx * 0.008;
+    isoTilt = constrain(isoTilt + dy * 0.006, 0.1, PI * 0.48);
+  }
+  needsRender = true;
+}
+
+function mouseReleased() {
+  isoDragging = false;
+  isoPanning = false;
+}
+
+function mouseWheel(event) {
+  if (viewMode !== 'iso') return;
+  if (mouseX < 0 || mouseX > DISPLAY_SIZE || mouseY < 0 || mouseY > DISPLAY_SIZE) return;
+
+  isoZoom = constrain(isoZoom - event.delta * 0.001, 0.3, 3.0);
+  needsRender = true;
+  return false; // prevent page scroll
 }
 
 // --- UTILITY FUNCTIONS ---
@@ -683,6 +767,15 @@ window.toggleView = function() {
   if (btn) btn.textContent = viewMode === '2d' ? '3D View' : '2D View';
   let indicator = document.getElementById('view-indicator');
   if (indicator) indicator.textContent = viewMode === '2d' ? '2D Color' : 'Isometric';
+  needsRender = true;
+};
+
+window.resetCamera = function() {
+  isoRotation = -0.7;
+  isoTilt = 0.65;
+  isoZoom = 1.0;
+  isoPanX = 0;
+  isoPanY = 0;
   needsRender = true;
 };
 
