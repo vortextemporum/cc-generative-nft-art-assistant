@@ -589,6 +589,10 @@ function setup() {
   setupUI();
   updateColorPreview();
   updateResolutionDisplay();
+
+  // Show renderer info
+  let ri = document.getElementById('renderer-indicator');
+  if (ri) ri.textContent = useWebGL ? 'GPU (WebGL)' : 'CPU (fallback)';
 }
 
 function createPixelBuffer() {
