@@ -493,15 +493,22 @@ float generateSample(float raw_phase, float scan_pos) {
   return clamp(samp, -1.0, 1.0);
 }
 
+vec3 paletteAt(int i) {
+  if (i <= 0) return u_palette[0];
+  if (i == 1) return u_palette[1];
+  if (i == 2) return u_palette[2];
+  if (i == 3) return u_palette[3];
+  if (i == 4) return u_palette[4];
+  if (i == 5) return u_palette[5];
+  return u_palette[6];
+}
+
 vec3 getPaletteColor(float t) {
   t = clamp(t, 0.0, 1.0);
   float scaledT = t * 6.0;
   int idx = int(floor(scaledT));
-  float f = scaledT - float(idx);
-  if (idx >= 6) return u_palette[6];
-  vec3 c1 = u_palette[idx];
-  vec3 c2 = u_palette[idx + 1];
-  return mix(c1, c2, f);
+  float f = scaledT - floor(scaledT);
+  return mix(paletteAt(idx), paletteAt(idx + 1), f);
 }
 
 void main() {
