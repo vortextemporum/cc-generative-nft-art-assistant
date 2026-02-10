@@ -1,14 +1,10 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v2.3 - WebGL Shader
+//   Based on GenDSP v2.2 - Isometric Heightmap
 // ==========================================
 
 let canvas;
 const DISPLAY_SIZE = 700;
-
-// --- WebGL SHADER RENDERER ---
-let glCanvas, gl, shaderProgram, quadVAO;
-let uLocations = {};
 
 // View mode: '2d' or 'iso'
 let viewMode = '2d';
@@ -24,9 +20,9 @@ let isoPanning = false;
 let isoDragStartX = 0;
 let isoDragStartY = 0;
 
-// Resolution options (GPU-rendered, so higher is fine)
-const RESOLUTIONS = [64, 128, 256, 512, 1024, 2048];
-let resolutionIndex = 3; // Default 512
+// Resolution options (render size, then scale up)
+const RESOLUTIONS = [64, 128, 256, 350, 512];
+let resolutionIndex = 1; // Default 128
 let renderSize = RESOLUTIONS[resolutionIndex];
 
 // --- PARAMETERS (matching GenDSP) ---
@@ -354,238 +350,13 @@ let currentPalette = 'thermal';
 let paletteNames = Object.keys(palettes);
 let pixelBuffer;
 
-// --- GLSL SHADER SOURCE ---
-const VERT_SRC = `
-attribute vec2 a_pos;
-varying vec2 v_uv;
-void main() {
-  v_uv = a_pos * 0.5 + 0.5;
-  gl_Position = vec4(a_pos, 0.0, 1.0);
-}`;
-
-const FRAG_SRC = `
-precision highp float;
-varying vec2 v_uv;
-
-uniform float u_shape;
-uniform float u_pw;
-uniform float u_soften;
-uniform float u_y_bend;
-uniform float u_fx_bend;
-uniform float u_fx_noise;
-uniform float u_fx_quantize;
-uniform float u_pw_morph;
-uniform float u_fx_fold;
-uniform float u_fx_crush;
-uniform float u_edge_fade;
-uniform float u_size;
-uniform vec3 u_palette[7];
-
-float fract2(float x) { return x - floor(x); }
-
-float tanh_approx(float x) {
-  if (x > 3.0) return 1.0;
-  if (x < -3.0) return -1.0;
-  float x2 = x * x;
-  return x * (27.0 + x2) / (27.0 + 9.0 * x2);
-}
-
-float smoothstep2(float edge0, float edge1, float x) {
-  float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-  return t * t * (3.0 - 2.0 * t);
-}
-
-float generateSample(float raw_phase, float scan_pos) {
-  // Y-WARP
-  if (abs(u_y_bend) > 0.001) {
-    float power = pow(2.0, u_y_bend * -2.5);
-    scan_pos = pow(scan_pos, power);
-  }
-
-  // STATIC NOISE
-  float noisy_phase = raw_phase;
-  if (u_fx_noise > 0.0) {
-    float hash = fract2(sin(raw_phase * 12.9898) * 43758.5453);
-    float dirt = (hash * 2.0 - 1.0) * (u_fx_noise * 0.1);
-    noisy_phase = raw_phase + dirt;
-  }
-
-  // QUANTIZE
-  float quant_phase = noisy_phase;
-  if (u_fx_quantize > 0.0) {
-    float q_val = pow(u_fx_quantize, 0.5);
-    float steps = 2.0 + (1.0 - q_val) * 100.0;
-    quant_phase = floor(noisy_phase * steps) / steps;
-  }
-
-  // PHASE BEND
-  float current_bend = u_fx_bend * scan_pos;
-  float final_phase = quant_phase;
-  if (abs(current_bend) > 0.001) {
-    float bend_fact = 1.0 - (current_bend * 0.01);
-    float safe_phase = clamp(quant_phase, 0.0001, 0.9999);
-    if (safe_phase < 0.5) {
-      final_phase = pow(safe_phase * 2.0, bend_fact) * 0.5;
-    } else {
-      final_phase = 1.0 - pow((1.0 - safe_phase) * 2.0, bend_fact) * 0.5;
-    }
-  }
-
-  // WAVEFORM
-  float morph_amt = u_pw_morph * scan_pos * 0.1;
-  float shift_val = (u_pw - 0.5) + morph_amt;
-  float shifted_phase = fract2(final_phase + shift_val);
-  int sel = int(floor(u_shape));
-  float samp = 0.0;
-
-  if (sel == 0) {
-    samp = sin(shifted_phase * 6.28318530718);
-  } else if (sel == 1) {
-    samp = 1.0 - abs((shifted_phase * 2.0) - 1.0) * 2.0;
-  } else if (sel == 2) {
-    samp = (shifted_phase * 2.0) - 1.0;
-  } else if (sel == 3) {
-    float cw = clamp(u_pw + morph_amt, 0.0, 1.0);
-    samp = final_phase < cw ? 1.0 : -1.0;
-  } else if (sel == 4) {
-    samp = sin(shifted_phase * 6.28318530718);
-    samp = samp > 0.0 ? samp * 2.0 - 1.0 : -1.0;
-  } else if (sel == 5) {
-    samp = sin(shifted_phase * 6.28318530718);
-    samp = floor(samp * 4.0) / 4.0;
-  } else if (sel == 6) {
-    float t = shifted_phase * 2.0 - 1.0;
-    samp = 1.0 - 2.0 * t * t;
-  } else if (sel == 7) {
-    float s1 = fract2(shifted_phase) * 2.0 - 1.0;
-    float s2 = fract2(shifted_phase * 1.006 + 0.1) * 2.0 - 1.0;
-    float s3 = fract2(shifted_phase * 0.994 + 0.2) * 2.0 - 1.0;
-    samp = (s1 + s2 + s3) / 3.0;
-  }
-
-  // SOFT SATURATION
-  samp = tanh_approx(samp * u_soften);
-
-  // BITCRUSH
-  float current_crush = u_fx_crush * scan_pos;
-  if (current_crush > 0.0) {
-    float safe_crush = clamp(current_crush, 0.0, 1.0);
-    float c_steps = 2.0 + (1.0 - safe_crush) * 50.0;
-    if (current_crush > 1.0) c_steps = 1.0;
-    samp = floor(samp * c_steps) / c_steps;
-  }
-
-  // WAVEFOLDER
-  float current_fold = u_fx_fold * scan_pos;
-  if (current_fold > 0.0) {
-    float drive = 1.0 + (current_fold * 0.008);
-    float safe_in = clamp(samp * drive, -100000.0, 100000.0);
-    samp = sin(safe_in);
-  }
-
-  // EDGE FADE
-  if (u_edge_fade > 0.0) {
-    float f_in = smoothstep2(0.0, u_edge_fade, raw_phase);
-    float f_out = smoothstep2(1.0, 1.0 - u_edge_fade, raw_phase);
-    samp = samp * f_in * f_out;
-  }
-
-  return clamp(samp, -1.0, 1.0);
-}
-
-vec3 getPaletteColor(float t) {
-  t = clamp(t, 0.0, 1.0);
-  float scaledT = t * 6.0;
-  int idx = int(floor(scaledT));
-  float f = scaledT - float(idx);
-  if (idx >= 6) return u_palette[6];
-  vec3 c1 = u_palette[idx];
-  vec3 c2 = u_palette[idx + 1];
-  return mix(c1, c2, f);
-}
-
-void main() {
-  float raw_phase = (v_uv.x * u_size + 1.0) / (u_size + 1.0);
-  float scan_pos = (v_uv.y * u_size + 1.0) / (u_size + 1.0);
-  float sample = generateSample(raw_phase, scan_pos);
-  float colorVal = (sample + 1.0) * 0.5;
-  vec3 col = getPaletteColor(colorVal);
-  gl_FragColor = vec4(col, 1.0);
-}`;
-
-function initWebGL() {
-  glCanvas = document.createElement('canvas');
-  glCanvas.width = renderSize;
-  glCanvas.height = renderSize;
-  gl = glCanvas.getContext('webgl', { preserveDrawingBuffer: true });
-  if (!gl) {
-    console.warn('WebGL not available, falling back to CPU');
-    return false;
-  }
-
-  // Compile shaders
-  let vs = gl.createShader(gl.VERTEX_SHADER);
-  gl.shaderSource(vs, VERT_SRC);
-  gl.compileShader(vs);
-  if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-    console.error('Vertex:', gl.getShaderInfoLog(vs));
-    return false;
-  }
-
-  let fs = gl.createShader(gl.FRAGMENT_SHADER);
-  gl.shaderSource(fs, FRAG_SRC);
-  gl.compileShader(fs);
-  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-    console.error('Fragment:', gl.getShaderInfoLog(fs));
-    return false;
-  }
-
-  shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, vs);
-  gl.attachShader(shaderProgram, fs);
-  gl.linkProgram(shaderProgram);
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    console.error('Link:', gl.getProgramInfoLog(shaderProgram));
-    return false;
-  }
-  gl.useProgram(shaderProgram);
-
-  // Fullscreen quad
-  let buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-  let aPos = gl.getAttribLocation(shaderProgram, 'a_pos');
-  gl.enableVertexAttribArray(aPos);
-  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-  // Cache uniform locations
-  let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
-               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fx_crush','u_edge_fade','u_size'];
-  for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
-  for (let i = 0; i < 7; i++) {
-    uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
-  }
-
-  return true;
-}
-
-function resizeGLCanvas() {
-  if (!gl) return;
-  glCanvas.width = renderSize;
-  glCanvas.height = renderSize;
-  gl.viewport(0, 0, renderSize, renderSize);
-}
-
-let useWebGL = false;
-
 function setup() {
   canvas = createCanvas(DISPLAY_SIZE, DISPLAY_SIZE);
   canvas.parent('sketch-holder');
   pixelDensity(1);
-  noSmooth();
+  noSmooth(); // Crisp pixel scaling
 
-  useWebGL = initWebGL();
-  if (!useWebGL) createPixelBuffer();
+  createPixelBuffer();
   setupUI();
   updateColorPreview();
   updateResolutionDisplay();
@@ -594,7 +365,6 @@ function setup() {
 function createPixelBuffer() {
   pixelBuffer = createGraphics(renderSize, renderSize);
   pixelBuffer.pixelDensity(1);
-  if (useWebGL) resizeGLCanvas();
   needsRender = true;
 }
 
@@ -618,13 +388,7 @@ function draw() {
 
   // Always draw the buffer (scaled up)
   if (viewMode === '2d') {
-    if (useWebGL) {
-      // Draw WebGL canvas onto p5 canvas (crisp upscale)
-      drawingContext.imageSmoothingEnabled = false;
-      drawingContext.drawImage(glCanvas, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
-    } else {
-      image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
-    }
+    image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
   } else {
     renderIsometric();
   }
@@ -785,42 +549,6 @@ function generateSample(raw_phase, scan_pos) {
 
 // --- RENDERING ---
 function renderWavetable() {
-  if (useWebGL) {
-    renderWavetableGPU();
-  } else {
-    renderWavetableCPU();
-  }
-}
-
-function renderWavetableGPU() {
-  let palette = palettes[currentPalette];
-  gl.viewport(0, 0, renderSize, renderSize);
-  gl.useProgram(shaderProgram);
-
-  // Set params
-  gl.uniform1f(uLocations.u_shape, params.shape);
-  gl.uniform1f(uLocations.u_pw, params.pw);
-  gl.uniform1f(uLocations.u_soften, params.soften);
-  gl.uniform1f(uLocations.u_y_bend, params.y_bend);
-  gl.uniform1f(uLocations.u_fx_bend, params.fx_bend);
-  gl.uniform1f(uLocations.u_fx_noise, params.fx_noise);
-  gl.uniform1f(uLocations.u_fx_quantize, params.fx_quantize);
-  gl.uniform1f(uLocations.u_pw_morph, params.pw_morph);
-  gl.uniform1f(uLocations.u_fx_fold, params.fx_fold);
-  gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
-  gl.uniform1f(uLocations.u_edge_fade, params.edge_fade);
-  gl.uniform1f(uLocations.u_size, renderSize);
-
-  // Set palette colors (normalized 0-1)
-  for (let i = 0; i < 7; i++) {
-    let c = palette[i] || palette[palette.length - 1];
-    gl.uniform3f(uLocations['u_palette_' + i], c[0]/255, c[1]/255, c[2]/255);
-  }
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-}
-
-function renderWavetableCPU() {
   pixelBuffer.loadPixels();
   let palette = palettes[currentPalette];
   let size = renderSize;
@@ -832,7 +560,8 @@ function renderWavetableCPU() {
       let raw_phase = (x + 1) / (size + 1);
       let sample = generateSample(raw_phase, scan_pos);
 
-      let colorVal = (sample + 1) * 0.5;
+      // Map sample (-1 to 1) to color
+      let colorVal = (sample + 1) * 0.5; // 0 to 1
       let col = getColorFromPalette(colorVal, palette);
 
       let idx = (y * size + x) * 4;
