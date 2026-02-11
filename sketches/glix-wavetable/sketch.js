@@ -656,9 +656,7 @@ float generateSample(float raw_phase, float scan_pos) {
   // BITCRUSH
   float current_crush = u_fx_crush * scan_pos;
   if (current_crush > 0.0) {
-    float safe_crush = clamp(current_crush, 0.0, 1.0);
-    float c_steps = 2.0 + (1.0 - safe_crush) * 50.0;
-    if (current_crush > 1.0) c_steps = 1.0;
+    float c_steps = max(1.0, 2.0 + (1.0 - current_crush) * 50.0);
     samp = floor(samp * c_steps) / c_steps;
   }
 
@@ -1150,11 +1148,7 @@ function generateSample(raw_phase, scan_pos) {
   // BITCRUSH
   let current_crush = params.fx_crush * scan_pos;
   if (current_crush > 0.0) {
-    let safe_crush = constrain(current_crush, 0.0, 1.0);
-    let c_steps = 2.0 + (1.0 - safe_crush) * 50.0;
-    if (current_crush > 1.0) {
-      c_steps = 1.0;
-    }
+    let c_steps = max(1.0, 2.0 + (1.0 - current_crush) * 50.0);
     samp = floor(samp * c_steps) / c_steps;
   }
 
