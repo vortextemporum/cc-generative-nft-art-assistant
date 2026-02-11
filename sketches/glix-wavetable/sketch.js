@@ -26,7 +26,7 @@ let isoDragStartY = 0;
 
 // Resolution options (GPU-rendered, so higher is fine)
 const RESOLUTIONS = [64, 128, 256, 512, 1024, 2048];
-let resolutionIndex = 3; // Default 512
+let resolutionIndex = 5; // Default 2048
 let renderSize = RESOLUTIONS[resolutionIndex];
 
 // --- PARAMETERS (matching GenDSP) ---
@@ -91,6 +91,13 @@ let bouncePhases = {};
   let keys = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush'];
   for (let k of keys) bouncePhases[k] = Math.random() * Math.PI * 2;
 })();
+
+// Post-processing flags
+let ppDither = false;    // Ordered Bayer dithering
+let ppScanlines = false; // CRT scanlines
+let ppPosterize = false; // Reduce color depth
+let ppGrain = false;     // Film grain
+let ppSuperSample = false; // 2x supersampling AA
 
 // Rendering throttle (30fps max for wavetable)
 const TARGET_UPDATE_FPS = 30;
@@ -420,6 +427,11 @@ uniform float u_fx_fold;
 uniform float u_fold_mode;
 uniform float u_fx_crush;
 uniform float u_size;
+uniform float u_pp_dither;
+uniform float u_pp_scanlines;
+uniform float u_pp_posterize;
+uniform float u_pp_grain;
+uniform float u_time;
 uniform vec3 u_palette[7];
 
 float fract2(float x) { return x - floor(x); }
@@ -572,13 +584,57 @@ vec3 getPaletteColor(float t) {
   return mix(paletteAt(idx), paletteAt(idx + 1), f);
 }
 
+// 4x4 Bayer dithering matrix
+float bayerMatrix(vec2 pos) {
+  int x = int(mod(pos.x, 4.0));
+  int y = int(mod(pos.y, 4.0));
+  int idx = x + y * 4;
+  // Unrolled Bayer 4x4
+  if (idx == 0) return 0.0/16.0;    if (idx == 1) return 8.0/16.0;
+  if (idx == 2) return 2.0/16.0;    if (idx == 3) return 10.0/16.0;
+  if (idx == 4) return 12.0/16.0;   if (idx == 5) return 4.0/16.0;
+  if (idx == 6) return 14.0/16.0;   if (idx == 7) return 6.0/16.0;
+  if (idx == 8) return 3.0/16.0;    if (idx == 9) return 11.0/16.0;
+  if (idx == 10) return 1.0/16.0;   if (idx == 11) return 9.0/16.0;
+  if (idx == 12) return 15.0/16.0;  if (idx == 13) return 7.0/16.0;
+  if (idx == 14) return 13.0/16.0;
+  return 5.0/16.0;
+}
+
 void main() {
   float raw_phase = (v_uv.x * u_size + 1.0) / (u_size + 1.0);
   float scan_pos = (v_uv.y * u_size + 1.0) / (u_size + 1.0);
-  float sample = generateSample(raw_phase, scan_pos);
-  float colorVal = (sample + 1.0) * 0.5;
+  float sample_val = generateSample(raw_phase, scan_pos);
+  float colorVal = (sample_val + 1.0) * 0.5;
   vec3 col = getPaletteColor(colorVal);
-  gl_FragColor = vec4(col, 1.0);
+
+  vec2 pixCoord = v_uv * u_size;
+
+  // Ordered dithering
+  if (u_pp_dither > 0.5) {
+    float dith = bayerMatrix(pixCoord) - 0.5;
+    col += dith * 0.08;
+  }
+
+  // Posterize (reduce to N color levels)
+  if (u_pp_posterize > 0.5) {
+    float levels = 6.0;
+    col = floor(col * levels + 0.5) / levels;
+  }
+
+  // Scanlines
+  if (u_pp_scanlines > 0.5) {
+    float line = mod(pixCoord.y, 3.0);
+    if (line < 1.0) col *= 0.7;
+  }
+
+  // Film grain
+  if (u_pp_grain > 0.5) {
+    float grain = fract2(sin(dot(pixCoord + u_time, vec2(12.9898, 78.233))) * 43758.5453);
+    col += (grain - 0.5) * 0.12;
+  }
+
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
 function initWebGL() {
@@ -628,7 +684,8 @@ function initWebGL() {
 
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
-               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size'];
+               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
+               'u_pp_dither','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
   for (let i = 0; i < 7; i++) {
     uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
@@ -639,9 +696,10 @@ function initWebGL() {
 
 function resizeGLCanvas() {
   if (!gl) return;
-  glCanvas.width = renderSize;
-  glCanvas.height = renderSize;
-  gl.viewport(0, 0, renderSize, renderSize);
+  let sz = ppSuperSample ? renderSize * 2 : renderSize;
+  glCanvas.width = sz;
+  glCanvas.height = sz;
+  gl.viewport(0, 0, sz, sz);
 }
 
 let useWebGL = false;
@@ -987,7 +1045,12 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_fx_fold, params.fx_fold);
   gl.uniform1f(uLocations.u_fold_mode, params.fold_mode);
   gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
-  gl.uniform1f(uLocations.u_size, renderSize);
+  gl.uniform1f(uLocations.u_size, ppSuperSample ? renderSize * 2 : renderSize);
+  gl.uniform1f(uLocations.u_pp_dither, ppDither ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_scanlines, ppScanlines ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_posterize, ppPosterize ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_grain, ppGrain ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_time, animTime * 100.0);
 
   // Set palette colors (normalized 0-1)
   for (let i = 0; i < 7; i++) {
@@ -1537,6 +1600,27 @@ window.toggleSmooth = function() {
   if (el) el.textContent = smoothUpscale ? 'Smooth: On' : 'Smooth: Off';
   needsRender = true;
 };
+
+function togglePP(name) {
+  if (name === 'dither') ppDither = !ppDither;
+  else if (name === 'scanlines') ppScanlines = !ppScanlines;
+  else if (name === 'posterize') ppPosterize = !ppPosterize;
+  else if (name === 'grain') ppGrain = !ppGrain;
+  else if (name === 'ssaa') {
+    ppSuperSample = !ppSuperSample;
+    resizeGLCanvas();
+  }
+  // Update button states
+  document.querySelectorAll('.pp-btn').forEach(btn => {
+    let pp = btn.dataset.pp;
+    let on = (pp === 'dither' && ppDither) || (pp === 'scanlines' && ppScanlines) ||
+             (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
+             (pp === 'ssaa' && ppSuperSample);
+    btn.classList.toggle('active', on);
+  });
+  needsRender = true;
+}
+window.togglePP = togglePP;
 
 function nextPalette() {
   let idx = paletteNames.indexOf(currentPalette);

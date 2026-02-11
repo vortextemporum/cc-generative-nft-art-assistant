@@ -510,15 +510,28 @@
       </div>
 
       <div class="panel">
-        <div class="section-title">View <span class="mode-indicator" id="view-indicator">2D Color</span> &nbsp; Resolution <span class="mode-indicator" id="res-display">512px</span></div>
+        <div class="section-title">View <span class="mode-indicator" id="view-indicator">2D Color</span> &nbsp; Resolution <span class="mode-indicator" id="res-display">2048px</span></div>
         <div class="param-group">
           <div class="shape-buttons" style="flex-wrap: wrap;">
             <button class="shape-btn res-btn" data-res="0" onclick="setResolution(0)">64</button>
             <button class="shape-btn res-btn" data-res="1" onclick="setResolution(1)">128</button>
             <button class="shape-btn res-btn" data-res="2" onclick="setResolution(2)">256</button>
-            <button class="shape-btn res-btn active" data-res="3" onclick="setResolution(3)">512</button>
+            <button class="shape-btn res-btn" data-res="3" onclick="setResolution(3)">512</button>
             <button class="shape-btn res-btn" data-res="4" onclick="setResolution(4)">1024</button>
-            <button class="shape-btn res-btn" data-res="5" onclick="setResolution(5)">2048</button>
+            <button class="shape-btn res-btn active" data-res="5" onclick="setResolution(5)">2048</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="section-title">Post FX</div>
+        <div class="param-group">
+          <div class="shape-buttons" style="flex-wrap: wrap;">
+            <button class="shape-btn pp-btn" data-pp="ssaa" onclick="togglePP('ssaa')">SSAA 2x</button>
+            <button class="shape-btn pp-btn" data-pp="dither" onclick="togglePP('dither')">Dither</button>
+            <button class="shape-btn pp-btn" data-pp="scanlines" onclick="togglePP('scanlines')">Scanlines</button>
+            <button class="shape-btn pp-btn" data-pp="posterize" onclick="togglePP('posterize')">Posterize</button>
+            <button class="shape-btn pp-btn" data-pp="grain" onclick="togglePP('grain')">Grain</button>
           </div>
         </div>
       </div>
