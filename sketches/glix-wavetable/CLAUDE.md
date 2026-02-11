@@ -103,10 +103,11 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 - **Bounce**: Prime-ratio sine ping-pong
 
 ### Animation Range
-- `animRange` multiplier scales `driftAmount` in all animation modes
+- `animRange` multiplier scales interpolation speed in `interpolateParams()`
 - Options: Full (1×), 1/10, 1/100, 1/1000
-- At 1/1000, parameters barely move — subtle micro-variations
+- At 1/1000, params creep toward targets — glacial, barely perceptible changes
 - UI buttons with `.range-btn` class, `setAnimRange(idx)` function
+- Randomized along with lock category on R press
 
 ### Parameter Lock System
 - Lock categories control how many params animate: Single(1), Couple(2-3), Multiple(4-5), Most(7-8), All(9)

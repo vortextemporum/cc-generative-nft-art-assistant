@@ -94,7 +94,7 @@ let animTime = 0;
 // Animation modes: 'drift', 'lfo', 'chaos', 'sequencer', 'bounce'
 let animMode = 'drift';
 
-// Animation range: scales how far params move (1 = full, 0.1 = subtle, etc.)
+// Animation range: scales interpolation speed (1 = full speed, 0.001 = glacial)
 const ANIM_RANGES = [1.0, 0.1, 0.01, 0.001];
 const ANIM_RANGE_LABELS = ['Full', '1/10', '1/100', '1/1000'];
 let animRangeIndex = 0;
@@ -1000,7 +1000,7 @@ function updateAnimation() {
 
 // MODE: Perlin noise drift (original)
 function animDrift() {
-  let drift = driftAmount * animRange;
+  let drift = driftAmount;
   let speed = animSpeed * 0.1;
   setTarget('y_bend', map(noise(animTime * speed * 0.3), 0, 1, -0.25, 1.0) * drift);
   setTarget('fx_bend', expMap(noise(animTime * speed * 0.2 + 100), 0, 500) * drift);
@@ -1015,7 +1015,7 @@ function animDrift() {
 // MODE: Synced LFO oscillation (rhythmic, musical)
 function animLFO() {
   let t = animTime * animSpeed * 0.5;
-  let d = driftAmount * animRange;
+  let d = driftAmount;
   setTarget('pw', 0.5 + Math.sin(t * 0.7) * 0.4 * d);
   setTarget('soften', 10 + Math.sin(t * 0.3) * 9 * d);
   setTarget('y_bend', Math.sin(t * 0.2) * 0.5 * d);
@@ -1031,7 +1031,7 @@ function animLFO() {
 function animChaos() {
   let dt = 0.005 * animSpeed;
   let sigma = 10, rho = 28, beta = 8/3;
-  let d = driftAmount * animRange;
+  let d = driftAmount;
   let dx = sigma * (lorenzY - lorenzX) * dt;
   let dy = (lorenzX * (rho - lorenzZ) - lorenzY) * dt;
   let dz = (lorenzX * lorenzY - beta * lorenzZ) * dt;
@@ -1060,7 +1060,7 @@ function animSequencer() {
   let nextPreset = SEQ_PRESETS[(seqStep + 1) % SEQ_PRESETS.length];
   let t = seqTimer / stepDur;
   t = t * t * (3 - 2 * t); // smoothstep ease
-  let d = driftAmount * animRange;
+  let d = driftAmount;
 
   targetParams.shape = preset.shape;
   params.shape = preset.shape;
@@ -1079,7 +1079,7 @@ function animSequencer() {
 // MODE: Bounce (params ping-pong at different prime-ratio rates)
 function animBounce() {
   let t = animTime * animSpeed * 0.3;
-  let d = driftAmount * animRange;
+  let d = driftAmount;
   setTarget('pw', map(Math.abs(Math.sin(t * 1.0 + bouncePhases.pw)), 0, 1, 0.1, 0.95) * d + 0.5 * (1 - d));
   setTarget('soften', map(Math.abs(Math.sin(t * 0.7 + bouncePhases.soften)), 0, 1, 1, 40));
   setTarget('y_bend', Math.sin(t * 0.3 + bouncePhases.y_bend) * 0.6 * d);
@@ -1093,7 +1093,7 @@ function animBounce() {
 
 function interpolateParams() {
   let dt = deltaTime * 0.001;
-  let lerp_speed = 1.0 - pow(0.5, dt * animSpeed * 2);
+  let lerp_speed = 1.0 - pow(0.5, dt * animSpeed * 2 * animRange);
   params.y_bend = lerp(params.y_bend, targetParams.y_bend, lerp_speed);
   params.fx_bend = lerp(params.fx_bend, targetParams.fx_bend, lerp_speed);
   params.pw_morph = lerp(params.pw_morph, targetParams.pw_morph, lerp_speed);
@@ -1909,6 +1909,15 @@ window.randomizeAll = function() {
 
   // Random resolution (full range)
   setResolution(floor(random(RESOLUTIONS.length)));
+
+  // Random animation range
+  setAnimRange(floor(random(ANIM_RANGES.length)));
+
+  // Random lock category
+  lockCategory = floor(random(LOCK_CATEGORIES.length));
+  document.querySelectorAll('.lock-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.lockcat) === lockCategory);
+  });
 
   // Apply param locks based on category
   applyRandomLocks();

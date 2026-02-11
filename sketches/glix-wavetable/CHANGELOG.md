@@ -4,9 +4,9 @@
 
 ### Added
 - Animation range selector: Full, 1/10, 1/100, 1/1000
-  - Scales how far parameters move during animation
-  - At 1/1000 fold sweeps ~10 units instead of ~10000
-  - Applied uniformly to all 5 animation modes
+  - Controls interpolation speed — how fast params converge to targets
+  - At 1/1000 fold creeps at ~0.05 units/frame instead of jumping
+  - Randomization (R) now also randomizes range and lock category
 - WebGL-accelerated isometric 3D view
   - Separate shader program with VBO/IBO for mesh rendering
   - GPU depth testing replaces CPU painter's algorithm sorting
