@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v2.6 - New Oscillators + Better Randomization
+//   Based on GenDSP v2.7 - Hue Shift + Palette Overhaul
 // ==========================================
 
 let canvas;

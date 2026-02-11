@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.7] - 2026-02-11
+
+### Added
+- Hue shift parameter (0-360°) — Rodrigues rotation in RGB space
+  - Slider in Color panel, randomized on R, applied in both GPU and CPU renderers
+  - 36 base palettes × 360 hue angles = massive variety
+- 7 structurally unique palettes:
+  - Duotone (hard 2-color transition), Banded (contour bands), Coal (narrow dark range)
+  - Neon Line (bright band through black), Pastel (soft desaturated), Split (diverging blue→red)
+  - Prism (spectral ROYGBIV)
+
+### Removed
+- 3 redundant palettes: Magma (≈Inferno), Arctic (≈Ocean), Solar (≈Ember)
+  - Recreatable via hue shift on their parent palettes
+
+### Changed
+- 36 base palettes total (was 32)
+
 ## [2.6] - 2026-02-11
 
 ### Added
