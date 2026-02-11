@@ -2,35 +2,56 @@
 
 ## Project Overview
 
-A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Features smooth parameter animation and interactive controls.
+**Version:** 2.6
+**Framework:** p5.js + WebGL 1.0 GLSL
+
+A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
 
 ## File Structure
 
 ```
 glix-wavetable/
-├── index.html          # Viewer with controls panel
-├── sketch.js           # Main p5.js sketch
-└── CLAUDE.md           # This file
+├── index.html          # Viewer with controls panel (~600 lines)
+├── sketch.js           # Main p5.js sketch + GLSL shader (~1850 lines)
+├── CLAUDE.md           # This file
+└── CHANGELOG.md        # Version history
 ```
 
 ## Origins
 
 Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitter that generates wavetables with extensive modulation options.
 
-## Parameters (matching GenDSP)
+## Oscillators (12 total)
+
+| Index | Name | Formula / Description |
+|-------|------|----------------------|
+| 0 | Sine | sin(2πφ) |
+| 1 | Triangle | 1 - |2φ - 1| × 2 |
+| 2 | Sawtooth | 2φ - 1 |
+| 3 | Pulse | PW-controlled square wave |
+| 4 | HalfRect | Half-rectified sine |
+| 5 | Staircase | 4-step quantized sine |
+| 6 | Parabolic | 1 - 2t² (rounded triangle) |
+| 7 | SuperSaw | 3 detuned saws mixed |
+| 8 | Schrödinger | ψ_n(x) = sin(nπx), morph sweeps quantum number 1-8 |
+| 9 | Chebyshev | T_n(x) = cos(n·arccos(x)), morph sweeps polynomial order 1-8 |
+| 10 | FM | sin(2πφ + index·sin(2π·ratio·φ)), morph sweeps mod depth 0-8, PW controls ratio |
+| 11 | Harmonic | Additive partials Σsin(k·2πφ)/k, morph sweeps harmonic count 1-16 |
+
+## Parameters
 
 ### Oscillator
 | Parameter | Range | Description |
 |-----------|-------|-------------|
-| shape | 0-3 | 0=Sine, 1=Triangle, 2=Sawtooth, 3=Pulse |
-| pw | 0-1 | Pulse width (for pulse) or phase shift (for others) |
-| soften | 0.001-50 | Soft saturation (tanh) |
+| shape | 0-11 | Oscillator type (see table above) |
+| pw | 0-1 | Pulse width / phase shift / FM ratio |
+| soften | 0.001-50 | Soft saturation (tanh), logarithmic slider |
 
 ### Phase FX
 | Parameter | Range | Description |
 |-----------|-------|-------------|
 | y_bend | -0.25 to 1.0 | Warp morph speed (power curve on Y) |
-| fx_bend | -1 to 1000 | X-axis phase warp |
+| fx_bend | 0-1000 | X-axis phase warp, logarithmic slider |
 | fx_noise | 0-1 | Static noise/dirt on phase |
 | fx_quantize | 0-1 | Pixelate/step the phase |
 
@@ -38,35 +59,68 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | Parameter | Range | Description |
 |-----------|-------|-------------|
 | pw_morph | -50 to 50 | Spiraling / PWM shift over Y |
-| fx_fold | 0-10000 | Wavefolder intensity |
-| fx_crush | 0-10000 | Bitcrush intensity |
-| edge_fade | 0-0.5 | De-clicker (fade edges) |
+| fx_fold | 0-10000 | Wavefolder intensity, logarithmic slider |
+| fold_mode | 0-2 | 0=GenDSP (×8.0), 1=Gentle (×0.008), 2=Triangle fold-back |
+| fx_crush | 0-10000 or 0-1 | Bitcrush intensity, logarithmic slider |
+| crush_mode | 0-1 | 0=Extreme (0-10000), 1=Classic (0-1) |
+
+### Post-Processing (GPU shader)
+| Effect | Description |
+|--------|-------------|
+| SSAA 2x | Supersampling antialiasing (render at 2× resolution) |
+| Dither | Ordered Bayer 4×4 dithering, cycles through 1px/2px/4px/8px |
+| Scanlines | CRT-style horizontal lines |
+| Posterize | 6-level color quantization |
+| Grain | Animated film noise |
+
+## Rendering Architecture
+
+- **Primary renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU)
+- **Fallback**: CPU pixel-by-pixel via p5.js pixels[] array
+- **Display**: 700×700 canvas, internal render at 64-2048px (default 2048)
+- **SSAA**: Renders at 2× canvas size, browser downscales
+
+### Signal Flow (in GLSL)
+1. Y-warp (time bending via power function)
+2. Phase noise (hash-based static)
+3. Phase quantize (stepped/pixelated)
+4. Phase bend (S-curve stretch)
+5. Waveform generation (12 oscillator types)
+6. Morph/shift application
+7. Soft saturation (tanh)
+8. Bitcrush (amplitude quantize)
+9. Wavefolder (3 modes: sine drive, gentle, triangle)
+10. Post-processing (SSAA, dither, scanlines, posterize, grain)
 
 ## Animation System
 
-The sketch features smooth, continuous animation:
-- Parameters drift using Perlin noise
-- All changes interpolate smoothly (no jumps)
-- Speed and drift amount are adjustable
-- Animation can be paused/resumed
+5 modes (cycled with M key or UI buttons):
+- **Drift**: Perlin noise — smooth organic movement
+- **LFO**: Sine oscillators — rhythmic, musical
+- **Chaos**: Lorenz attractor — unpredictable but structured
+- **Sequencer**: Step presets with smoothstep interpolation
+- **Bounce**: Prime-ratio sine ping-pong
+
+### Parameter Lock System
+- Lock categories control how many params animate: Single(1), Couple(2-3), Multiple(4-5), Most(7-8), All(9)
+- `paramLocks` object tracks per-param lock state
+- `setTarget(key, val)` respects locks — animation functions use this instead of direct assignment
+- `applyRandomLocks()` shuffles which params are locked based on category
+
+### Randomization Distribution
+- `fx_noise` / `fx_quantize`: 40% chance of zero, rest biased low via power curve
+- `fx_fold` / `fx_crush` / `fx_bend`: chance of zero + power-biased exponential mapping
+- `pw_morph`: biased toward center
+- Designed to preserve clean outputs while allowing occasional dirty ones
 
 ## Color Palettes
 
-7 built-in palettes:
-- **thermal**: Black to white through purple/red/orange
-- **ocean**: Deep blue to bright cyan
-- **neon**: Vivid magenta/cyan/yellow
-- **sunset**: Purple through orange
-- **monochrome**: Pure grayscale
-- **plasma**: Purple/pink/orange
-- **rainbow**: Full spectrum
+32 total: 15 gradient palettes + 10 chaotic non-gradient + 7 original palettes.
 
 ## View Modes
 
-Two view modes, toggled with `V` key or the "3D View" button:
-
 1. **2D Color** (default): Top-down wavetable, X=phase, Y=morph, color=amplitude
-2. **Isometric Heightmap**: 3D terrain where sample values become vertex heights with palette-based shading
+2. **Isometric Heightmap**: 3D terrain with drag-to-rotate, shift+drag pan, scroll zoom
 
 ## Keyboard Shortcuts
 
@@ -76,64 +130,35 @@ Two view modes, toggled with `V` key or the "3D View" button:
 | R | Randomize all parameters |
 | 0 | Reset to defaults |
 | S | Save image (PNG) |
-| 1-4 | Select wave shape |
-| C | Cycle to next color palette |
+| 1-9 | Select oscillator 0-8 |
+| C | Cycle color palette |
 | V | Toggle 2D/Isometric view |
+| M | Cycle animation mode |
 | +/- | Adjust animation speed |
-| F | Increase fold amount |
 
-## Technical Details
+## Key Implementation Notes
 
-### Rendering
-- Full pixel-by-pixel wavetable rendering
-- Uses p5.js `pixels[]` array for performance
-- 700x700 default resolution
-- Sample value mapped to color palette gradient
-
-### Signal Flow (matching GenDSP)
-1. Y-warp (time bending via power function)
-2. Phase noise (hash-based static)
-3. Phase quantize (stepped/pixelated)
-4. Phase bend (S-curve stretch)
-5. Waveform generation (shape selection)
-6. Morph/shift application
-7. Soft saturation (tanh)
-8. Bitcrush (amplitude quantize)
-9. Wavefolder (sine drive)
-10. Edge fade (de-click)
+- **expMap/logMap**: Exponential mapping (k=4) for logarithmic slider curves on large-range params
+- **vertexBuffer**: Stored globally for rebinding after WebGL canvas resize (SSAA toggle)
+- **u_size vs u_canvas_size**: u_size = wavetable grid resolution, u_canvas_size = actual pixel dimensions (for post-FX)
+- **WebGL 1.0 constraints**: No dynamic array indexing, loops need constant bounds, use if/else chains for oscillator selection
 
 ## Common Tasks
 
+### Add a new oscillator
+1. Add CPU implementation in `generateSample()` (if/else chain by `sel`)
+2. Add GLSL implementation in fragment shader (matching if/else chain)
+3. Add button to `#shape-buttons` in index.html with `data-shape="N"`
+4. Update `randomizeAll()` shape range: `floor(random(N+1))`
+
 ### Add a new palette
 1. Add color array to `palettes` object in sketch.js
-2. Add option to palette-select dropdown in index.html
+2. Add option to `palette-select` dropdown in index.html
 3. Colors are [R, G, B] arrays (0-255)
 
-### Adjust animation behavior
-- Modify `updateAnimation()` function
-- Each parameter uses noise with different offset and speed
-- Adjust multipliers for more/less drift
-
-### Change default parameters
-- Modify initial `params` object at top of sketch.js
-- These are used on load and reset
-
-## Quick Commands
-
-```bash
-# Open in browser
-open index.html
-
-# Or with local server
-python3 -m http.server 8000
-# Visit http://localhost:8000/sketches/glix-wavetable/
-```
-
-
-<claude-mem-context>
-# Recent Activity
-
-<!-- This section is auto-generated by claude-mem. Edit content outside the tags. -->
-
-*No recent activity*
-</claude-mem-context>
+### Add a post-processing effect
+1. Add uniform declaration in GLSL shader
+2. Add effect code after color mapping, before `gl_FragColor`
+3. Add uniform upload in `renderWavetableGPU()`
+4. Add toggle button in Post FX panel in index.html
+5. Add state variable and toggle logic in `togglePP()`

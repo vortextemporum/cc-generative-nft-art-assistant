@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.6] - 2026-02-11
+
+### Added
+- 3 new oscillators (12 total):
+  - Chebyshev polynomial waveshaping T_n(x) = cos(n·arccos(x)), order 1-8
+  - FM synthesis sin(2πφ + index·sin(2π·ratio·φ)), PW controls ratio
+  - Harmonic series: additive partials with morph controlling harmonic count 1-16
+
+### Changed
+- Randomization biased toward cleaner outputs:
+  - fx_noise: 40% chance of zero, rest power-curved (max ~0.8)
+  - fx_quantize: 40% chance of zero, rest power-curved (max ~0.7)
+  - fx_fold/crush/bend: probability of zero + power-biased exponential
+  - pw_morph: biased toward center values
+- Bounce animation: reduced noise/quantize caps for cleaner motion
+
 ## [2.5] - 2026-02-11
 
 ### Added
