@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v2.4 - Animation Modes
+//   Based on GenDSP v2.5 - Quantum + Log Controls
 // ==========================================
 
 let canvas;

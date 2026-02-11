@@ -1,14 +1,51 @@
 # Changelog
 
+## [2.5] - 2026-02-11
+
+### Added
+- Schrödinger quantum wavefunction oscillator (9th shape)
+  - 1D particle-in-a-box ψ_n(x) = sin(nπx)
+  - Morph axis interpolates quantum number 1-8
+- 3 wavefolder modes: GenDSP (aggressive, original), Gentle (soft), Triangle (linear fold-back)
+- 2 bitcrush ranges: Extreme (0-10000) and Classic (0-1)
+- Logarithmic slider curves for fold, crush, bend, soften parameters
+- Soften minimum extended to 0.001
+
+### Fixed
+- Wavefolder drive multiplier corrected to match original GenDSP (8.0, was 0.008)
+
+## [2.4] - 2026-02-11
+
+### Added
+- 5 animation modes: Drift (Perlin), LFO (sine), Chaos (Lorenz), Sequencer (presets), Bounce (prime-ratio)
+- Animation mode randomization in Randomize function
+- Image smoothing toggle (crisp vs bilinear upscaling)
+- M key to cycle animation modes
+
+### Removed
+- edge_fade parameter (audio-only, no visual purpose)
+
+## [2.3] - 2026-02-11
+
+### Added
+- WebGL GPU-accelerated rendering via GLSL fragment shader
+- Full DSP signal chain ported to GLSL (all oscillators, phase FX, post FX)
+- GPU/CPU renderer indicator in footer
+- 1024 and 2048 resolution options
+- 15 gradient palettes + 10 chaotic non-gradient palettes (32 total)
+- 4 new oscillator types: HalfRect, Staircase, Parabolic, SuperSaw (8 total)
+- Version display in UI
+
 ## [2.2] - 2026-02-11
 
 ### Added
 - Isometric heightmap view mode (press V or click "3D View" button)
-- Wavetable sample values rendered as 3D terrain heights
-- Palette-based coloring with surface normal shading
-- Phase and Morph axis labels on isometric view
-- View toggle button in controls bar
-- V keyboard shortcut for view switching
+- Interactive 3D camera: drag to rotate, shift+drag to pan, scroll to zoom
+- Depth-sorted quad rendering with rotation-aware lighting
+- Scan range shifted to (y+1)/(size+1) to avoid zero-row issue
+
+### Fixed
+- First row rendering (scan_pos=0 zeroed all modulated effects)
 
 ## [2.1] - Initial
 
