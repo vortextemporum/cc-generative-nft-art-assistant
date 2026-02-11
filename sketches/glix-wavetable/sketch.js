@@ -134,6 +134,7 @@ let bouncePhases = {};
 
 // Post-processing flags
 let ppDither = false;    // Ordered Bayer dithering
+let ppDitherScale = 1;   // Dither cell size: 0=fine(1px), 1=medium(2px), 2=coarse(4px), 3=chunky(8px)
 let ppScanlines = false; // CRT scanlines
 let ppPosterize = false; // Reduce color depth
 let ppGrain = false;     // Film grain
@@ -468,6 +469,7 @@ uniform float u_fold_mode;
 uniform float u_fx_crush;
 uniform float u_size;
 uniform float u_pp_dither;
+uniform float u_pp_dither_scale;
 uniform float u_pp_scanlines;
 uniform float u_pp_posterize;
 uniform float u_pp_grain;
@@ -651,10 +653,11 @@ void main() {
 
   vec2 pixCoord = v_uv * u_canvas_size;
 
-  // Ordered dithering
+  // Ordered dithering (scaled cell size)
   if (u_pp_dither > 0.5) {
-    float dith = bayerMatrix(pixCoord) - 0.5;
-    col += dith * 0.08;
+    vec2 ditherCoord = floor(pixCoord / u_pp_dither_scale);
+    float dith = bayerMatrix(ditherCoord) - 0.5;
+    col += dith * (0.06 + u_pp_dither_scale * 0.015);
   }
 
   // Posterize (reduce to N color levels)
@@ -726,7 +729,7 @@ function initWebGL() {
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
                'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
-               'u_pp_dither','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time','u_canvas_size'];
+               'u_pp_dither','u_pp_dither_scale','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time','u_canvas_size'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
   for (let i = 0; i < 7; i++) {
     uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
@@ -1077,7 +1080,8 @@ function renderWavetable() {
 
 function renderWavetableGPU() {
   let palette = palettes[currentPalette];
-  gl.viewport(0, 0, renderSize, renderSize);
+  let canvasSize = ppSuperSample ? renderSize * 2 : renderSize;
+  gl.viewport(0, 0, canvasSize, canvasSize);
   gl.useProgram(shaderProgram);
 
   // Set params
@@ -1092,13 +1096,13 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_fx_fold, params.fx_fold);
   gl.uniform1f(uLocations.u_fold_mode, params.fold_mode);
   gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
-  gl.uniform1f(uLocations.u_size, ppSuperSample ? renderSize * 2 : renderSize);
+  gl.uniform1f(uLocations.u_size, renderSize);
   gl.uniform1f(uLocations.u_pp_dither, ppDither ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_dither_scale, [1, 2, 4, 8][ppDitherScale]);
   gl.uniform1f(uLocations.u_pp_scanlines, ppScanlines ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_posterize, ppPosterize ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_grain, ppGrain ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_time, animTime * 100.0);
-  let canvasSize = ppSuperSample ? renderSize * 2 : renderSize;
   gl.uniform1f(uLocations.u_canvas_size, canvasSize);
 
   // Set palette colors (normalized 0-1)
@@ -1666,7 +1670,18 @@ window.toggleSmooth = function() {
 };
 
 function togglePP(name) {
-  if (name === 'dither') ppDither = !ppDither;
+  if (name === 'dither') {
+    if (!ppDither) {
+      ppDither = true;
+      ppDitherScale = 0; // start at fine
+    } else {
+      ppDitherScale++;
+      if (ppDitherScale > 3) {
+        ppDither = false;
+        ppDitherScale = 0;
+      }
+    }
+  }
   else if (name === 'scanlines') ppScanlines = !ppScanlines;
   else if (name === 'posterize') ppPosterize = !ppPosterize;
   else if (name === 'grain') ppGrain = !ppGrain;
@@ -1675,12 +1690,16 @@ function togglePP(name) {
     resizeGLCanvas();
   }
   // Update button states
+  let ditherLabels = ['1px', '2px', '4px', '8px'];
   document.querySelectorAll('.pp-btn').forEach(btn => {
     let pp = btn.dataset.pp;
     let on = (pp === 'dither' && ppDither) || (pp === 'scanlines' && ppScanlines) ||
              (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
              (pp === 'ssaa' && ppSuperSample);
     btn.classList.toggle('active', on);
+    if (pp === 'dither') {
+      btn.textContent = ppDither ? 'Dither ' + ditherLabels[ppDitherScale] : 'Dither';
+    }
   });
   needsRender = true;
 }
