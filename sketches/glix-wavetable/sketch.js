@@ -41,8 +41,7 @@ let params = {
   pw_morph: 0.0,      // Spiraling / PWM shift (-50 to 50)
   fx_fold: 100.0,     // Wavefolder (0-10000)
   fold_mode: 0,       // 0=GenDSP (aggressive sine), 1=Gentle (soft sine), 2=Triangle fold
-  fx_crush: 0.0,      // Bitcrush
-  crush_mode: 0       // 0=Extreme (0-10000), 1=Classic (0-1)
+  fx_crush: 0.0       // Bitcrush (0-1)
 };
 
 // Animation targets (for smooth interpolation)
@@ -1492,23 +1491,6 @@ function setupUI() {
     });
   });
 
-  // Crush mode buttons
-  document.querySelectorAll('.shape-btn[data-crushmode]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      params.crush_mode = parseInt(btn.dataset.crushmode);
-      targetParams.crush_mode = params.crush_mode;
-      // Re-scale current crush value to new range
-      let oldMax = params.crush_mode === 0 ? 1 : 10000;
-      let newMax = params.crush_mode === 0 ? 10000 : 1;
-      let normalized = logMap(params.fx_crush, 0, oldMax);
-      params.fx_crush = expMap(normalized, 0, newMax);
-      targetParams.fx_crush = params.fx_crush;
-      updateCrushButtons();
-      updateUIValues();
-      needsRender = true;
-    });
-  });
-
   // Sliders
   setupSlider('pw', 0, 1000, v => {
     params.pw = v / 1000;
@@ -1551,14 +1533,9 @@ function setupUI() {
   }, v => expMap(v / 1000, 0, 10000).toFixed(0));
 
   setupSlider('crush', 0, 1000, v => {
-    let mx = params.crush_mode === 0 ? 10000 : 1;
-    params.fx_crush = expMap(v / 1000, 0, mx);
+    params.fx_crush = expMap(v / 1000, 0, 1);
     targetParams.fx_crush = params.fx_crush;
-  }, v => {
-    let mx = params.crush_mode === 0 ? 10000 : 1;
-    let val = expMap(v / 1000, 0, mx);
-    return mx > 1 ? val.toFixed(0) : val.toFixed(3);
-  });
+  }, v => expMap(v / 1000, 0, 1).toFixed(3));
 
   setupSlider('speed', 1, 100, v => {
     animSpeed = v / 100;
@@ -1609,11 +1586,6 @@ function updateFoldButtons() {
   });
 }
 
-function updateCrushButtons() {
-  document.querySelectorAll('.shape-btn[data-crushmode]').forEach(btn => {
-    btn.classList.toggle('active', parseInt(btn.dataset.crushmode) === params.crush_mode);
-  });
-}
 
 function updateUIValues() {
   document.getElementById('param-pw').value = params.pw * 1000;
@@ -1644,10 +1616,9 @@ function updateUIValues() {
   document.getElementById('param-fold').value = foldVal;
   document.getElementById('val-fold').textContent = params.fx_fold.toFixed(0);
 
-  let crushMax = params.crush_mode === 0 ? 10000 : 1;
-  let crushVal = logMap(params.fx_crush, 0, crushMax) * 1000;
+  let crushVal = logMap(params.fx_crush, 0, 1) * 1000;
   document.getElementById('param-crush').value = crushVal;
-  document.getElementById('val-crush').textContent = crushMax > 1 ? params.fx_crush.toFixed(0) : params.fx_crush.toFixed(3);
+  document.getElementById('val-crush').textContent = params.fx_crush.toFixed(3);
 
 }
 
@@ -1677,14 +1648,13 @@ window.randomizeAll = function() {
   // fx_fold: 20% very low (<50), rest exp-biased
   params.fx_fold = random() < 0.2 ? random(0, 50) : expMap(pow(random(), 1.3), 0, 10000);
   params.fold_mode = floor(random(3));
-  // fx_crush: 35% zero, rest exp-biased
-  params.crush_mode = floor(random(2));
-  params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, params.crush_mode === 0 ? 10000 : 1);
+  // fx_crush: 35% zero, rest exp-biased (0-1)
+  params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
   // Snap targets to match (no slow interpolation)
   targetParams = { ...params };
   updateShapeButtons();
   updateFoldButtons();
-  updateCrushButtons();
+
   updateUIValues();
 
   // Random palette + hue shift
@@ -1717,13 +1687,12 @@ window.resetParams = function() {
     pw_morph: 0.0,
     fx_fold: 100.0,
     fold_mode: 0,
-    fx_crush: 0.0,
-    crush_mode: 0
+    fx_crush: 0.0
   };
   targetParams = { ...params };
   updateShapeButtons();
   updateFoldButtons();
-  updateCrushButtons();
+
   updateUIValues();
 
   currentPalette = 'thermal';
