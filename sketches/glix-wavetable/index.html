@@ -393,6 +393,13 @@
             <button class="shape-btn" data-shape="10">FM</button>
             <button class="shape-btn" data-shape="11">Harmonic</button>
           </div>
+          <div class="param-row" style="margin-top: 8px;">
+            <span class="param-label">Variation</span>
+            <div class="shape-buttons">
+              <button class="shape-btn" id="wave-mirror-btn" onclick="toggleWaveMirror()">Mirror</button>
+              <button class="shape-btn" id="wave-invert-btn" onclick="toggleWaveInvert()">Invert</button>
+            </div>
+          </div>
           <div class="param-row" style="margin-top: 12px;">
             <span class="param-label">PW / Shift</span>
             <input type="range" class="param-slider" id="param-pw" min="0" max="1000" value="1000">

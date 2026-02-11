@@ -41,7 +41,9 @@ let params = {
   pw_morph: 0.0,      // Spiraling / PWM shift (-50 to 50)
   fx_fold: 100.0,     // Wavefolder (0-10000)
   fold_mode: 0,       // 0=GenDSP (aggressive sine), 1=Gentle (soft sine), 2=Triangle fold
-  fx_crush: 0.0       // Bitcrush (0-1)
+  fx_crush: 0.0,      // Bitcrush (0-1)
+  wave_mirror: 0,     // Mirror phase (0 or 1)
+  wave_invert: 0      // Invert output (0 or 1)
 };
 
 // Animation targets (for smooth interpolation)
@@ -534,6 +536,8 @@ uniform float u_time;
 uniform float u_canvas_size;
 uniform vec3 u_palette[7];
 uniform float u_hue_shift;
+uniform float u_wave_mirror;
+uniform float u_wave_invert;
 
 float fract2(float x) { return x - floor(x); }
 
@@ -584,6 +588,9 @@ float generateSample(float raw_phase, float scan_pos) {
       final_phase = 1.0 - pow((1.0 - safe_phase) * 2.0, bend_fact) * 0.5;
     }
   }
+
+  // MIRROR (flip phase)
+  if (u_wave_mirror > 0.5) final_phase = 1.0 - final_phase;
 
   // WAVEFORM
   float morph_amt = u_pw_morph * scan_pos * 0.1;
@@ -654,6 +661,9 @@ float generateSample(float raw_phase, float scan_pos) {
     }
     samp *= 0.63;
   }
+
+  // INVERT (flip output)
+  if (u_wave_invert > 0.5) samp = -samp;
 
   // SOFT SATURATION
   samp = tanh_approx(samp * u_soften);
@@ -902,7 +912,8 @@ function initWebGL() {
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
                'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
-               'u_pp_dither','u_pp_dither_scale','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time','u_canvas_size','u_hue_shift'];
+               'u_pp_dither','u_pp_dither_scale','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time','u_canvas_size','u_hue_shift',
+               'u_wave_mirror','u_wave_invert'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
   for (let i = 0; i < 7; i++) {
     uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
@@ -1141,6 +1152,9 @@ function generateSample(raw_phase, scan_pos) {
     }
   }
 
+  // MIRROR (flip phase)
+  if (params.wave_mirror) final_phase = 1.0 - final_phase;
+
   // WAVEFORM GENERATOR
   let morph_amt = params.pw_morph * scan_pos * 0.1;
   let shift_val = (params.pw - 0.5) + morph_amt;
@@ -1221,6 +1235,9 @@ function generateSample(raw_phase, scan_pos) {
     }
     samp *= 0.63; // normalize (harmonic series sum ≈ 1.59 at 16 terms)
   }
+
+  // INVERT (flip output)
+  if (params.wave_invert) samp = -samp;
 
   // Soft Saturation
   samp = tanh_approx(samp * params.soften);
@@ -1315,6 +1332,8 @@ function renderWavetableGPU() {
     gl.uniform3f(uLocations['u_palette_' + i], c[0]/255, c[1]/255, c[2]/255);
   }
   gl.uniform1f(uLocations.u_hue_shift, hueShift);
+  gl.uniform1f(uLocations.u_wave_mirror, params.wave_mirror);
+  gl.uniform1f(uLocations.u_wave_invert, params.wave_invert);
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
@@ -1819,6 +1838,26 @@ function updateFoldButtons() {
   });
 }
 
+window.toggleWaveMirror = function() {
+  params.wave_mirror = params.wave_mirror ? 0 : 1;
+  targetParams.wave_mirror = params.wave_mirror;
+  updateWaveModButtons();
+  needsRender = true;
+};
+
+window.toggleWaveInvert = function() {
+  params.wave_invert = params.wave_invert ? 0 : 1;
+  targetParams.wave_invert = params.wave_invert;
+  updateWaveModButtons();
+  needsRender = true;
+};
+
+function updateWaveModButtons() {
+  let mirBtn = document.getElementById('wave-mirror-btn');
+  let invBtn = document.getElementById('wave-invert-btn');
+  if (mirBtn) mirBtn.classList.toggle('active', params.wave_mirror === 1);
+  if (invBtn) invBtn.classList.toggle('active', params.wave_invert === 1);
+}
 
 function updateUIValues() {
   document.getElementById('param-pw').value = params.pw * 1000;
@@ -1883,10 +1922,14 @@ window.randomizeAll = function() {
   params.fold_mode = floor(random(3));
   // fx_crush: 35% zero, rest exp-biased (0-1)
   params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
+  // Wave mirror/invert: randomly pick a variation
+  params.wave_mirror = random() < 0.5 ? 1 : 0;
+  params.wave_invert = random() < 0.5 ? 1 : 0;
   // Snap targets to match (no slow interpolation)
   targetParams = { ...params };
   updateShapeButtons();
   updateFoldButtons();
+  updateWaveModButtons();
 
   updateUIValues();
 
@@ -1932,7 +1975,9 @@ window.resetParams = function() {
     pw_morph: 0.0,
     fx_fold: 100.0,
     fold_mode: 0,
-    fx_crush: 0.0
+    fx_crush: 0.0,
+    wave_mirror: 0,
+    wave_invert: 0
   };
   targetParams = { ...params };
   updateShapeButtons();

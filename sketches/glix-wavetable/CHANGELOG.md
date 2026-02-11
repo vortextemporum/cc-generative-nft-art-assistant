@@ -3,6 +3,12 @@
 ## [2.8] - 2026-02-11
 
 ### Added
+- Waveform Mirror and Invert toggles
+  - Mirror: flips phase (1-phase) before waveform generation
+  - Invert: flips output (-sample) after waveform generation
+  - 4 variations per oscillator (normal, mirror, invert, both)
+  - Randomized on R press (50/50 each)
+  - Implemented in both GPU (GLSL uniforms) and CPU paths
 - Per-parameter animation range: Full, 1/10, 1/100
   - Controls interpolation speed per-param — each param can converge at different rates
   - UI buttons set all params to same range; randomize (R) assigns random per-param mix
