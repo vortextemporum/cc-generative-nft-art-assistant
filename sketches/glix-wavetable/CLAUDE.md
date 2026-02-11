@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 2.7
+**Version:** 2.8
 **Framework:** p5.js + WebGL 1.0 GLSL
 
 A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
@@ -77,7 +77,8 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 
 - **Primary renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU)
 - **Fallback**: CPU pixel-by-pixel via p5.js pixels[] array
-- **Display**: 700×700 canvas, internal render at 64-2048px (default 2048)
+- **Display**: 700×700 canvas, internal render at 32-2048px (default 2048)
+- **Isometric 3D**: WebGL mesh rendering (VBO/IBO), grid capped at 512, GPU depth testing
 - **SSAA**: Renders at 2× canvas size, browser downscales
 
 ### Signal Flow (in GLSL)
@@ -123,6 +124,10 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 
 1. **2D Color** (default): Top-down wavetable, X=phase, Y=morph, color=amplitude
 2. **Isometric Heightmap**: 3D terrain with drag-to-rotate, shift+drag pan, scroll zoom
+   - **WebGL-accelerated**: Uses separate shader program (`isoShaderProgram`) with VBO/IBO
+   - CPU computes samples + projection, GPU handles depth-tested triangle rendering
+   - Grid capped at 512×512 (vs old 256 CPU limit), uses `OES_element_index_uint` for >65k vertices
+   - Single `gl.drawElements()` call replaces ~65k individual p5.js draw calls
 
 ## Keyboard Shortcuts
 

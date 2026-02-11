@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v2.7 - Hue Shift + Palette Overhaul
+//   Based on GenDSP v2.8 - WebGL Isometric + Resolution Overhaul
 // ==========================================
 
 let canvas;
@@ -25,8 +25,8 @@ let isoDragStartX = 0;
 let isoDragStartY = 0;
 
 // Resolution options (GPU-rendered, so higher is fine)
-const RESOLUTIONS = [64, 128, 256, 512, 1024, 2048];
-let resolutionIndex = 5; // Default 2048
+const RESOLUTIONS = [32, 64, 128, 256, 512, 1024, 2048];
+let resolutionIndex = 6; // Default 2048
 let renderSize = RESOLUTIONS[resolutionIndex];
 
 // --- PARAMETERS (matching GenDSP) ---
@@ -771,6 +771,83 @@ void main() {
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
+// --- ISOMETRIC 3D WEBGL SHADER ---
+const ISO_VERT_SRC = `
+attribute vec2 a_pos;
+attribute float a_depth;
+attribute vec3 a_color;
+varying vec3 v_color;
+void main() {
+  v_color = a_color;
+  gl_Position = vec4(a_pos, a_depth, 1.0);
+}`;
+
+const ISO_FRAG_SRC = `
+precision mediump float;
+varying vec3 v_color;
+void main() {
+  gl_FragColor = vec4(v_color, 1.0);
+}`;
+
+// Isometric WebGL resources
+let isoShaderProgram = null;
+let isoVBO = null, isoIBO = null;
+let isoAttrLocs = {};
+const ISO_MAX_GRID = 512;
+const ISO_STRIDE = 6; // floats per vertex: x, y, depth, r, g, b
+let isoUintExt = null;
+
+function initIsoWebGL() {
+  if (!gl) return false;
+
+  // Compile isometric shaders
+  let vs = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vs, ISO_VERT_SRC);
+  gl.compileShader(vs);
+  if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+    console.error('Iso Vertex:', gl.getShaderInfoLog(vs));
+    return false;
+  }
+
+  let fs = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fs, ISO_FRAG_SRC);
+  gl.compileShader(fs);
+  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+    console.error('Iso Fragment:', gl.getShaderInfoLog(fs));
+    return false;
+  }
+
+  isoShaderProgram = gl.createProgram();
+  gl.attachShader(isoShaderProgram, vs);
+  gl.attachShader(isoShaderProgram, fs);
+  gl.linkProgram(isoShaderProgram);
+  if (!gl.getProgramParameter(isoShaderProgram, gl.LINK_STATUS)) {
+    console.error('Iso Link:', gl.getProgramInfoLog(isoShaderProgram));
+    return false;
+  }
+
+  isoAttrLocs.a_pos = gl.getAttribLocation(isoShaderProgram, 'a_pos');
+  isoAttrLocs.a_depth = gl.getAttribLocation(isoShaderProgram, 'a_depth');
+  isoAttrLocs.a_color = gl.getAttribLocation(isoShaderProgram, 'a_color');
+
+  // OES_element_index_uint for >65k vertices
+  isoUintExt = gl.getExtension('OES_element_index_uint');
+
+  // Pre-allocate VBO and IBO at max size
+  let maxVerts = (ISO_MAX_GRID + 1) * (ISO_MAX_GRID + 1);
+  let maxIndices = ISO_MAX_GRID * ISO_MAX_GRID * 6; // 2 triangles * 3 indices per cell
+
+  isoVBO = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, isoVBO);
+  gl.bufferData(gl.ARRAY_BUFFER, maxVerts * ISO_STRIDE * 4, gl.DYNAMIC_DRAW);
+
+  isoIBO = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, isoIBO);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, maxIndices * 4, gl.DYNAMIC_DRAW);
+
+  return true;
+}
+
 function initWebGL() {
   glCanvas = document.createElement('canvas');
   glCanvas.width = renderSize;
@@ -851,6 +928,7 @@ function setup() {
   noSmooth();
 
   useWebGL = initWebGL();
+  if (useWebGL) initIsoWebGL();
   if (!useWebGL) createPixelBuffer();
   setupUI();
   updateColorPreview();
@@ -881,22 +959,24 @@ function draw() {
   // Throttle rendering to TARGET_UPDATE_FPS
   let timeSinceRender = currentTime - lastRenderTime;
   if (needsRender && timeSinceRender >= 1000 / TARGET_UPDATE_FPS) {
-    renderWavetable();
+    if (viewMode === '2d') {
+      renderWavetable();
+    }
     lastRenderTime = currentTime;
     needsRender = false;
   }
 
-  // Always draw the buffer (scaled up)
+  // Draw
   if (viewMode === '2d') {
     if (useWebGL) {
       drawingContext.imageSmoothingEnabled = smoothUpscale;
       drawingContext.drawImage(glCanvas, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
     } else {
-      if (smoothUpscale) drawingContext.imageSmoothingEnabled = true;
-      else drawingContext.imageSmoothingEnabled = false;
+      drawingContext.imageSmoothingEnabled = !smoothUpscale ? false : true;
       image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
     }
   } else {
+    // Isometric always re-renders (camera may be dragging)
     renderIsometric();
   }
 }
@@ -1193,8 +1273,19 @@ function renderWavetable() {
 function renderWavetableGPU() {
   let palette = palettes[currentPalette];
   let canvasSize = ppSuperSample ? renderSize * 2 : renderSize;
+  // Ensure canvas is correct size for 2D
+  if (glCanvas.width !== canvasSize || glCanvas.height !== canvasSize) {
+    glCanvas.width = canvasSize;
+    glCanvas.height = canvasSize;
+  }
   gl.viewport(0, 0, canvasSize, canvasSize);
   gl.useProgram(shaderProgram);
+
+  // Rebind 2D fullscreen quad (may have been unbound by iso render)
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  let aPos = gl.getAttribLocation(shaderProgram, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
   // Set params
   gl.uniform1f(uLocations.u_shape, params.shape);
@@ -1299,13 +1390,18 @@ function projectPoint(nx, ny, nz) {
 }
 
 function renderIsometric() {
-  background(10, 10, 15);
-
   let palette = palettes[currentPalette];
-  let gridRes = min(renderSize, 256); // cap grid for perf
-  let heightAmt = 0.3; // height relative to grid size
+  let gridRes = min(renderSize, ISO_MAX_GRID);
+  let heightAmt = 0.3;
 
-  // Pre-compute the sample grid + projected points
+  // Use WebGL path if available
+  if (isoShaderProgram) {
+    renderIsometricWebGL(palette, gridRes, heightAmt);
+    return;
+  }
+
+  // CPU fallback (p5.js drawing)
+  background(10, 10, 15);
   let grid = [];
   let projected = [];
   for (let gy = 0; gy <= gridRes; gy++) {
@@ -1316,8 +1412,6 @@ function renderIsometric() {
       let scan = (gy + 1) / (gridRes + 2);
       let sample = generateSample(phase, scan);
       row.push(sample);
-
-      // Map grid to centered normalized coords
       let nx = (gx / gridRes) - 0.5;
       let ny = (gy / gridRes) - 0.5;
       let nz = ((sample + 1) * 0.5) * heightAmt;
@@ -1327,7 +1421,6 @@ function renderIsometric() {
     projected.push(projRow);
   }
 
-  // Determine draw order: sort quads by average depth (z), back to front
   let quads = [];
   for (let gy = 0; gy < gridRes; gy++) {
     for (let gx = 0; gx < gridRes; gx++) {
@@ -1336,61 +1429,200 @@ function renderIsometric() {
       quads.push({ gx, gy, z: avgZ });
     }
   }
-  quads.sort((a, b) => a.z - b.z); // back to front
+  quads.sort((a, b) => a.z - b.z);
 
-  // Draw quads
   push();
   strokeWeight(0.5);
-
   for (let q of quads) {
-    let gx = q.gx;
-    let gy = q.gy;
-
-    let s00 = grid[gy][gx];
-    let s10 = grid[gy][gx + 1];
-    let s01 = grid[gy + 1][gx];
-    let s11 = grid[gy + 1][gx + 1];
-
+    let gx = q.gx, gy = q.gy;
+    let s00 = grid[gy][gx], s10 = grid[gy][gx+1], s01 = grid[gy+1][gx], s11 = grid[gy+1][gx+1];
     let avgSample = (s00 + s10 + s01 + s11) * 0.25;
     let colorVal = (avgSample + 1) * 0.5;
     let col = getColorFromPalette(colorVal, palette);
     if (Math.abs(hueShift) > 0.5) col = hueShiftRGB(col[0], col[1], col[2], hueShift);
-
-    let p00 = projected[gy][gx];
-    let p10 = projected[gy][gx + 1];
-    let p01 = projected[gy + 1][gx];
-    let p11 = projected[gy + 1][gx + 1];
-
-    // Shading from surface normal approximation
+    let p00 = projected[gy][gx], p10 = projected[gy][gx+1], p01 = projected[gy+1][gx], p11 = projected[gy+1][gx+1];
     let dx = (s10 - s00 + s11 - s01) * 0.5;
     let dy = (s01 - s00 + s11 - s10) * 0.5;
-    // Light direction affected by rotation
-    let lightX = Math.cos(isoRotation + 0.8);
-    let lightY = Math.sin(isoRotation + 0.8);
-    let shade = 0.85 + (dx * lightX + dy * lightY) * 0.5;
-    shade = constrain(shade, 0.35, 1.5);
-
-    fill(
-      constrain(col[0] * shade, 0, 255),
-      constrain(col[1] * shade, 0, 255),
-      constrain(col[2] * shade, 0, 255)
-    );
-    stroke(
-      constrain(col[0] * shade * 0.5, 0, 255),
-      constrain(col[1] * shade * 0.5, 0, 255),
-      constrain(col[2] * shade * 0.5, 0, 255),
-      60
-    );
-
+    let lightX = Math.cos(isoRotation + 0.8), lightY = Math.sin(isoRotation + 0.8);
+    let shade = constrain(0.85 + (dx * lightX + dy * lightY) * 0.5, 0.35, 1.5);
+    fill(constrain(col[0]*shade,0,255), constrain(col[1]*shade,0,255), constrain(col[2]*shade,0,255));
+    stroke(constrain(col[0]*shade*0.5,0,255), constrain(col[1]*shade*0.5,0,255), constrain(col[2]*shade*0.5,0,255), 60);
     beginShape();
-    vertex(p00.x, p00.y);
-    vertex(p10.x, p10.y);
-    vertex(p11.x, p11.y);
-    vertex(p01.x, p01.y);
+    vertex(p00.x, p00.y); vertex(p10.x, p10.y); vertex(p11.x, p11.y); vertex(p01.x, p01.y);
     endShape(CLOSE);
   }
-
   pop();
+}
+
+function renderIsometricWebGL(palette, gridRes, heightAmt) {
+  let numVerts = (gridRes + 1) * (gridRes + 1);
+  let numCells = gridRes * gridRes;
+  let vertData = new Float32Array(numVerts * ISO_STRIDE);
+  let indexData = isoUintExt ? new Uint32Array(numCells * 6) : new Uint16Array(numCells * 6);
+
+  // Pre-compute lighting direction
+  let lightX = Math.cos(isoRotation + 0.8);
+  let lightY = Math.sin(isoRotation + 0.8);
+
+  // Build sample grid (flat arrays for speed)
+  let samples = new Float32Array(numVerts);
+  for (let gy = 0; gy <= gridRes; gy++) {
+    for (let gx = 0; gx <= gridRes; gx++) {
+      let phase = (gx + 1) / (gridRes + 2);
+      let scan = (gy + 1) / (gridRes + 2);
+      samples[gy * (gridRes + 1) + gx] = generateSample(phase, scan);
+    }
+  }
+
+  // Build vertex data: project each vertex, store clip coords + base color
+  let cosR = Math.cos(isoRotation), sinR = Math.sin(isoRotation);
+  let cosT = Math.cos(isoTilt), sinT = Math.sin(isoTilt);
+  let scale = DISPLAY_SIZE * 0.75 * isoZoom;
+  let cx = DISPLAY_SIZE * 0.5 + isoPanX;
+  let cy = DISPLAY_SIZE * 0.5 + isoPanY;
+  let invDS = 1.0 / DISPLAY_SIZE;
+
+  for (let gy = 0; gy <= gridRes; gy++) {
+    for (let gx = 0; gx <= gridRes; gx++) {
+      let vi = gy * (gridRes + 1) + gx;
+      let s = samples[vi];
+      let nx = (gx / gridRes) - 0.5;
+      let ny = (gy / gridRes) - 0.5;
+      let nz = ((s + 1) * 0.5) * heightAmt;
+
+      // Projection (inline for speed)
+      let rx = nx * cosR - ny * sinR;
+      let ry = nx * sinR + ny * cosR;
+      let ty = ry * cosT - nz * sinT;
+      let tz = ry * sinT + nz * cosT;
+      let sx = cx + rx * scale;
+      let sy = cy + ty * scale;
+
+      // Convert to clip space (-1 to 1)
+      let clipX = sx * invDS * 2.0 - 1.0;
+      let clipY = 1.0 - sy * invDS * 2.0;
+      // Depth: map tz to 0-1 range for depth buffer
+      let depth = (tz + 1.0) * 0.5;
+
+      let off = vi * ISO_STRIDE;
+      vertData[off] = clipX;
+      vertData[off + 1] = clipY;
+      vertData[off + 2] = depth;
+      // Color will be filled per-cell below (placeholder)
+      vertData[off + 3] = 0;
+      vertData[off + 4] = 0;
+      vertData[off + 5] = 0;
+    }
+  }
+
+  // Per-cell: compute color with lighting, write to all 4 corner vertices
+  // Since each vertex is shared by up to 4 cells, we accumulate and average
+  let colorAccum = new Float32Array(numVerts * 3);
+  let colorCount = new Uint8Array(numVerts);
+
+  for (let gy = 0; gy < gridRes; gy++) {
+    for (let gx = 0; gx < gridRes; gx++) {
+      let i00 = gy * (gridRes + 1) + gx;
+      let i10 = i00 + 1;
+      let i01 = i00 + (gridRes + 1);
+      let i11 = i01 + 1;
+
+      let s00 = samples[i00], s10 = samples[i10], s01 = samples[i01], s11 = samples[i11];
+      let avgSample = (s00 + s10 + s01 + s11) * 0.25;
+      let colorVal = (avgSample + 1) * 0.5;
+      let col = getColorFromPalette(colorVal, palette);
+      if (Math.abs(hueShift) > 0.5) col = hueShiftRGB(col[0], col[1], col[2], hueShift);
+
+      // Surface normal lighting
+      let dx = (s10 - s00 + s11 - s01) * 0.5;
+      let dy = (s01 - s00 + s11 - s10) * 0.5;
+      let shade = 0.85 + (dx * lightX + dy * lightY) * 0.5;
+      if (shade < 0.35) shade = 0.35;
+      if (shade > 1.5) shade = 1.5;
+
+      let r = Math.min(col[0] * shade, 255) / 255;
+      let g = Math.min(col[1] * shade, 255) / 255;
+      let b = Math.min(col[2] * shade, 255) / 255;
+
+      // Accumulate color to shared vertices
+      let corners = [i00, i10, i01, i11];
+      for (let c = 0; c < 4; c++) {
+        let ci = corners[c];
+        colorAccum[ci * 3] += r;
+        colorAccum[ci * 3 + 1] += g;
+        colorAccum[ci * 3 + 2] += b;
+        colorCount[ci]++;
+      }
+
+      // Build index buffer: two triangles per cell
+      let cellIdx = (gy * gridRes + gx) * 6;
+      indexData[cellIdx] = i00;
+      indexData[cellIdx + 1] = i10;
+      indexData[cellIdx + 2] = i11;
+      indexData[cellIdx + 3] = i00;
+      indexData[cellIdx + 4] = i11;
+      indexData[cellIdx + 5] = i01;
+    }
+  }
+
+  // Average accumulated colors and write to vertex data
+  for (let i = 0; i < numVerts; i++) {
+    let cnt = colorCount[i];
+    if (cnt > 0) {
+      let off = i * ISO_STRIDE;
+      vertData[off + 3] = colorAccum[i * 3] / cnt;
+      vertData[off + 4] = colorAccum[i * 3 + 1] / cnt;
+      vertData[off + 5] = colorAccum[i * 3 + 2] / cnt;
+    }
+  }
+
+  // --- WebGL draw ---
+  // Ensure glCanvas is at display size for 3D
+  if (glCanvas.width !== DISPLAY_SIZE || glCanvas.height !== DISPLAY_SIZE) {
+    glCanvas.width = DISPLAY_SIZE;
+    glCanvas.height = DISPLAY_SIZE;
+  }
+  gl.viewport(0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
+
+  // Clear with background color
+  gl.clearColor(10/255, 10/255, 15/255, 1.0);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  // Bind isometric shader
+  gl.useProgram(isoShaderProgram);
+
+  // Upload vertex data
+  gl.bindBuffer(gl.ARRAY_BUFFER, isoVBO);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertData);
+
+  // Set attribute pointers
+  let stride = ISO_STRIDE * 4; // bytes
+  gl.enableVertexAttribArray(isoAttrLocs.a_pos);
+  gl.vertexAttribPointer(isoAttrLocs.a_pos, 2, gl.FLOAT, false, stride, 0);
+  gl.enableVertexAttribArray(isoAttrLocs.a_depth);
+  gl.vertexAttribPointer(isoAttrLocs.a_depth, 1, gl.FLOAT, false, stride, 8);
+  gl.enableVertexAttribArray(isoAttrLocs.a_color);
+  gl.vertexAttribPointer(isoAttrLocs.a_color, 3, gl.FLOAT, false, stride, 12);
+
+  // Upload index data and draw
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, isoIBO);
+  gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, indexData);
+
+  let indexType = isoUintExt ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+  gl.drawElements(gl.TRIANGLES, numCells * 6, indexType, 0);
+
+  // Disable depth test (not needed for 2D view)
+  gl.disable(gl.DEPTH_TEST);
+
+  // Disable iso attributes so they don't interfere with 2D shader
+  gl.disableVertexAttribArray(isoAttrLocs.a_pos);
+  gl.disableVertexAttribArray(isoAttrLocs.a_depth);
+  gl.disableVertexAttribArray(isoAttrLocs.a_color);
+
+  // Copy glCanvas to p5.js canvas
+  drawingContext.drawImage(glCanvas, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
 }
 
 // --- MOUSE CONTROLS FOR ISO VIEW ---
@@ -1669,8 +1901,8 @@ window.randomizeAll = function() {
   let newMode = random(ANIM_MODES);
   setAnimMode(newMode);
 
-  // Random resolution (bias toward higher: 256, 512, 1024, 2048)
-  setResolution(floor(random(2, RESOLUTIONS.length)));
+  // Random resolution (full range)
+  setResolution(floor(random(RESOLUTIONS.length)));
 
   // Apply param locks based on category
   applyRandomLocks();

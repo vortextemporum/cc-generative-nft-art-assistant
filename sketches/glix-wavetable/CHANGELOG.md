@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.8] - 2026-02-11
+
+### Added
+- WebGL-accelerated isometric 3D view
+  - Separate shader program with VBO/IBO for mesh rendering
+  - GPU depth testing replaces CPU painter's algorithm sorting
+  - Single `gl.drawElements()` call replaces ~65k individual p5.js draw calls
+  - Grid cap raised from 256 to 512 (262k triangles at 60fps)
+  - Vertex color averaging for smooth shading at shared vertices
+- 32px resolution option (7 total: 32, 64, 128, 256, 512, 1024, 2048)
+
+### Changed
+- Randomization now uses full resolution range (was skipping 64/128)
+- 2D GPU renderer rebinds vertex state on each frame (robust after iso→2D switch)
+- Skip 2D wavetable rendering when in isometric view mode (saves GPU time)
+
 ## [2.7] - 2026-02-11
 
 ### Added
