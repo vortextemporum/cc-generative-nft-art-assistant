@@ -1302,7 +1302,7 @@ function renderIsometric() {
   background(10, 10, 15);
 
   let palette = palettes[currentPalette];
-  let gridRes = min(renderSize, 128); // cap grid for perf
+  let gridRes = min(renderSize, 256); // cap grid for perf
   let heightAmt = 0.3; // height relative to grid size
 
   // Pre-compute the sample grid + projected points
@@ -1668,6 +1668,9 @@ window.randomizeAll = function() {
   // Random animation mode
   let newMode = random(ANIM_MODES);
   setAnimMode(newMode);
+
+  // Random resolution (bias toward higher: 256, 512, 1024, 2048)
+  setResolution(floor(random(2, RESOLUTIONS.length)));
 
   // Apply param locks based on category
   applyRandomLocks();
