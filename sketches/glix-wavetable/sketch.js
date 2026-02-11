@@ -123,11 +123,11 @@ const SEQ_PRESETS = [
   { shape:0, pw:0.5, soften:5, y_bend:0, fx_bend:0, fx_noise:0, fx_quantize:0, pw_morph:0, fx_fold:100, fx_crush:0 },
   { shape:0, pw:0.5, soften:3, y_bend:0.5, fx_bend:200, fx_noise:0, fx_quantize:0, pw_morph:10, fx_fold:500, fx_crush:0 },
   { shape:2, pw:0.3, soften:8, y_bend:0.2, fx_bend:0, fx_noise:0.3, fx_quantize:0.4, pw_morph:-20, fx_fold:2000, fx_crush:0 },
-  { shape:7, pw:0.8, soften:15, y_bend:-0.1, fx_bend:400, fx_noise:0, fx_quantize:0, pw_morph:30, fx_fold:100, fx_crush:3000 },
+  { shape:7, pw:0.8, soften:15, y_bend:-0.1, fx_bend:400, fx_noise:0, fx_quantize:0, pw_morph:30, fx_fold:100, fx_crush:0.6 },
   { shape:1, pw:0.6, soften:2, y_bend:0.8, fx_bend:100, fx_noise:0.1, fx_quantize:0.2, pw_morph:-15, fx_fold:4000, fx_crush:0 },
-  { shape:4, pw:0.4, soften:25, y_bend:0, fx_bend:600, fx_noise:0, fx_quantize:0, pw_morph:0, fx_fold:800, fx_crush:5000 },
+  { shape:4, pw:0.4, soften:25, y_bend:0, fx_bend:600, fx_noise:0, fx_quantize:0, pw_morph:0, fx_fold:800, fx_crush:0.8 },
   { shape:6, pw:0.9, soften:1, y_bend:0.3, fx_bend:0, fx_noise:0.5, fx_quantize:0.6, pw_morph:40, fx_fold:6000, fx_crush:0 },
-  { shape:5, pw:0.2, soften:40, y_bend:-0.2, fx_bend:800, fx_noise:0, fx_quantize:0, pw_morph:-40, fx_fold:200, fx_crush:8000 },
+  { shape:5, pw:0.2, soften:40, y_bend:-0.2, fx_bend:800, fx_noise:0, fx_quantize:0, pw_morph:-40, fx_fold:200, fx_crush:0.9 },
 ];
 
 // Bounce state
@@ -1024,7 +1024,7 @@ function animLFO() {
   setTarget('fx_fold', expMap(Math.sin(t * 0.1) * 0.5 + 0.5, 0, 3000) * d + 100 * (1 - d));
   setTarget('fx_noise', (Math.sin(t * 0.6) * 0.5 + 0.5) * 0.3 * d);
   setTarget('fx_quantize', (Math.sin(t * 0.25) * 0.5 + 0.5) * 0.4 * d);
-  setTarget('fx_crush', expMap(Math.sin(t * 0.08) * 0.5 + 0.5, 0, 2000) * d);
+  setTarget('fx_crush', expMap(Math.sin(t * 0.08) * 0.5 + 0.5, 0, 1) * d);
 }
 
 // MODE: Lorenz attractor (chaotic, unpredictable but structured)
@@ -1045,7 +1045,7 @@ function animChaos() {
   setTarget('fx_fold', expMap(Math.abs(nz), 0, 4000) * d + 100 * (1 - d));
   setTarget('fx_noise', Math.abs(nx) * 0.3 * d);
   setTarget('fx_quantize', Math.abs(ny) * 0.4 * d);
-  setTarget('fx_crush', expMap(Math.abs(nz), 0, 6000) * d);
+  setTarget('fx_crush', expMap(Math.abs(nz), 0, 1) * d);
 }
 
 // MODE: Step sequencer (morph between presets)
@@ -1088,7 +1088,7 @@ function animBounce() {
   setTarget('fx_quantize', Math.abs(Math.sin(t * 0.9 + bouncePhases.fx_quantize)) * 0.35 * d);
   setTarget('pw_morph', Math.sin(t * 0.5 + bouncePhases.pw_morph) * 40 * d);
   setTarget('fx_fold', expMap(Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)), 0, 8000) * d + 50);
-  setTarget('fx_crush', expMap(Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)), 0, 6000) * d);
+  setTarget('fx_crush', expMap(Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)), 0, 1) * d);
 }
 
 function interpolateParams() {
