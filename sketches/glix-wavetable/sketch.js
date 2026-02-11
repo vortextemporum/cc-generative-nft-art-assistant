@@ -1361,6 +1361,7 @@ function renderIsometric() {
     let avgSample = (s00 + s10 + s01 + s11) * 0.25;
     let colorVal = (avgSample + 1) * 0.5;
     let col = getColorFromPalette(colorVal, palette);
+    if (Math.abs(hueShift) > 0.5) col = hueShiftRGB(col[0], col[1], col[2], hueShift);
 
     let p00 = projected[gy][gx];
     let p10 = projected[gy][gx + 1];
