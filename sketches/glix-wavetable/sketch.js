@@ -93,6 +93,12 @@ let animTime = 0;
 
 // Animation modes: 'drift', 'lfo', 'chaos', 'sequencer', 'bounce'
 let animMode = 'drift';
+
+// Animation range: scales how far params move (1 = full, 0.1 = subtle, etc.)
+const ANIM_RANGES = [1.0, 0.1, 0.01, 0.001];
+const ANIM_RANGE_LABELS = ['Full', '1/10', '1/100', '1/1000'];
+let animRangeIndex = 0;
+let animRange = ANIM_RANGES[0];
 const ANIM_MODES = ['drift', 'lfo', 'chaos', 'sequencer', 'bounce'];
 
 // Exponential mapping for large-range params (more resolution at low end)
@@ -994,7 +1000,7 @@ function updateAnimation() {
 
 // MODE: Perlin noise drift (original)
 function animDrift() {
-  let drift = driftAmount;
+  let drift = driftAmount * animRange;
   let speed = animSpeed * 0.1;
   setTarget('y_bend', map(noise(animTime * speed * 0.3), 0, 1, -0.25, 1.0) * drift);
   setTarget('fx_bend', expMap(noise(animTime * speed * 0.2 + 100), 0, 500) * drift);
@@ -1009,7 +1015,7 @@ function animDrift() {
 // MODE: Synced LFO oscillation (rhythmic, musical)
 function animLFO() {
   let t = animTime * animSpeed * 0.5;
-  let d = driftAmount;
+  let d = driftAmount * animRange;
   setTarget('pw', 0.5 + Math.sin(t * 0.7) * 0.4 * d);
   setTarget('soften', 10 + Math.sin(t * 0.3) * 9 * d);
   setTarget('y_bend', Math.sin(t * 0.2) * 0.5 * d);
@@ -1025,7 +1031,7 @@ function animLFO() {
 function animChaos() {
   let dt = 0.005 * animSpeed;
   let sigma = 10, rho = 28, beta = 8/3;
-  let d = driftAmount;
+  let d = driftAmount * animRange;
   let dx = sigma * (lorenzY - lorenzX) * dt;
   let dy = (lorenzX * (rho - lorenzZ) - lorenzY) * dt;
   let dz = (lorenzX * lorenzY - beta * lorenzZ) * dt;
@@ -1054,7 +1060,7 @@ function animSequencer() {
   let nextPreset = SEQ_PRESETS[(seqStep + 1) % SEQ_PRESETS.length];
   let t = seqTimer / stepDur;
   t = t * t * (3 - 2 * t); // smoothstep ease
-  let d = driftAmount;
+  let d = driftAmount * animRange;
 
   targetParams.shape = preset.shape;
   params.shape = preset.shape;
@@ -1073,7 +1079,7 @@ function animSequencer() {
 // MODE: Bounce (params ping-pong at different prime-ratio rates)
 function animBounce() {
   let t = animTime * animSpeed * 0.3;
-  let d = driftAmount;
+  let d = driftAmount * animRange;
   setTarget('pw', map(Math.abs(Math.sin(t * 1.0 + bouncePhases.pw)), 0, 1, 0.1, 0.95) * d + 0.5 * (1 - d));
   setTarget('soften', map(Math.abs(Math.sin(t * 0.7 + bouncePhases.soften)), 0, 1, 1, 40));
   setTarget('y_bend', Math.sin(t * 0.3 + bouncePhases.y_bend) * 0.6 * d);
@@ -1997,6 +2003,14 @@ window.cycleAnimMode = function() {
   let el = document.getElementById('anim-mode-display');
   if (el) el.textContent = animMode.charAt(0).toUpperCase() + animMode.slice(1);
   needsRender = true;
+};
+
+window.setAnimRange = function(idx) {
+  animRangeIndex = constrain(idx, 0, ANIM_RANGES.length - 1);
+  animRange = ANIM_RANGES[animRangeIndex];
+  document.querySelectorAll('.range-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.range) === animRangeIndex);
+  });
 };
 
 let smoothUpscale = false;

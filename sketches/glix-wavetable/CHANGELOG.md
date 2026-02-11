@@ -3,6 +3,10 @@
 ## [2.8] - 2026-02-11
 
 ### Added
+- Animation range selector: Full, 1/10, 1/100, 1/1000
+  - Scales how far parameters move during animation
+  - At 1/1000 fold sweeps ~10 units instead of ~10000
+  - Applied uniformly to all 5 animation modes
 - WebGL-accelerated isometric 3D view
   - Separate shader program with VBO/IBO for mesh rendering
   - GPU depth testing replaces CPU painter's algorithm sorting
