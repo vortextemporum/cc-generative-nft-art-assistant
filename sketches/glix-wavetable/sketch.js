@@ -49,6 +49,46 @@ let params = {
 let targetParams = { ...params };
 let animSpeed = 0.3;
 let driftAmount = 0.5;
+
+// Parameter locks — locked params are not updated by animation
+const ANIM_PARAMS = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush'];
+let paramLocks = {};
+for (let k of ANIM_PARAMS) paramLocks[k] = false;
+
+// Set target param only if unlocked
+function setTarget(key, val) {
+  if (!paramLocks[key]) targetParams[key] = val;
+}
+
+// Lock count categories: how many params to animate (rest are locked)
+// 0=single(1), 1=couple(2-3), 2=multiple(4-5), 3=almost all(7-8), 4=all(9)
+let lockCategory = 4; // default: all animate
+const LOCK_CATEGORIES = [
+  { name: 'Single', count: 1 },
+  { name: 'Couple', count: [2, 3] },
+  { name: 'Multiple', count: [4, 5] },
+  { name: 'Most', count: [7, 8] },
+  { name: 'All', count: 9 }
+];
+
+function applyRandomLocks() {
+  let cat = LOCK_CATEGORIES[lockCategory];
+  let animCount;
+  if (Array.isArray(cat.count)) {
+    animCount = cat.count[0] + floor(random(cat.count[1] - cat.count[0] + 1));
+  } else {
+    animCount = cat.count;
+  }
+  // Shuffle param list and pick which ones to animate
+  let shuffled = [...ANIM_PARAMS];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    let j = floor(random(i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  for (let i = 0; i < ANIM_PARAMS.length; i++) {
+    paramLocks[shuffled[i]] = i >= animCount;
+  }
+}
 let isAnimating = true;
 let animTime = 0;
 
@@ -783,29 +823,29 @@ function updateAnimation() {
 function animDrift() {
   let drift = driftAmount;
   let speed = animSpeed * 0.1;
-  targetParams.y_bend = map(noise(animTime * speed * 0.3), 0, 1, -0.25, 1.0) * drift;
-  targetParams.fx_bend = expMap(noise(animTime * speed * 0.2 + 100), 0, 500) * drift;
-  targetParams.pw_morph = map(noise(animTime * speed * 0.4 + 200), 0, 1, -25, 25) * drift;
-  targetParams.fx_fold = expMap(noise(animTime * speed * 0.15 + 300), 0, 2000) * drift + 100 * (1 - drift);
-  targetParams.pw = map(noise(animTime * speed * 0.5 + 400), 0, 1, 0.2, 1.0);
-  targetParams.fx_noise = map(noise(animTime * speed * 0.25 + 500), 0, 1, 0, 0.3) * drift;
-  targetParams.fx_quantize = map(noise(animTime * speed * 0.2 + 600), 0, 1, 0, 0.5) * drift;
-  targetParams.soften = map(noise(animTime * speed * 0.35 + 700), 0, 1, 1, 20);
+  setTarget('y_bend', map(noise(animTime * speed * 0.3), 0, 1, -0.25, 1.0) * drift);
+  setTarget('fx_bend', expMap(noise(animTime * speed * 0.2 + 100), 0, 500) * drift);
+  setTarget('pw_morph', map(noise(animTime * speed * 0.4 + 200), 0, 1, -25, 25) * drift);
+  setTarget('fx_fold', expMap(noise(animTime * speed * 0.15 + 300), 0, 2000) * drift + 100 * (1 - drift));
+  setTarget('pw', map(noise(animTime * speed * 0.5 + 400), 0, 1, 0.2, 1.0));
+  setTarget('fx_noise', map(noise(animTime * speed * 0.25 + 500), 0, 1, 0, 0.3) * drift);
+  setTarget('fx_quantize', map(noise(animTime * speed * 0.2 + 600), 0, 1, 0, 0.5) * drift);
+  setTarget('soften', map(noise(animTime * speed * 0.35 + 700), 0, 1, 1, 20));
 }
 
 // MODE: Synced LFO oscillation (rhythmic, musical)
 function animLFO() {
   let t = animTime * animSpeed * 0.5;
   let d = driftAmount;
-  targetParams.pw = 0.5 + Math.sin(t * 0.7) * 0.4 * d;
-  targetParams.soften = 10 + Math.sin(t * 0.3) * 9 * d;
-  targetParams.y_bend = Math.sin(t * 0.2) * 0.5 * d;
-  targetParams.fx_bend = expMap(Math.sin(t * 0.15) * 0.5 + 0.5, 0, 400) * d;
-  targetParams.pw_morph = Math.sin(t * 0.4) * 30 * d;
-  targetParams.fx_fold = expMap(Math.sin(t * 0.1) * 0.5 + 0.5, 0, 3000) * d + 100 * (1 - d);
-  targetParams.fx_noise = (Math.sin(t * 0.6) * 0.5 + 0.5) * 0.3 * d;
-  targetParams.fx_quantize = (Math.sin(t * 0.25) * 0.5 + 0.5) * 0.4 * d;
-  targetParams.fx_crush = expMap(Math.sin(t * 0.08) * 0.5 + 0.5, 0, 2000) * d;
+  setTarget('pw', 0.5 + Math.sin(t * 0.7) * 0.4 * d);
+  setTarget('soften', 10 + Math.sin(t * 0.3) * 9 * d);
+  setTarget('y_bend', Math.sin(t * 0.2) * 0.5 * d);
+  setTarget('fx_bend', expMap(Math.sin(t * 0.15) * 0.5 + 0.5, 0, 400) * d);
+  setTarget('pw_morph', Math.sin(t * 0.4) * 30 * d);
+  setTarget('fx_fold', expMap(Math.sin(t * 0.1) * 0.5 + 0.5, 0, 3000) * d + 100 * (1 - d));
+  setTarget('fx_noise', (Math.sin(t * 0.6) * 0.5 + 0.5) * 0.3 * d);
+  setTarget('fx_quantize', (Math.sin(t * 0.25) * 0.5 + 0.5) * 0.4 * d);
+  setTarget('fx_crush', expMap(Math.sin(t * 0.08) * 0.5 + 0.5, 0, 2000) * d);
 }
 
 // MODE: Lorenz attractor (chaotic, unpredictable but structured)
@@ -818,15 +858,15 @@ function animChaos() {
   let dz = (lorenzX * lorenzY - beta * lorenzZ) * dt;
   lorenzX += dx; lorenzY += dy; lorenzZ += dz;
   let nx = lorenzX / 20, ny = lorenzY / 25, nz = (lorenzZ - 25) / 20;
-  targetParams.pw = 0.5 + nx * 0.4 * d;
-  targetParams.soften = 10 + ny * 15 * d;
-  targetParams.y_bend = nx * 0.5 * d;
-  targetParams.fx_bend = expMap((nz + 1) * 0.5, 0, 500) * d;
-  targetParams.pw_morph = ny * 30 * d;
-  targetParams.fx_fold = expMap(Math.abs(nz), 0, 4000) * d + 100 * (1 - d);
-  targetParams.fx_noise = Math.abs(nx) * 0.3 * d;
-  targetParams.fx_quantize = Math.abs(ny) * 0.4 * d;
-  targetParams.fx_crush = expMap(Math.abs(nz), 0, 6000) * d;
+  setTarget('pw', 0.5 + nx * 0.4 * d);
+  setTarget('soften', 10 + ny * 15 * d);
+  setTarget('y_bend', nx * 0.5 * d);
+  setTarget('fx_bend', expMap((nz + 1) * 0.5, 0, 500) * d);
+  setTarget('pw_morph', ny * 30 * d);
+  setTarget('fx_fold', expMap(Math.abs(nz), 0, 4000) * d + 100 * (1 - d));
+  setTarget('fx_noise', Math.abs(nx) * 0.3 * d);
+  setTarget('fx_quantize', Math.abs(ny) * 0.4 * d);
+  setTarget('fx_crush', expMap(Math.abs(nz), 0, 6000) * d);
 }
 
 // MODE: Step sequencer (morph between presets)
@@ -846,30 +886,30 @@ function animSequencer() {
   targetParams.shape = preset.shape;
   params.shape = preset.shape;
   updateShapeButtons();
-  targetParams.pw = lerp(preset.pw, nextPreset.pw, t * d);
-  targetParams.soften = lerp(preset.soften, nextPreset.soften, t * d);
-  targetParams.y_bend = lerp(preset.y_bend, nextPreset.y_bend, t * d);
-  targetParams.fx_bend = lerp(preset.fx_bend, nextPreset.fx_bend, t * d);
-  targetParams.fx_noise = lerp(preset.fx_noise, nextPreset.fx_noise, t * d);
-  targetParams.fx_quantize = lerp(preset.fx_quantize, nextPreset.fx_quantize, t * d);
-  targetParams.pw_morph = lerp(preset.pw_morph, nextPreset.pw_morph, t * d);
-  targetParams.fx_fold = lerp(preset.fx_fold, nextPreset.fx_fold, t * d);
-  targetParams.fx_crush = lerp(preset.fx_crush, nextPreset.fx_crush, t * d);
+  setTarget('pw', lerp(preset.pw, nextPreset.pw, t * d));
+  setTarget('soften', lerp(preset.soften, nextPreset.soften, t * d));
+  setTarget('y_bend', lerp(preset.y_bend, nextPreset.y_bend, t * d));
+  setTarget('fx_bend', lerp(preset.fx_bend, nextPreset.fx_bend, t * d));
+  setTarget('fx_noise', lerp(preset.fx_noise, nextPreset.fx_noise, t * d));
+  setTarget('fx_quantize', lerp(preset.fx_quantize, nextPreset.fx_quantize, t * d));
+  setTarget('pw_morph', lerp(preset.pw_morph, nextPreset.pw_morph, t * d));
+  setTarget('fx_fold', lerp(preset.fx_fold, nextPreset.fx_fold, t * d));
+  setTarget('fx_crush', lerp(preset.fx_crush, nextPreset.fx_crush, t * d));
 }
 
 // MODE: Bounce (params ping-pong at different prime-ratio rates)
 function animBounce() {
   let t = animTime * animSpeed * 0.3;
   let d = driftAmount;
-  targetParams.pw = map(Math.abs(Math.sin(t * 1.0 + bouncePhases.pw)), 0, 1, 0.1, 0.95) * d + 0.5 * (1 - d);
-  targetParams.soften = map(Math.abs(Math.sin(t * 0.7 + bouncePhases.soften)), 0, 1, 1, 40);
-  targetParams.y_bend = Math.sin(t * 0.3 + bouncePhases.y_bend) * 0.6 * d;
-  targetParams.fx_bend = expMap(Math.abs(Math.sin(t * 0.2 + bouncePhases.fx_bend)), 0, 700) * d;
-  targetParams.fx_noise = Math.abs(Math.sin(t * 1.3 + bouncePhases.fx_noise)) * 0.5 * d;
-  targetParams.fx_quantize = Math.abs(Math.sin(t * 0.9 + bouncePhases.fx_quantize)) * 0.6 * d;
-  targetParams.pw_morph = Math.sin(t * 0.5 + bouncePhases.pw_morph) * 40 * d;
-  targetParams.fx_fold = expMap(Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)), 0, 8000) * d + 50;
-  targetParams.fx_crush = expMap(Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)), 0, 6000) * d;
+  setTarget('pw', map(Math.abs(Math.sin(t * 1.0 + bouncePhases.pw)), 0, 1, 0.1, 0.95) * d + 0.5 * (1 - d));
+  setTarget('soften', map(Math.abs(Math.sin(t * 0.7 + bouncePhases.soften)), 0, 1, 1, 40));
+  setTarget('y_bend', Math.sin(t * 0.3 + bouncePhases.y_bend) * 0.6 * d);
+  setTarget('fx_bend', expMap(Math.abs(Math.sin(t * 0.2 + bouncePhases.fx_bend)), 0, 700) * d);
+  setTarget('fx_noise', Math.abs(Math.sin(t * 1.3 + bouncePhases.fx_noise)) * 0.5 * d);
+  setTarget('fx_quantize', Math.abs(Math.sin(t * 0.9 + bouncePhases.fx_quantize)) * 0.6 * d);
+  setTarget('pw_morph', Math.sin(t * 0.5 + bouncePhases.pw_morph) * 40 * d);
+  setTarget('fx_fold', expMap(Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)), 0, 8000) * d + 50);
+  setTarget('fx_crush', expMap(Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)), 0, 6000) * d);
 }
 
 function interpolateParams() {
@@ -1320,6 +1360,18 @@ function setupUI() {
     });
   });
 
+  // Lock category buttons
+  document.querySelectorAll('.lock-btn[data-lockcat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      lockCategory = parseInt(btn.dataset.lockcat);
+      document.querySelectorAll('.lock-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.lockcat) === lockCategory);
+      });
+      applyRandomLocks();
+      needsRender = true;
+    });
+  });
+
   // Crush mode buttons
   document.querySelectorAll('.shape-btn[data-crushmode]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1511,6 +1563,9 @@ window.randomizeAll = function() {
   // Random animation mode
   let newMode = random(ANIM_MODES);
   setAnimMode(newMode);
+
+  // Apply param locks based on category
+  applyRandomLocks();
 
   needsRender = true;
 };
