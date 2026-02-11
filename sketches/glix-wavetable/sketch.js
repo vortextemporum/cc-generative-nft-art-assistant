@@ -566,6 +566,35 @@ float generateSample(float raw_phase, float scan_pos) {
     float psi_lo = sin(n_lo * 3.14159265 * shifted_phase);
     float psi_hi = sin(n_hi * 3.14159265 * shifted_phase);
     samp = psi_lo * (1.0 - frac_n) + psi_hi * frac_n;
+  } else if (sel == 9) {
+    // Chebyshev: T_n(x) = cos(n * acos(x))
+    float x = shifted_phase * 2.0 - 1.0;
+    x = clamp(x, -0.999, 0.999);
+    float n = 1.0 + scan_pos * 7.0;
+    float n_lo = floor(n);
+    float n_hi = n_lo + 1.0;
+    float frac_n = n - n_lo;
+    float t_lo = cos(n_lo * acos(x));
+    float t_hi = cos(n_hi * acos(x));
+    samp = t_lo * (1.0 - frac_n) + t_hi * frac_n;
+  } else if (sel == 10) {
+    // FM Synthesis: sin(2πφ + index * sin(2π * ratio * φ))
+    float mod_index = scan_pos * 8.0;
+    float ratio = 2.0 + (u_pw - 0.5) * 2.0;
+    samp = sin(6.28318530718 * shifted_phase + mod_index * sin(6.28318530718 * ratio * shifted_phase));
+  } else if (sel == 11) {
+    // Harmonic Series: sum sin(k*2πφ)/k
+    float num_h = 1.0 + scan_pos * 15.0;
+    float n_lo_h = floor(num_h);
+    float frac_h = num_h - n_lo_h;
+    samp = 0.0;
+    for (int k = 1; k <= 16; k++) {
+      float fk = float(k);
+      if (fk > n_lo_h + 1.0) break;
+      float amp = fk <= n_lo_h ? 1.0 : frac_h;
+      samp += amp * sin(fk * 6.28318530718 * shifted_phase) / fk;
+    }
+    samp *= 0.63;
   }
 
   // SOFT SATURATION
@@ -1011,18 +1040,44 @@ function generateSample(raw_phase, scan_pos) {
     samp = (s1 + s2 + s3) / 3.0;
   } else if (sel === 8) {
     // SCHRÖDINGER (1D quantum wavefunction)
-    // scan_pos controls quantum number n (1-8), phase is position x
     let n = 1.0 + scan_pos * 7.0;
     let n_lo = floor(n);
     let n_hi = n_lo + 1;
     let frac_n = n - n_lo;
-    // ψ_n(x) = sin(n * π * x) for infinite well
     let psi_lo = sin(n_lo * PI * shifted_phase);
     let psi_hi = sin(n_hi * PI * shifted_phase);
-    // Smooth interpolation between quantum states
-    let psi = psi_lo * (1.0 - frac_n) + psi_hi * frac_n;
-    // Output wavefunction (not |ψ|² — keep the sign for audio character)
-    samp = psi;
+    samp = psi_lo * (1.0 - frac_n) + psi_hi * frac_n;
+  } else if (sel === 9) {
+    // CHEBYSHEV (polynomial waveshaping)
+    // T_n(x) = cos(n * arccos(x)), morph sweeps order 1→8
+    let x = shifted_phase * 2.0 - 1.0;
+    x = constrain(x, -0.999, 0.999);
+    let n = 1.0 + scan_pos * 7.0;
+    let n_lo = floor(n);
+    let n_hi = n_lo + 1;
+    let frac_n = n - n_lo;
+    let t_lo = cos(n_lo * acos(x));
+    let t_hi = cos(n_hi * acos(x));
+    samp = t_lo * (1.0 - frac_n) + t_hi * frac_n;
+  } else if (sel === 10) {
+    // FM SYNTHESIS
+    // sin(2πφ + index * sin(2π * ratio * φ)), morph sweeps index 0→8
+    let mod_index = scan_pos * 8.0;
+    let ratio = 2.0 + (params.pw - 0.5) * 2.0; // pw controls FM ratio (1-3)
+    samp = sin(TWO_PI * shifted_phase + mod_index * sin(TWO_PI * ratio * shifted_phase));
+  } else if (sel === 11) {
+    // HARMONIC SERIES (additive synthesis)
+    // Sum of sin(k*2πφ)/k, morph sweeps number of harmonics 1→16
+    let num_h = 1.0 + scan_pos * 15.0;
+    let n_lo_h = floor(num_h);
+    let frac_h = num_h - n_lo_h;
+    samp = 0.0;
+    for (let k = 1; k <= 16; k++) {
+      if (k > n_lo_h + 1) break;
+      let amp = k <= n_lo_h ? 1.0 : frac_h;
+      samp += amp * sin(k * TWO_PI * shifted_phase) / k;
+    }
+    samp *= 0.63; // normalize (harmonic series sum ≈ 1.59 at 16 terms)
   }
 
   // Soft Saturation
