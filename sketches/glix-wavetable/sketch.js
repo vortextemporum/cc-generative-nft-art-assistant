@@ -7,7 +7,7 @@ let canvas;
 const DISPLAY_SIZE = 700;
 
 // --- WebGL SHADER RENDERER ---
-let glCanvas, gl, shaderProgram, quadVAO;
+let glCanvas, gl, shaderProgram, vertexBuffer;
 let uLocations = {};
 
 // View mode: '2d' or 'iso'
@@ -432,6 +432,7 @@ uniform float u_pp_scanlines;
 uniform float u_pp_posterize;
 uniform float u_pp_grain;
 uniform float u_time;
+uniform float u_canvas_size;
 uniform vec3 u_palette[7];
 
 float fract2(float x) { return x - floor(x); }
@@ -608,7 +609,7 @@ void main() {
   float colorVal = (sample_val + 1.0) * 0.5;
   vec3 col = getPaletteColor(colorVal);
 
-  vec2 pixCoord = v_uv * u_size;
+  vec2 pixCoord = v_uv * u_canvas_size;
 
   // Ordered dithering
   if (u_pp_dither > 0.5) {
@@ -675,8 +676,8 @@ function initWebGL() {
   gl.useProgram(shaderProgram);
 
   // Fullscreen quad
-  let buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
   let aPos = gl.getAttribLocation(shaderProgram, 'a_pos');
   gl.enableVertexAttribArray(aPos);
@@ -685,7 +686,7 @@ function initWebGL() {
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
                'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
-               'u_pp_dither','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time'];
+               'u_pp_dither','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time','u_canvas_size'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
   for (let i = 0; i < 7; i++) {
     uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
@@ -700,6 +701,12 @@ function resizeGLCanvas() {
   glCanvas.width = sz;
   glCanvas.height = sz;
   gl.viewport(0, 0, sz, sz);
+  // Rebind after resize (canvas resize resets GL state)
+  gl.useProgram(shaderProgram);
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  let aPos = gl.getAttribLocation(shaderProgram, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 }
 
 let useWebGL = false;
@@ -1051,6 +1058,8 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_pp_posterize, ppPosterize ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_grain, ppGrain ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_time, animTime * 100.0);
+  let canvasSize = ppSuperSample ? renderSize * 2 : renderSize;
+  gl.uniform1f(uLocations.u_canvas_size, canvasSize);
 
   // Set palette colors (normalized 0-1)
   for (let i = 0; i < 7; i++) {
@@ -1329,53 +1338,53 @@ function setupUI() {
   });
 
   // Sliders
-  setupSlider('pw', 0, 100, v => {
-    params.pw = v / 100;
+  setupSlider('pw', 0, 1000, v => {
+    params.pw = v / 1000;
     targetParams.pw = params.pw;
-  }, v => (v / 100).toFixed(2));
+  }, v => (v / 1000).toFixed(3));
 
-  setupSlider('soften', 0, 100, v => {
-    params.soften = expMap(v / 100, 0.001, 50);
+  setupSlider('soften', 0, 1000, v => {
+    params.soften = expMap(v / 1000, 0.001, 50);
     targetParams.soften = params.soften;
-  }, v => expMap(v / 100, 0.001, 50).toFixed(3));
+  }, v => expMap(v / 1000, 0.001, 50).toFixed(3));
 
-  setupSlider('ybend', 0, 100, v => {
-    params.y_bend = map(v, 0, 100, -0.25, 1.0);
+  setupSlider('ybend', 0, 1000, v => {
+    params.y_bend = map(v, 0, 1000, -0.25, 1.0);
     targetParams.y_bend = params.y_bend;
-  }, v => map(v, 0, 100, -0.25, 1.0).toFixed(2));
+  }, v => map(v, 0, 1000, -0.25, 1.0).toFixed(3));
 
-  setupSlider('fxbend', 0, 100, v => {
-    params.fx_bend = expMap(v / 100, 0, 1000);
+  setupSlider('fxbend', 0, 1000, v => {
+    params.fx_bend = expMap(v / 1000, 0, 1000);
     targetParams.fx_bend = params.fx_bend;
-  }, v => expMap(v / 100, 0, 1000).toFixed(0));
+  }, v => expMap(v / 1000, 0, 1000).toFixed(1));
 
-  setupSlider('fxnoise', 0, 100, v => {
-    params.fx_noise = v / 100;
+  setupSlider('fxnoise', 0, 1000, v => {
+    params.fx_noise = v / 1000;
     targetParams.fx_noise = params.fx_noise;
-  }, v => (v / 100).toFixed(2));
+  }, v => (v / 1000).toFixed(3));
 
-  setupSlider('fxquant', 0, 100, v => {
-    params.fx_quantize = v / 100;
+  setupSlider('fxquant', 0, 1000, v => {
+    params.fx_quantize = v / 1000;
     targetParams.fx_quantize = params.fx_quantize;
-  }, v => (v / 100).toFixed(2));
+  }, v => (v / 1000).toFixed(3));
 
-  setupSlider('pwmorph', 0, 100, v => {
-    params.pw_morph = map(v, 0, 100, -50, 50);
+  setupSlider('pwmorph', 0, 1000, v => {
+    params.pw_morph = map(v, 0, 1000, -50, 50);
     targetParams.pw_morph = params.pw_morph;
-  }, v => map(v, 0, 100, -50, 50).toFixed(1));
+  }, v => map(v, 0, 1000, -50, 50).toFixed(1));
 
-  setupSlider('fold', 0, 100, v => {
-    params.fx_fold = expMap(v / 100, 0, 10000);
+  setupSlider('fold', 0, 1000, v => {
+    params.fx_fold = expMap(v / 1000, 0, 10000);
     targetParams.fx_fold = params.fx_fold;
-  }, v => expMap(v / 100, 0, 10000).toFixed(0));
+  }, v => expMap(v / 1000, 0, 10000).toFixed(0));
 
-  setupSlider('crush', 0, 100, v => {
+  setupSlider('crush', 0, 1000, v => {
     let mx = params.crush_mode === 0 ? 10000 : 1;
-    params.fx_crush = expMap(v / 100, 0, mx);
+    params.fx_crush = expMap(v / 1000, 0, mx);
     targetParams.fx_crush = params.fx_crush;
   }, v => {
     let mx = params.crush_mode === 0 ? 10000 : 1;
-    let val = expMap(v / 100, 0, mx);
+    let val = expMap(v / 1000, 0, mx);
     return mx > 1 ? val.toFixed(0) : val.toFixed(3);
   });
 
@@ -1429,36 +1438,36 @@ function updateCrushButtons() {
 }
 
 function updateUIValues() {
-  document.getElementById('param-pw').value = params.pw * 100;
-  document.getElementById('val-pw').textContent = params.pw.toFixed(2);
+  document.getElementById('param-pw').value = params.pw * 1000;
+  document.getElementById('val-pw').textContent = params.pw.toFixed(3);
 
-  document.getElementById('param-soften').value = logMap(params.soften, 0.001, 50) * 100;
+  document.getElementById('param-soften').value = logMap(params.soften, 0.001, 50) * 1000;
   document.getElementById('val-soften').textContent = params.soften.toFixed(3);
 
-  let ybendVal = map(params.y_bend, -0.25, 1.0, 0, 100);
+  let ybendVal = map(params.y_bend, -0.25, 1.0, 0, 1000);
   document.getElementById('param-ybend').value = ybendVal;
-  document.getElementById('val-ybend').textContent = params.y_bend.toFixed(2);
+  document.getElementById('val-ybend').textContent = params.y_bend.toFixed(3);
 
-  let fxbendVal = logMap(params.fx_bend, 0, 1000) * 100;
+  let fxbendVal = logMap(params.fx_bend, 0, 1000) * 1000;
   document.getElementById('param-fxbend').value = fxbendVal;
-  document.getElementById('val-fxbend').textContent = params.fx_bend.toFixed(0);
+  document.getElementById('val-fxbend').textContent = params.fx_bend.toFixed(1);
 
-  document.getElementById('param-fxnoise').value = params.fx_noise * 100;
-  document.getElementById('val-fxnoise').textContent = params.fx_noise.toFixed(2);
+  document.getElementById('param-fxnoise').value = params.fx_noise * 1000;
+  document.getElementById('val-fxnoise').textContent = params.fx_noise.toFixed(3);
 
-  document.getElementById('param-fxquant').value = params.fx_quantize * 100;
-  document.getElementById('val-fxquant').textContent = params.fx_quantize.toFixed(2);
+  document.getElementById('param-fxquant').value = params.fx_quantize * 1000;
+  document.getElementById('val-fxquant').textContent = params.fx_quantize.toFixed(3);
 
-  let pwmorphVal = map(params.pw_morph, -50, 50, 0, 100);
+  let pwmorphVal = map(params.pw_morph, -50, 50, 0, 1000);
   document.getElementById('param-pwmorph').value = pwmorphVal;
   document.getElementById('val-pwmorph').textContent = params.pw_morph.toFixed(1);
 
-  let foldVal = logMap(params.fx_fold, 0, 10000) * 100;
+  let foldVal = logMap(params.fx_fold, 0, 10000) * 1000;
   document.getElementById('param-fold').value = foldVal;
   document.getElementById('val-fold').textContent = params.fx_fold.toFixed(0);
 
   let crushMax = params.crush_mode === 0 ? 10000 : 1;
-  let crushVal = logMap(params.fx_crush, 0, crushMax) * 100;
+  let crushVal = logMap(params.fx_crush, 0, crushMax) * 1000;
   document.getElementById('param-crush').value = crushVal;
   document.getElementById('val-crush').textContent = crushMax > 1 ? params.fx_crush.toFixed(0) : params.fx_crush.toFixed(3);
 
