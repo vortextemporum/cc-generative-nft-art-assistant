@@ -21,7 +21,7 @@ glix-wavetable/
 
 Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitter that generates wavetables with extensive modulation options.
 
-## Oscillators (12 total)
+## Oscillators (16 total)
 
 | Index | Name | Formula / Description |
 |-------|------|----------------------|
@@ -37,6 +37,10 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | 9 | Chebyshev | T_n(x) = cos(n·arccos(x)), morph sweeps polynomial order 1-8 |
 | 10 | FM | sin(2πφ + index·sin(2π·ratio·φ)), morph sweeps mod depth 0-8, PW controls ratio |
 | 11 | Harmonic | Additive partials Σsin(k·2πφ)/k, morph sweeps harmonic count 1-16 |
+| 12 | Fractal | Weierstrass Σsin(b^n·πφ)/a^n, morph sweeps octaves 1-12, PW controls freq ratio 2-5 |
+| 13 | Chirp | sin(2π·φ^k), morph sweeps exponent k 1-8 |
+| 14 | Formant | Gaussian-windowed harmonics, morph sweeps center freq 2-16, PW controls bandwidth |
+| 15 | Chaos | Logistic map r·x·(1-x) iterated 24×, morph sweeps r 2.5-4.0 |
 
 ## Parameters
 

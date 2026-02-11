@@ -3,6 +3,11 @@
 ## [2.8] - 2026-02-11
 
 ### Added
+- 4 new non-standard oscillators (16 total):
+  - Fractal (Weierstrass): self-similar harmonic series, morph sweeps octaves 1-12, PW controls freq ratio
+  - Chirp: frequency accelerates across cycle via sin(2πφ^k), morph sweeps exponent 1-8
+  - Formant: gaussian-windowed harmonics creating vocal resonances, morph sweeps center freq, PW controls bandwidth
+  - Chaos (Logistic map): iterated r*x*(1-x), morph sweeps r from periodic to chaotic (2.5-4.0)
 - Waveform Mirror and Invert toggles
   - Mirror: flips phase (1-phase) before waveform generation
   - Invert: flips output (-sample) after waveform generation

@@ -660,6 +660,55 @@ float generateSample(float raw_phase, float scan_pos) {
       samp += amp * sin(fk * 6.28318530718 * shifted_phase) / fk;
     }
     samp *= 0.63;
+  } else if (sel == 12) {
+    // Fractal (Weierstrass): sum sin(b^n * π * φ) / a^n
+    // Morph sweeps octave count 1-12, PW controls frequency ratio b
+    float b = 2.0 + u_pw * 3.0; // freq ratio 2-5
+    float a = 1.5; // amplitude decay
+    float num_oct = 1.0 + scan_pos * 11.0;
+    float n_lo_f = floor(num_oct);
+    float frac_f = num_oct - n_lo_f;
+    samp = 0.0;
+    float bn = 1.0; // b^n
+    float an = 1.0; // a^n
+    for (int n = 0; n < 12; n++) {
+      float fn = float(n);
+      if (fn > n_lo_f + 1.0) break;
+      float amp = fn <= n_lo_f ? 1.0 : frac_f;
+      samp += amp * sin(bn * 3.14159265 * shifted_phase) / an;
+      bn *= b;
+      an *= a;
+    }
+    samp *= 0.5; // normalize
+  } else if (sel == 13) {
+    // Chirp: sin(2π * φ^k), frequency accelerates across cycle
+    // Morph sweeps exponent k from 1-8
+    float k = 1.0 + scan_pos * 7.0;
+    float chirp_phase = pow(clamp(shifted_phase, 0.001, 0.999), k);
+    samp = sin(chirp_phase * 6.28318530718);
+  } else if (sel == 14) {
+    // Formant: gaussian-windowed harmonics (vocal resonance)
+    // Morph sweeps formant frequency, PW controls bandwidth
+    float formant_freq = 2.0 + scan_pos * 14.0; // center harmonic 2-16
+    float bw = 0.3 + u_pw * 1.2; // bandwidth 0.3-1.5
+    samp = 0.0;
+    for (int k = 1; k <= 16; k++) {
+      float fk = float(k);
+      float dist = (fk - formant_freq) / bw;
+      float env = exp(-0.5 * dist * dist); // gaussian window
+      samp += env * sin(fk * 6.28318530718 * shifted_phase);
+    }
+    samp *= 0.4; // normalize
+  } else if (sel == 15) {
+    // Chaos (Logistic map): x = r*x*(1-x) iterated
+    // Phase → initial x, morph → r parameter (2.5-4.0)
+    float r = 2.5 + scan_pos * 1.5;
+    float x = clamp(shifted_phase, 0.01, 0.99);
+    // Iterate 24 times, use last value
+    for (int i = 0; i < 24; i++) {
+      x = r * x * (1.0 - x);
+    }
+    samp = x * 2.0 - 1.0; // map 0-1 to -1..1
   }
 
   // INVERT (flip output)
@@ -1234,6 +1283,47 @@ function generateSample(raw_phase, scan_pos) {
       samp += amp * sin(k * TWO_PI * shifted_phase) / k;
     }
     samp *= 0.63; // normalize (harmonic series sum ≈ 1.59 at 16 terms)
+  } else if (sel === 12) {
+    // FRACTAL (Weierstrass): sum sin(b^n * π * φ) / a^n
+    let b = 2.0 + params.pw * 3.0;
+    let a = 1.5;
+    let num_oct = 1.0 + scan_pos * 11.0;
+    let n_lo_f = floor(num_oct);
+    let frac_f = num_oct - n_lo_f;
+    samp = 0.0;
+    let bn = 1.0, an = 1.0;
+    for (let n = 0; n < 12; n++) {
+      if (n > n_lo_f + 1) break;
+      let amp = n <= n_lo_f ? 1.0 : frac_f;
+      samp += amp * sin(bn * PI * shifted_phase) / an;
+      bn *= b;
+      an *= a;
+    }
+    samp *= 0.5;
+  } else if (sel === 13) {
+    // CHIRP: sin(2π * φ^k), frequency accelerates across cycle
+    let k = 1.0 + scan_pos * 7.0;
+    let chirp_phase = pow(constrain(shifted_phase, 0.001, 0.999), k);
+    samp = sin(chirp_phase * TWO_PI);
+  } else if (sel === 14) {
+    // FORMANT: gaussian-windowed harmonics (vocal resonance)
+    let formant_freq = 2.0 + scan_pos * 14.0;
+    let bw = 0.3 + params.pw * 1.2;
+    samp = 0.0;
+    for (let k = 1; k <= 16; k++) {
+      let dist = (k - formant_freq) / bw;
+      let env = exp(-0.5 * dist * dist);
+      samp += env * sin(k * TWO_PI * shifted_phase);
+    }
+    samp *= 0.4;
+  } else if (sel === 15) {
+    // CHAOS (Logistic map): x = r*x*(1-x) iterated
+    let r = 2.5 + scan_pos * 1.5;
+    let x = constrain(shifted_phase, 0.01, 0.99);
+    for (let i = 0; i < 24; i++) {
+      x = r * x * (1.0 - x);
+    }
+    samp = x * 2.0 - 1.0;
   }
 
   // INVERT (flip output)
@@ -1905,7 +1995,7 @@ function updateColorPreview() {
 
 // --- GLOBAL FUNCTIONS ---
 window.randomizeAll = function() {
-  params.shape = floor(random(12));
+  params.shape = floor(random(16));
   params.pw = random(0.0, 1.0);
   params.soften = expMap(random(), 0.001, 50);
   params.y_bend = random(-0.25, 1.0);
