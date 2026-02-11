@@ -102,15 +102,14 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 - **Sequencer**: Step presets with smoothstep interpolation
 - **Bounce**: Prime-ratio sine ping-pong
 
-### Animation Range
-- `animRange` multiplier scales interpolation speed in `interpolateParams()`
-- Options: Full (1×), 1/10, 1/100, 1/1000
-- At 1/1000, params creep toward targets — glacial, barely perceptible changes
-- UI buttons with `.range-btn` class, `setAnimRange(idx)` function
-- Randomized along with lock category on R press
+### Animation Range (per-parameter)
+- `paramRanges` object: per-param interpolation speed multiplier (1.0, 0.1, 0.01)
+- UI buttons set all params to same value; `randomizeParamRanges()` assigns random per-param mix
+- `interpolateParams()` uses `paramRanges[k]` for each param's lerp speed
+- On randomize (R), each param independently gets Full/1/10/1/100
 
 ### Parameter Lock System
-- Lock categories control how many params animate: Single(1), Couple(2-3), Multiple(4-5), Most(7-8), All(9)
+- Lock categories control how many params animate: Couple(2-3), Multiple(4-5), Most(7-8), All(9)
 - `paramLocks` object tracks per-param lock state
 - `setTarget(key, val)` respects locks — animation functions use this instead of direct assignment
 - `applyRandomLocks()` shuffles which params are locked based on category

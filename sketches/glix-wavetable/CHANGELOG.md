@@ -3,10 +3,11 @@
 ## [2.8] - 2026-02-11
 
 ### Added
-- Animation range selector: Full, 1/10, 1/100, 1/1000
-  - Controls interpolation speed — how fast params converge to targets
-  - At 1/1000 fold creeps at ~0.05 units/frame instead of jumping
-  - Randomization (R) now also randomizes range and lock category
+- Per-parameter animation range: Full, 1/10, 1/100
+  - Controls interpolation speed per-param — each param can converge at different rates
+  - UI buttons set all params to same range; randomize (R) assigns random per-param mix
+  - Removed 1/1000 option (too extreme)
+  - Removed Single from Animate lock categories
 - WebGL-accelerated isometric 3D view
   - Separate shader program with VBO/IBO for mesh rendering
   - GPU depth testing replaces CPU painter's algorithm sorting

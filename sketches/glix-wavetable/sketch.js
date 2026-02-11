@@ -60,10 +60,9 @@ function setTarget(key, val) {
 }
 
 // Lock count categories: how many params to animate (rest are locked)
-// 0=single(1), 1=couple(2-3), 2=multiple(4-5), 3=almost all(7-8), 4=all(9)
-let lockCategory = 4; // default: all animate
+// 0=couple(2-3), 1=multiple(4-5), 2=almost all(7-8), 3=all(9)
+let lockCategory = 3; // default: all animate
 const LOCK_CATEGORIES = [
-  { name: 'Single', count: 1 },
   { name: 'Couple', count: [2, 3] },
   { name: 'Multiple', count: [4, 5] },
   { name: 'Most', count: [7, 8] },
@@ -94,11 +93,12 @@ let animTime = 0;
 // Animation modes: 'drift', 'lfo', 'chaos', 'sequencer', 'bounce'
 let animMode = 'drift';
 
-// Animation range: scales interpolation speed (1 = full speed, 0.001 = glacial)
-const ANIM_RANGES = [1.0, 0.1, 0.01, 0.001];
-const ANIM_RANGE_LABELS = ['Full', '1/10', '1/100', '1/1000'];
-let animRangeIndex = 0;
-let animRange = ANIM_RANGES[0];
+// Animation range: per-param interpolation speed multiplier
+const ANIM_RANGES = [1.0, 0.1, 0.01];
+const ANIM_RANGE_LABELS = ['Full', '1/10', '1/100'];
+let animRangeIndex = 0; // for UI button state
+let paramRanges = {};
+for (let k of ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush']) paramRanges[k] = 1.0;
 const ANIM_MODES = ['drift', 'lfo', 'chaos', 'sequencer', 'bounce'];
 
 // Exponential mapping for large-range params (more resolution at low end)
@@ -1093,16 +1093,11 @@ function animBounce() {
 
 function interpolateParams() {
   let dt = deltaTime * 0.001;
-  let lerp_speed = 1.0 - pow(0.5, dt * animSpeed * 2 * animRange);
-  params.y_bend = lerp(params.y_bend, targetParams.y_bend, lerp_speed);
-  params.fx_bend = lerp(params.fx_bend, targetParams.fx_bend, lerp_speed);
-  params.pw_morph = lerp(params.pw_morph, targetParams.pw_morph, lerp_speed);
-  params.fx_fold = lerp(params.fx_fold, targetParams.fx_fold, lerp_speed);
-  params.pw = lerp(params.pw, targetParams.pw, lerp_speed);
-  params.fx_noise = lerp(params.fx_noise, targetParams.fx_noise, lerp_speed);
-  params.fx_quantize = lerp(params.fx_quantize, targetParams.fx_quantize, lerp_speed);
-  params.soften = lerp(params.soften, targetParams.soften, lerp_speed);
-  params.fx_crush = lerp(params.fx_crush, targetParams.fx_crush, lerp_speed);
+  let base = dt * animSpeed * 2;
+  for (let k of ANIM_PARAMS) {
+    let spd = 1.0 - pow(0.5, base * paramRanges[k]);
+    params[k] = lerp(params[k], targetParams[k], spd);
+  }
   updateUIValues();
 }
 
@@ -1910,8 +1905,8 @@ window.randomizeAll = function() {
   // Random resolution (full range)
   setResolution(floor(random(RESOLUTIONS.length)));
 
-  // Random animation range
-  setAnimRange(floor(random(ANIM_RANGES.length)));
+  // Random per-param animation ranges
+  randomizeParamRanges();
 
   // Random lock category
   lockCategory = floor(random(LOCK_CATEGORIES.length));
@@ -2016,11 +2011,21 @@ window.cycleAnimMode = function() {
 
 window.setAnimRange = function(idx) {
   animRangeIndex = constrain(idx, 0, ANIM_RANGES.length - 1);
-  animRange = ANIM_RANGES[animRangeIndex];
+  let val = ANIM_RANGES[animRangeIndex];
+  for (let k of ANIM_PARAMS) paramRanges[k] = val;
   document.querySelectorAll('.range-btn').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.range) === animRangeIndex);
   });
 };
+
+function randomizeParamRanges() {
+  for (let k of ANIM_PARAMS) {
+    paramRanges[k] = ANIM_RANGES[floor(random(ANIM_RANGES.length))];
+  }
+  // Clear button active states (mixed mode)
+  animRangeIndex = -1;
+  document.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('active'));
+}
 
 let smoothUpscale = false;
 window.toggleSmooth = function() {
