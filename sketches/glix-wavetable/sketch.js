@@ -441,7 +441,22 @@ const palettes = {
 
 let currentPalette = 'thermal';
 let paletteNames = Object.keys(palettes);
+let hueShift = 0; // 0-360 degrees
 let pixelBuffer;
+
+// Hue shift via Rodrigues rotation (CPU-side)
+function hueShiftRGB(r, g, b, deg) {
+  if (Math.abs(deg) < 0.5) return [r, g, b];
+  let angle = deg * 0.01745329252;
+  let cosA = Math.cos(angle), sinA = Math.sin(angle);
+  let k = 0.57735026919;
+  let nr = r * cosA + (k * b - k * g) * sinA + k * (k * r + k * g + k * b) * (1 - cosA);
+  let ng = g * cosA + (k * r - k * b) * sinA + k * (k * r + k * g + k * b) * (1 - cosA);
+  // correction: use proper cross product
+  // cross((k,k,k), (r,g,b)) = (k*b - k*g, k*r - k*b, k*g - k*r)
+  let nb = b * cosA + (k * g - k * r) * sinA + k * (k * r + k * g + k * b) * (1 - cosA);
+  return [constrain(nr, 0, 255), constrain(ng, 0, 255), constrain(nb, 0, 255)];
+}
 
 // --- GLSL SHADER SOURCE ---
 const VERT_SRC = `
@@ -476,6 +491,7 @@ uniform float u_pp_grain;
 uniform float u_time;
 uniform float u_canvas_size;
 uniform vec3 u_palette[7];
+uniform float u_hue_shift;
 
 float fract2(float x) { return x - floor(x); }
 
@@ -680,6 +696,17 @@ void main() {
   float colorVal = (sample_val + 1.0) * 0.5;
   vec3 col = getPaletteColor(colorVal);
 
+  // Hue shift via Rodrigues rotation around (1,1,1)/sqrt(3) axis in RGB space
+  if (abs(u_hue_shift) > 0.5) {
+    float angle = u_hue_shift * 0.01745329252; // deg to rad
+    float cosA = cos(angle);
+    float sinA = sin(angle);
+    float k = 0.57735026919; // 1/sqrt(3)
+    vec3 kv = vec3(k);
+    col = col * cosA + cross(kv, col) * sinA + kv * dot(kv, col) * (1.0 - cosA);
+    col = clamp(col, 0.0, 1.0);
+  }
+
   vec2 pixCoord = v_uv * u_canvas_size;
 
   // Ordered dithering (scaled cell size)
@@ -758,7 +785,7 @@ function initWebGL() {
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
                'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
-               'u_pp_dither','u_pp_dither_scale','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time','u_canvas_size'];
+               'u_pp_dither','u_pp_dither_scale','u_pp_scanlines','u_pp_posterize','u_pp_grain','u_time','u_canvas_size','u_hue_shift'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
   for (let i = 0; i < 7; i++) {
     uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
@@ -1165,6 +1192,7 @@ function renderWavetableGPU() {
     let c = palette[i] || palette[palette.length - 1];
     gl.uniform3f(uLocations['u_palette_' + i], c[0]/255, c[1]/255, c[2]/255);
   }
+  gl.uniform1f(uLocations.u_hue_shift, hueShift);
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
@@ -1183,6 +1211,7 @@ function renderWavetableCPU() {
 
       let colorVal = (sample + 1) * 0.5;
       let col = getColorFromPalette(colorVal, palette);
+      if (Math.abs(hueShift) > 0.5) col = hueShiftRGB(col[0], col[1], col[2], hueShift);
 
       let idx = (y * size + x) * 4;
       pixelBuffer.pixels[idx] = col[0];
@@ -1513,6 +1542,12 @@ function setupUI() {
     updateColorPreview();
     needsRender = true;
   });
+
+  // Hue shift slider
+  setupSlider('hueshift', 0, 360, v => {
+    hueShift = v;
+    needsRender = true;
+  }, v => v + '°');
 }
 
 function setupSlider(id, min, max, onChange, formatValue) {
@@ -1620,9 +1655,12 @@ window.randomizeAll = function() {
   updateCrushButtons();
   updateUIValues();
 
-  // Random palette
+  // Random palette + hue shift
   currentPalette = random(paletteNames);
+  hueShift = floor(random(360));
   document.getElementById('palette-select').value = currentPalette;
+  document.getElementById('param-hueshift').value = hueShift;
+  document.getElementById('val-hueshift').textContent = hueShift + '°';
   updateColorPreview();
 
   // Random animation mode
@@ -1657,7 +1695,10 @@ window.resetParams = function() {
   updateUIValues();
 
   currentPalette = 'thermal';
+  hueShift = 0;
   document.getElementById('palette-select').value = currentPalette;
+  document.getElementById('param-hueshift').value = 0;
+  document.getElementById('val-hueshift').textContent = '0°';
   updateColorPreview();
   needsRender = true;
 };
