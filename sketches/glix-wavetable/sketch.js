@@ -738,6 +738,16 @@ float generateSample(float raw_phase, float scan_pos) {
       float drive = 1.0 + (current_fold * 0.008);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
+    } else if (fm == 2) {
+      // Gentle: soft sine drive
+      float drive = 1.0 + (current_fold * 0.1);
+      float safe_in = clamp(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm == 3) {
+      // Gentle: soft sine drive
+      float drive = 1.0 + (current_fold * 1.0);
+      float safe_in = clamp(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
     } else {
       // Triangle fold: linear fold-back
       float drive = 1.0 + (current_fold * 2.0);
@@ -1352,6 +1362,16 @@ function generateSample(raw_phase, scan_pos) {
     } else if (fm === 1) {
       // Gentle: soft sine drive (multiplier 0.008)
       let drive = 1.0 + (current_fold * 0.008);
+      let safe_in = constrain(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm === 2) {
+      // Less Gentle: soft sine drive (multiplier 0.008)
+      let drive = 1.0 + (current_fold * 0.1);
+      let safe_in = constrain(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm === 3) {
+      // Less Gentle: soft sine drive (multiplier 0.008)
+      let drive = 1.0 + (current_fold * 1);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else {
@@ -2010,7 +2030,7 @@ window.randomizeAll = function() {
   params.pw_morph = pow(random(), 1.5) * 50 * (random() < 0.5 ? -1 : 1);
   // fx_fold: 20% very low (<50), rest exp-biased
   params.fx_fold = random() < 0.2 ? random(0, 50) : expMap(pow(random(), 1.3), 0, 10000);
-  params.fold_mode = floor(random(3));
+  params.fold_mode = floor(random(5));
   // fx_crush: 35% zero, rest exp-biased (0-1)
   params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
   // Wave mirror/invert: randomly pick a variation
