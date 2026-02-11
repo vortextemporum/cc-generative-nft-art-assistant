@@ -908,8 +908,8 @@ function animBounce() {
   setTarget('soften', map(Math.abs(Math.sin(t * 0.7 + bouncePhases.soften)), 0, 1, 1, 40));
   setTarget('y_bend', Math.sin(t * 0.3 + bouncePhases.y_bend) * 0.6 * d);
   setTarget('fx_bend', expMap(Math.abs(Math.sin(t * 0.2 + bouncePhases.fx_bend)), 0, 700) * d);
-  setTarget('fx_noise', Math.abs(Math.sin(t * 1.3 + bouncePhases.fx_noise)) * 0.5 * d);
-  setTarget('fx_quantize', Math.abs(Math.sin(t * 0.9 + bouncePhases.fx_quantize)) * 0.6 * d);
+  setTarget('fx_noise', Math.abs(Math.sin(t * 1.3 + bouncePhases.fx_noise)) * 0.3 * d);
+  setTarget('fx_quantize', Math.abs(Math.sin(t * 0.9 + bouncePhases.fx_quantize)) * 0.35 * d);
   setTarget('pw_morph', Math.sin(t * 0.5 + bouncePhases.pw_morph) * 40 * d);
   setTarget('fx_fold', expMap(Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)), 0, 8000) * d + 50);
   setTarget('fx_crush', expMap(Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)), 0, 6000) * d);
@@ -1540,18 +1540,24 @@ function updateColorPreview() {
 
 // --- GLOBAL FUNCTIONS ---
 window.randomizeAll = function() {
-  params.shape = floor(random(9));
+  params.shape = floor(random(12));
   params.pw = random(0.0, 1.0);
   params.soften = expMap(random(), 0.001, 50);
   params.y_bend = random(-0.25, 1.0);
-  params.fx_bend = expMap(random(), 0, 1000);
-  params.fx_noise = random(0, 1.0);
-  params.fx_quantize = random(0, 1.0);
-  params.pw_morph = random(-50, 50);
-  params.fx_fold = expMap(random(), 0, 10000);
+  // fx_bend: 30% chance of zero, otherwise exp-biased
+  params.fx_bend = random() < 0.3 ? 0 : expMap(pow(random(), 1.5), 0, 1000);
+  // fx_noise: 40% zero, rest biased low (power curve)
+  params.fx_noise = random() < 0.4 ? 0 : pow(random(), 3) * 0.8;
+  // fx_quantize: 40% zero, rest biased low
+  params.fx_quantize = random() < 0.4 ? 0 : pow(random(), 3) * 0.7;
+  // pw_morph: biased toward center
+  params.pw_morph = pow(random(), 1.5) * 50 * (random() < 0.5 ? -1 : 1);
+  // fx_fold: 20% very low (<50), rest exp-biased
+  params.fx_fold = random() < 0.2 ? random(0, 50) : expMap(pow(random(), 1.3), 0, 10000);
   params.fold_mode = floor(random(3));
+  // fx_crush: 35% zero, rest exp-biased
   params.crush_mode = floor(random(2));
-  params.fx_crush = expMap(random(), 0, params.crush_mode === 0 ? 10000 : 1);
+  params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, params.crush_mode === 0 ? 10000 : 1);
   // Snap targets to match (no slow interpolation)
   targetParams = { ...params };
   updateShapeButtons();
