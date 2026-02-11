@@ -2071,6 +2071,12 @@ window.randomizeAll = function() {
   // Apply param locks based on category
   applyRandomLocks();
 
+  // Ensure at least one unlocked param has full-speed range
+  let unlocked = ANIM_PARAMS.filter(k => !paramLocks[k]);
+  if (unlocked.length > 0 && !unlocked.some(k => paramRanges[k] >= 1.0)) {
+    paramRanges[unlocked[floor(random(unlocked.length))]] = 1.0;
+  }
+
   needsRender = true;
 };
 
