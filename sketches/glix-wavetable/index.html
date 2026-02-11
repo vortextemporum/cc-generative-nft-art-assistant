@@ -396,8 +396,8 @@
           </div>
           <div class="param-row">
             <span class="param-label">Soften</span>
-            <input type="range" class="param-slider" id="param-soften" min="1" max="500" value="50">
-            <span class="param-value" id="val-soften">5.00</span>
+            <input type="range" class="param-slider" id="param-soften" min="0" max="100" value="50">
+            <span class="param-value" id="val-soften">5.000</span>
           </div>
         </div>
       </div>
@@ -442,9 +442,24 @@
             <span class="param-value" id="val-fold">100</span>
           </div>
           <div class="param-row">
+            <span class="param-label">Fold Mode</span>
+            <div class="shape-buttons" id="fold-mode-buttons">
+              <button class="shape-btn active" data-foldmode="0">GenDSP</button>
+              <button class="shape-btn" data-foldmode="1">Gentle</button>
+              <button class="shape-btn" data-foldmode="2">Triangle</button>
+            </div>
+          </div>
+          <div class="param-row">
             <span class="param-label">Crush</span>
             <input type="range" class="param-slider" id="param-crush" min="0" max="100" value="0">
-            <span class="param-value" id="val-crush">0.00</span>
+            <span class="param-value" id="val-crush">0</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Crush Range</span>
+            <div class="shape-buttons" id="crush-mode-buttons">
+              <button class="shape-btn active" data-crushmode="0">Extreme</button>
+              <button class="shape-btn" data-crushmode="1">Classic</button>
+            </div>
           </div>
         </div>
       </div>

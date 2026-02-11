@@ -40,7 +40,9 @@ let params = {
   fx_quantize: 0.0,   // Pixelate (0-1)
   pw_morph: 0.0,      // Spiraling / PWM shift (-50 to 50)
   fx_fold: 100.0,     // Wavefolder (0-10000)
-  fx_crush: 0.0       // Bitcrush (0-10000)
+  fold_mode: 0,       // 0=GenDSP (aggressive sine), 1=Gentle (soft sine), 2=Triangle fold
+  fx_crush: 0.0,      // Bitcrush
+  crush_mode: 0       // 0=Extreme (0-10000), 1=Classic (0-1)
 };
 
 // Animation targets (for smooth interpolation)
@@ -53,6 +55,18 @@ let animTime = 0;
 // Animation modes: 'drift', 'lfo', 'chaos', 'sequencer', 'bounce'
 let animMode = 'drift';
 const ANIM_MODES = ['drift', 'lfo', 'chaos', 'sequencer', 'bounce'];
+
+// Exponential mapping for large-range params (more resolution at low end)
+const EXP_K = 4;
+const EXP_DENOM = Math.exp(EXP_K) - 1;
+function expMap(t, mn, mx) {
+  t = Math.max(0, Math.min(1, t));
+  return mn + (mx - mn) * (Math.exp(EXP_K * t) - 1) / EXP_DENOM;
+}
+function logMap(val, mn, mx) {
+  let t = Math.max(0, Math.min(1, (val - mn) / (mx - mn)));
+  return Math.log(1 + t * EXP_DENOM) / EXP_K;
+}
 
 // Chaos (Lorenz attractor state)
 let lorenzX = 1.0, lorenzY = 1.0, lorenzZ = 1.0;
@@ -403,6 +417,7 @@ uniform float u_fx_noise;
 uniform float u_fx_quantize;
 uniform float u_pw_morph;
 uniform float u_fx_fold;
+uniform float u_fold_mode;
 uniform float u_fx_crush;
 uniform float u_size;
 uniform vec3 u_palette[7];
@@ -504,9 +519,27 @@ float generateSample(float raw_phase, float scan_pos) {
   // WAVEFOLDER
   float current_fold = u_fx_fold * scan_pos;
   if (current_fold > 0.0) {
-    float drive = 1.0 + (current_fold * 0.008);
-    float safe_in = clamp(samp * drive, -100000.0, 100000.0);
-    samp = sin(safe_in);
+    int fm = int(u_fold_mode);
+    if (fm == 0) {
+      // GenDSP original: aggressive sine drive
+      float drive = 1.0 + (current_fold * 8.0);
+      float safe_in = clamp(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm == 1) {
+      // Gentle: soft sine drive
+      float drive = 1.0 + (current_fold * 0.008);
+      float safe_in = clamp(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else {
+      // Triangle fold: linear fold-back
+      float drive = 1.0 + (current_fold * 2.0);
+      float folded = samp * drive;
+      folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
+      if (abs(folded) > 1.0) {
+        folded = folded > 0.0 ? 2.0 - folded : -2.0 - folded;
+      }
+      samp = clamp(folded, -1.0, 1.0);
+    }
   }
 
   return clamp(samp, -1.0, 1.0);
@@ -586,7 +619,7 @@ function initWebGL() {
 
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
-               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fx_crush','u_size'];
+               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
   for (let i = 0; i < 7; i++) {
     uLocations['u_palette_' + i] = gl.getUniformLocation(shaderProgram, 'u_palette[' + i + ']');
@@ -677,9 +710,9 @@ function animDrift() {
   let drift = driftAmount;
   let speed = animSpeed * 0.1;
   targetParams.y_bend = map(noise(animTime * speed * 0.3), 0, 1, -0.25, 1.0) * drift;
-  targetParams.fx_bend = map(noise(animTime * speed * 0.2 + 100), 0, 1, 0, 500) * drift;
+  targetParams.fx_bend = expMap(noise(animTime * speed * 0.2 + 100), 0, 500) * drift;
   targetParams.pw_morph = map(noise(animTime * speed * 0.4 + 200), 0, 1, -25, 25) * drift;
-  targetParams.fx_fold = map(noise(animTime * speed * 0.15 + 300), 0, 1, 50, 2000) * drift + 100 * (1 - drift);
+  targetParams.fx_fold = expMap(noise(animTime * speed * 0.15 + 300), 0, 2000) * drift + 100 * (1 - drift);
   targetParams.pw = map(noise(animTime * speed * 0.5 + 400), 0, 1, 0.2, 1.0);
   targetParams.fx_noise = map(noise(animTime * speed * 0.25 + 500), 0, 1, 0, 0.3) * drift;
   targetParams.fx_quantize = map(noise(animTime * speed * 0.2 + 600), 0, 1, 0, 0.5) * drift;
@@ -693,12 +726,12 @@ function animLFO() {
   targetParams.pw = 0.5 + Math.sin(t * 0.7) * 0.4 * d;
   targetParams.soften = 10 + Math.sin(t * 0.3) * 9 * d;
   targetParams.y_bend = Math.sin(t * 0.2) * 0.5 * d;
-  targetParams.fx_bend = (Math.sin(t * 0.15) * 0.5 + 0.5) * 400 * d;
+  targetParams.fx_bend = expMap(Math.sin(t * 0.15) * 0.5 + 0.5, 0, 400) * d;
   targetParams.pw_morph = Math.sin(t * 0.4) * 30 * d;
-  targetParams.fx_fold = 100 + (Math.sin(t * 0.1) * 0.5 + 0.5) * 3000 * d;
+  targetParams.fx_fold = expMap(Math.sin(t * 0.1) * 0.5 + 0.5, 0, 3000) * d + 100 * (1 - d);
   targetParams.fx_noise = (Math.sin(t * 0.6) * 0.5 + 0.5) * 0.3 * d;
   targetParams.fx_quantize = (Math.sin(t * 0.25) * 0.5 + 0.5) * 0.4 * d;
-  targetParams.fx_crush = (Math.sin(t * 0.08) * 0.5 + 0.5) * 2000 * d;
+  targetParams.fx_crush = expMap(Math.sin(t * 0.08) * 0.5 + 0.5, 0, 2000) * d;
 }
 
 // MODE: Lorenz attractor (chaotic, unpredictable but structured)
@@ -714,12 +747,12 @@ function animChaos() {
   targetParams.pw = 0.5 + nx * 0.4 * d;
   targetParams.soften = 10 + ny * 15 * d;
   targetParams.y_bend = nx * 0.5 * d;
-  targetParams.fx_bend = (nz + 1) * 250 * d;
+  targetParams.fx_bend = expMap((nz + 1) * 0.5, 0, 500) * d;
   targetParams.pw_morph = ny * 30 * d;
-  targetParams.fx_fold = 500 + nz * 2000 * d;
+  targetParams.fx_fold = expMap(Math.abs(nz), 0, 4000) * d + 100 * (1 - d);
   targetParams.fx_noise = Math.abs(nx) * 0.3 * d;
   targetParams.fx_quantize = Math.abs(ny) * 0.4 * d;
-  targetParams.fx_crush = Math.abs(nz) * 3000 * d;
+  targetParams.fx_crush = expMap(Math.abs(nz), 0, 6000) * d;
 }
 
 // MODE: Step sequencer (morph between presets)
@@ -757,12 +790,12 @@ function animBounce() {
   targetParams.pw = map(Math.abs(Math.sin(t * 1.0 + bouncePhases.pw)), 0, 1, 0.1, 0.95) * d + 0.5 * (1 - d);
   targetParams.soften = map(Math.abs(Math.sin(t * 0.7 + bouncePhases.soften)), 0, 1, 1, 40);
   targetParams.y_bend = Math.sin(t * 0.3 + bouncePhases.y_bend) * 0.6 * d;
-  targetParams.fx_bend = Math.abs(Math.sin(t * 0.2 + bouncePhases.fx_bend)) * 700 * d;
+  targetParams.fx_bend = expMap(Math.abs(Math.sin(t * 0.2 + bouncePhases.fx_bend)), 0, 700) * d;
   targetParams.fx_noise = Math.abs(Math.sin(t * 1.3 + bouncePhases.fx_noise)) * 0.5 * d;
   targetParams.fx_quantize = Math.abs(Math.sin(t * 0.9 + bouncePhases.fx_quantize)) * 0.6 * d;
   targetParams.pw_morph = Math.sin(t * 0.5 + bouncePhases.pw_morph) * 40 * d;
-  targetParams.fx_fold = Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)) * 8000 * d + 50;
-  targetParams.fx_crush = Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)) * 6000 * d;
+  targetParams.fx_fold = expMap(Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)), 0, 8000) * d + 50;
+  targetParams.fx_crush = expMap(Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)), 0, 6000) * d;
 }
 
 function interpolateParams() {
@@ -878,9 +911,25 @@ function generateSample(raw_phase, scan_pos) {
   // WAVEFOLDER
   let current_fold = params.fx_fold * scan_pos;
   if (current_fold > 0.0) {
-    let drive = 1.0 + (current_fold * 0.008);
-    let safe_in = constrain(samp * drive, -100000.0, 100000.0);
-    samp = sin(safe_in);
+    let fm = floor(params.fold_mode);
+    if (fm === 0) {
+      // GenDSP original: aggressive sine drive (multiplier 8.0)
+      let drive = 1.0 + (current_fold * 8.0);
+      let safe_in = constrain(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm === 1) {
+      // Gentle: soft sine drive (multiplier 0.008)
+      let drive = 1.0 + (current_fold * 0.008);
+      let safe_in = constrain(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else {
+      // Triangle fold: linear fold-back at ±1 boundaries
+      let drive = 1.0 + (current_fold * 2.0);
+      let folded = samp * drive;
+      folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
+      samp = abs(folded) <= 1.0 ? folded : (folded > 0.0 ? 2.0 - folded : -2.0 - folded);
+      samp = constrain(samp, -1.0, 1.0);
+    }
   }
 
   // NaN check
@@ -913,6 +962,7 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_fx_quantize, params.fx_quantize);
   gl.uniform1f(uLocations.u_pw_morph, params.pw_morph);
   gl.uniform1f(uLocations.u_fx_fold, params.fx_fold);
+  gl.uniform1f(uLocations.u_fold_mode, params.fold_mode);
   gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
   gl.uniform1f(uLocations.u_size, renderSize);
 
@@ -1165,16 +1215,43 @@ function setupUI() {
     });
   });
 
+  // Fold mode buttons
+  document.querySelectorAll('.shape-btn[data-foldmode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      params.fold_mode = parseInt(btn.dataset.foldmode);
+      targetParams.fold_mode = params.fold_mode;
+      updateFoldButtons();
+      needsRender = true;
+    });
+  });
+
+  // Crush mode buttons
+  document.querySelectorAll('.shape-btn[data-crushmode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      params.crush_mode = parseInt(btn.dataset.crushmode);
+      targetParams.crush_mode = params.crush_mode;
+      // Re-scale current crush value to new range
+      let oldMax = params.crush_mode === 0 ? 1 : 10000;
+      let newMax = params.crush_mode === 0 ? 10000 : 1;
+      let normalized = logMap(params.fx_crush, 0, oldMax);
+      params.fx_crush = expMap(normalized, 0, newMax);
+      targetParams.fx_crush = params.fx_crush;
+      updateCrushButtons();
+      updateUIValues();
+      needsRender = true;
+    });
+  });
+
   // Sliders
   setupSlider('pw', 0, 100, v => {
     params.pw = v / 100;
     targetParams.pw = params.pw;
   }, v => (v / 100).toFixed(2));
 
-  setupSlider('soften', 1, 500, v => {
-    params.soften = v / 10;
+  setupSlider('soften', 0, 100, v => {
+    params.soften = expMap(v / 100, 0.001, 50);
     targetParams.soften = params.soften;
-  }, v => (v / 10).toFixed(2));
+  }, v => expMap(v / 100, 0.001, 50).toFixed(3));
 
   setupSlider('ybend', 0, 100, v => {
     params.y_bend = map(v, 0, 100, -0.25, 1.0);
@@ -1182,9 +1259,9 @@ function setupUI() {
   }, v => map(v, 0, 100, -0.25, 1.0).toFixed(2));
 
   setupSlider('fxbend', 0, 100, v => {
-    params.fx_bend = map(v, 0, 100, 0, 1000);
+    params.fx_bend = expMap(v / 100, 0, 1000);
     targetParams.fx_bend = params.fx_bend;
-  }, v => map(v, 0, 100, 0, 1000).toFixed(0));
+  }, v => expMap(v / 100, 0, 1000).toFixed(0));
 
   setupSlider('fxnoise', 0, 100, v => {
     params.fx_noise = v / 100;
@@ -1202,14 +1279,19 @@ function setupUI() {
   }, v => map(v, 0, 100, -50, 50).toFixed(1));
 
   setupSlider('fold', 0, 100, v => {
-    params.fx_fold = map(v, 0, 100, 0, 10000);
+    params.fx_fold = expMap(v / 100, 0, 10000);
     targetParams.fx_fold = params.fx_fold;
-  }, v => map(v, 0, 100, 0, 10000).toFixed(0));
+  }, v => expMap(v / 100, 0, 10000).toFixed(0));
 
   setupSlider('crush', 0, 100, v => {
-    params.fx_crush = map(v, 0, 100, 0, 10000);
+    let mx = params.crush_mode === 0 ? 10000 : 1;
+    params.fx_crush = expMap(v / 100, 0, mx);
     targetParams.fx_crush = params.fx_crush;
-  }, v => map(v, 0, 100, 0, 10000).toFixed(0));
+  }, v => {
+    let mx = params.crush_mode === 0 ? 10000 : 1;
+    let val = expMap(v / 100, 0, mx);
+    return mx > 1 ? val.toFixed(0) : val.toFixed(3);
+  });
 
   setupSlider('speed', 1, 100, v => {
     animSpeed = v / 100;
@@ -1248,18 +1330,30 @@ function updateShapeButtons() {
   });
 }
 
+function updateFoldButtons() {
+  document.querySelectorAll('.shape-btn[data-foldmode]').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.foldmode) === params.fold_mode);
+  });
+}
+
+function updateCrushButtons() {
+  document.querySelectorAll('.shape-btn[data-crushmode]').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.crushmode) === params.crush_mode);
+  });
+}
+
 function updateUIValues() {
   document.getElementById('param-pw').value = params.pw * 100;
   document.getElementById('val-pw').textContent = params.pw.toFixed(2);
 
-  document.getElementById('param-soften').value = params.soften * 10;
-  document.getElementById('val-soften').textContent = params.soften.toFixed(2);
+  document.getElementById('param-soften').value = logMap(params.soften, 0.001, 50) * 100;
+  document.getElementById('val-soften').textContent = params.soften.toFixed(3);
 
   let ybendVal = map(params.y_bend, -0.25, 1.0, 0, 100);
   document.getElementById('param-ybend').value = ybendVal;
   document.getElementById('val-ybend').textContent = params.y_bend.toFixed(2);
 
-  let fxbendVal = map(params.fx_bend, 0, 1000, 0, 100);
+  let fxbendVal = logMap(params.fx_bend, 0, 1000) * 100;
   document.getElementById('param-fxbend').value = fxbendVal;
   document.getElementById('val-fxbend').textContent = params.fx_bend.toFixed(0);
 
@@ -1273,13 +1367,14 @@ function updateUIValues() {
   document.getElementById('param-pwmorph').value = pwmorphVal;
   document.getElementById('val-pwmorph').textContent = params.pw_morph.toFixed(1);
 
-  let foldVal = map(params.fx_fold, 0, 10000, 0, 100);
+  let foldVal = logMap(params.fx_fold, 0, 10000) * 100;
   document.getElementById('param-fold').value = foldVal;
   document.getElementById('val-fold').textContent = params.fx_fold.toFixed(0);
 
-  let crushVal = map(params.fx_crush, 0, 10000, 0, 100);
+  let crushMax = params.crush_mode === 0 ? 10000 : 1;
+  let crushVal = logMap(params.fx_crush, 0, crushMax) * 100;
   document.getElementById('param-crush').value = crushVal;
-  document.getElementById('val-crush').textContent = params.fx_crush.toFixed(0);
+  document.getElementById('val-crush').textContent = crushMax > 1 ? params.fx_crush.toFixed(0) : params.fx_crush.toFixed(3);
 
 }
 
@@ -1296,23 +1391,32 @@ function updateColorPreview() {
 window.randomizeAll = function() {
   params.shape = floor(random(8));
   params.pw = random(0.0, 1.0);
-  params.soften = random(0.5, 50);
+  params.soften = expMap(random(), 0.001, 50);
   params.y_bend = random(-0.25, 1.0);
-  params.fx_bend = random(-1, 1000);
+  params.fx_bend = expMap(random(), 0, 1000);
   params.fx_noise = random(0, 1.0);
   params.fx_quantize = random(0, 1.0);
   params.pw_morph = random(-50, 50);
-  params.fx_fold = random(0, 10000);
-  params.fx_crush = random(0, 10000);
+  params.fx_fold = expMap(random(), 0, 10000);
+  params.fold_mode = floor(random(3));
+  params.crush_mode = floor(random(2));
+  params.fx_crush = expMap(random(), 0, params.crush_mode === 0 ? 10000 : 1);
   // Snap targets to match (no slow interpolation)
   targetParams = { ...params };
   updateShapeButtons();
+  updateFoldButtons();
+  updateCrushButtons();
   updateUIValues();
 
   // Random palette
   currentPalette = random(paletteNames);
   document.getElementById('palette-select').value = currentPalette;
   updateColorPreview();
+
+  // Random animation mode
+  let newMode = random(ANIM_MODES);
+  setAnimMode(newMode);
+
   needsRender = true;
 };
 
@@ -1327,10 +1431,14 @@ window.resetParams = function() {
     fx_quantize: 0.0,
     pw_morph: 0.0,
     fx_fold: 100.0,
-    fx_crush: 0.0
+    fold_mode: 0,
+    fx_crush: 0.0,
+    crush_mode: 0
   };
   targetParams = { ...params };
   updateShapeButtons();
+  updateFoldButtons();
+  updateCrushButtons();
   updateUIValues();
 
   currentPalette = 'thermal';
