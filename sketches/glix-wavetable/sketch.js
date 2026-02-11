@@ -1115,16 +1115,17 @@ function animSequencer() {
   if (seqTimer >= stepDur) {
     seqTimer -= stepDur;
     seqStep = (seqStep + 1) % SEQ_PRESETS.length;
+    // Only change shape on step transitions
+    let preset = SEQ_PRESETS[seqStep];
+    targetParams.shape = preset.shape;
+    params.shape = preset.shape;
+    updateShapeButtons();
   }
   let preset = SEQ_PRESETS[seqStep];
   let nextPreset = SEQ_PRESETS[(seqStep + 1) % SEQ_PRESETS.length];
   let t = seqTimer / stepDur;
   t = t * t * (3 - 2 * t); // smoothstep ease
   let d = driftAmount;
-
-  targetParams.shape = preset.shape;
-  params.shape = preset.shape;
-  updateShapeButtons();
   setTarget('pw', lerp(preset.pw, nextPreset.pw, t * d));
   setTarget('soften', lerp(preset.soften, nextPreset.soften, t * d));
   setTarget('y_bend', lerp(preset.y_bend, nextPreset.y_bend, t * d));
