@@ -82,7 +82,7 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 - **Primary renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU)
 - **Fallback**: CPU pixel-by-pixel via p5.js pixels[] array
 - **Display**: 700×700 canvas, internal render at 32-2048px (default 2048)
-- **Isometric 3D**: WebGL mesh rendering (VBO/IBO), grid capped at 512, GPU depth testing
+- **Isometric 3D**: WebGL mesh rendering (VBO/IBO), grid capped at 256, GPU depth testing, 30fps throttle
 - **SSAA**: Renders at 2× canvas size, browser downscales
 
 ### Signal Flow (in GLSL)

@@ -868,7 +868,7 @@ void main() {
 let isoShaderProgram = null;
 let isoVBO = null, isoIBO = null;
 let isoAttrLocs = {};
-const ISO_MAX_GRID = 512;
+const ISO_MAX_GRID = 256;
 const ISO_STRIDE = 6; // floats per vertex: x, y, depth, r, g, b
 let isoUintExt = null;
 
@@ -1032,17 +1032,19 @@ function draw() {
     needsRender = true;
   }
 
-  // Throttle rendering to TARGET_UPDATE_FPS
+  // Throttle rendering to TARGET_UPDATE_FPS (both 2D and 3D)
   let timeSinceRender = currentTime - lastRenderTime;
   if (needsRender && timeSinceRender >= 1000 / TARGET_UPDATE_FPS) {
     if (viewMode === '2d') {
       renderWavetable();
+    } else {
+      renderIsometric();
     }
     lastRenderTime = currentTime;
     needsRender = false;
   }
 
-  // Draw
+  // 2D: always blit buffer to canvas (iso blits directly in renderIsometric)
   if (viewMode === '2d') {
     if (useWebGL) {
       drawingContext.imageSmoothingEnabled = smoothUpscale;
@@ -1051,9 +1053,6 @@ function draw() {
       drawingContext.imageSmoothingEnabled = !smoothUpscale ? false : true;
       image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
     }
-  } else {
-    // Isometric always re-renders (camera may be dragging)
-    renderIsometric();
   }
 }
 

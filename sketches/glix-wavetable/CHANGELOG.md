@@ -28,6 +28,8 @@
 - 32px resolution option (7 total: 32, 64, 128, 256, 512, 1024, 2048)
 
 ### Changed
+- Isometric 3D grid cap lowered from 512 to 256 for better performance
+- Isometric 3D view throttled to 30fps (was uncapped at 60fps)
 - Randomization now uses full resolution range (was skipping 64/128)
 - 2D GPU renderer rebinds vertex state on each frame (robust after iso→2D switch)
 - Skip 2D wavetable rendering when in isometric view mode (saves GPU time)
