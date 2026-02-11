@@ -502,6 +502,15 @@ float generateSample(float raw_phase, float scan_pos) {
     float s2 = fract2(shifted_phase * 1.006 + 0.1) * 2.0 - 1.0;
     float s3 = fract2(shifted_phase * 0.994 + 0.2) * 2.0 - 1.0;
     samp = (s1 + s2 + s3) / 3.0;
+  } else if (sel == 8) {
+    // Schrodinger: 1D quantum wavefunction
+    float n = 1.0 + scan_pos * 7.0;
+    float n_lo = floor(n);
+    float n_hi = n_lo + 1.0;
+    float frac_n = n - n_lo;
+    float psi_lo = sin(n_lo * 3.14159265 * shifted_phase);
+    float psi_hi = sin(n_hi * 3.14159265 * shifted_phase);
+    samp = psi_lo * (1.0 - frac_n) + psi_hi * frac_n;
   }
 
   // SOFT SATURATION
@@ -892,6 +901,20 @@ function generateSample(raw_phase, scan_pos) {
     let s2 = fract(shifted_phase * 1.006 + 0.1) * 2.0 - 1.0;
     let s3 = fract(shifted_phase * 0.994 + 0.2) * 2.0 - 1.0;
     samp = (s1 + s2 + s3) / 3.0;
+  } else if (sel === 8) {
+    // SCHRÖDINGER (1D quantum wavefunction)
+    // scan_pos controls quantum number n (1-8), phase is position x
+    let n = 1.0 + scan_pos * 7.0;
+    let n_lo = floor(n);
+    let n_hi = n_lo + 1;
+    let frac_n = n - n_lo;
+    // ψ_n(x) = sin(n * π * x) for infinite well
+    let psi_lo = sin(n_lo * PI * shifted_phase);
+    let psi_hi = sin(n_hi * PI * shifted_phase);
+    // Smooth interpolation between quantum states
+    let psi = psi_lo * (1.0 - frac_n) + psi_hi * frac_n;
+    // Output wavefunction (not |ψ|² — keep the sign for audio character)
+    samp = psi;
   }
 
   // Soft Saturation
@@ -1389,7 +1412,7 @@ function updateColorPreview() {
 
 // --- GLOBAL FUNCTIONS ---
 window.randomizeAll = function() {
-  params.shape = floor(random(8));
+  params.shape = floor(random(9));
   params.pw = random(0.0, 1.0);
   params.soften = expMap(random(), 0.001, 50);
   params.y_bend = random(-0.25, 1.0);
@@ -1569,7 +1592,7 @@ function keyPressed() {
       resetParams();
       break;
     case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8':
+    case '5': case '6': case '7': case '8': case '9':
       params.shape = parseInt(key) - 1;
       targetParams.shape = params.shape;
       updateShapeButtons();
