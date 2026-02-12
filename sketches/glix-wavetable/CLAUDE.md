@@ -64,7 +64,7 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 |-----------|-------|-------------|
 | pw_morph | -50 to 50 | Spiraling / PWM shift over Y |
 | fx_fold | 0-10000 | Wavefolder intensity, logarithmic slider |
-| fold_mode | 0-2 | 0=GenDSP (×8.0), 1=Gentle (×0.008), 2=Triangle fold-back |
+| fold_mode | 0-4 | 0=GenDSP (×0.05), 1=Gentle (×0.002), 2=Less Gentle (×0.008), 3=V.Less Gentle (×0.02), 4=Triangle (×0.01) |
 | fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
 ### Post-Processing (GPU shader)

@@ -728,28 +728,28 @@ float generateSample(float raw_phase, float scan_pos) {
   if (current_fold > 0.0) {
     int fm = int(u_fold_mode);
     if (fm == 0) {
-      // GenDSP original: aggressive sine drive
-      float drive = 1.0 + (current_fold * 8.0);
+      // GenDSP: aggressive sine drive
+      float drive = 1.0 + (current_fold * 0.05);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm == 1) {
       // Gentle: soft sine drive
-      float drive = 1.0 + (current_fold * 0.008);
+      float drive = 1.0 + (current_fold * 0.002);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm == 2) {
-      // Gentle: soft sine drive
-      float drive = 1.0 + (current_fold * 0.1);
+      // Less Gentle: medium sine drive
+      float drive = 1.0 + (current_fold * 0.008);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm == 3) {
-      // Gentle: soft sine drive
-      float drive = 1.0 + (current_fold * 1.0);
+      // Very Less Gentle: strong sine drive
+      float drive = 1.0 + (current_fold * 0.02);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else {
       // Triangle fold: linear fold-back
-      float drive = 1.0 + (current_fold * 2.0);
+      float drive = 1.0 + (current_fold * 0.01);
       float folded = samp * drive;
       folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
       if (abs(folded) > 1.0) {
@@ -1391,28 +1391,28 @@ function generateSample(raw_phase, scan_pos) {
   if (current_fold > 0.0) {
     let fm = floor(params.fold_mode);
     if (fm === 0) {
-      // GenDSP original: aggressive sine drive (multiplier 8.0)
-      let drive = 1.0 + (current_fold * 8.0);
+      // GenDSP: aggressive sine drive
+      let drive = 1.0 + (current_fold * 0.05);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm === 1) {
-      // Gentle: soft sine drive (multiplier 0.008)
-      let drive = 1.0 + (current_fold * 0.008);
+      // Gentle: soft sine drive
+      let drive = 1.0 + (current_fold * 0.002);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm === 2) {
-      // Less Gentle: soft sine drive (multiplier 0.008)
-      let drive = 1.0 + (current_fold * 0.1);
+      // Less Gentle: medium sine drive
+      let drive = 1.0 + (current_fold * 0.008);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm === 3) {
-      // Less Gentle: soft sine drive (multiplier 0.008)
-      let drive = 1.0 + (current_fold * 1);
+      // Very Less Gentle: strong sine drive
+      let drive = 1.0 + (current_fold * 0.02);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else {
       // Triangle fold: linear fold-back at ±1 boundaries
-      let drive = 1.0 + (current_fold * 2.0);
+      let drive = 1.0 + (current_fold * 0.01);
       let folded = samp * drive;
       folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
       samp = abs(folded) <= 1.0 ? folded : (folded > 0.0 ? 2.0 - folded : -2.0 - folded);

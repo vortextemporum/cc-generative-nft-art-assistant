@@ -31,6 +31,8 @@
   - No canvas resizing needed (unlike SSAA which rendered at 2-4× resolution)
 
 ### Changed
+- Wavefolder drive multipliers retuned for wider sweet spots across slider range:
+  - GenDSP: 8.0 → 0.05, Gentle: 0.008 → 0.002, Less Gentle: 0.1 → 0.008, V.Less Gentle: 1.0 → 0.02, Triangle: 2.0 → 0.01
 - Isometric 3D grid cap lowered from 512 to 256 for better performance
 - Isometric 3D view throttled to 30fps (was uncapped at 60fps)
 - Randomization now uses full resolution range (was skipping 64/128)
