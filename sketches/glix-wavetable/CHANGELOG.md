@@ -14,6 +14,12 @@
 - Post-FX randomization on R press — each effect has <10% chance to trigger
 - Smooth upscale button moved to Post FX panel (uses CSS `image-rendering` toggle)
 
+### Changed
+- Pulse oscillator now uses soft edge transition controlled by soften parameter
+  - High soften (default 5.0) = sharp edge like before
+  - Low soften = gradual slope, making phase FX and animation visually effective
+  - Fixes pulse appearing static during animation
+
 ### Removed
 - FXAA (Smooth upscale serves similar purpose via CSS interpolation)
 

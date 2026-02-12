@@ -618,7 +618,8 @@ float generateSample(float raw_phase, float scan_pos) {
     samp = (shifted_phase * 2.0) - 1.0;
   } else if (sel == 3) {
     float cw = clamp(u_pw + morph_amt, 0.0, 1.0);
-    samp = final_phase < cw ? 1.0 : -1.0;
+    float edge = max(0.001, 0.5 / u_soften);
+    samp = smoothstep2(cw - edge, cw + edge, final_phase) * -2.0 + 1.0;
   } else if (sel == 4) {
     samp = sin(shifted_phase * 6.28318530718);
     samp = samp > 0.0 ? samp * 2.0 - 1.0 : -1.0;
@@ -1328,9 +1329,11 @@ function generateSample(raw_phase, scan_pos) {
     // SAWTOOTH
     samp = (shifted_phase * 2.0) - 1.0;
   } else if (sel === 3) {
-    // PULSE
+    // PULSE (soft edge controlled by soften)
     let current_width = constrain(params.pw + morph_amt, 0.0, 1.0);
-    samp = final_phase < current_width ? 1.0 : -1.0;
+    let edge = Math.max(0.001, 0.5 / params.soften);
+    let t = constrain((final_phase - (current_width - edge)) / (2 * edge), 0, 1);
+    samp = 1.0 - t * t * (3 - 2 * t) * 2.0; // smoothstep → -1 to 1
   } else if (sel === 4) {
     // HALF-RECTIFIED SINE
     samp = sin(shifted_phase * TWO_PI);
