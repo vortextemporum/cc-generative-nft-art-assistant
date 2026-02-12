@@ -22,15 +22,11 @@
 </head>
 <body>
   <script>
-    // Stub getElementById for missing UI elements
+    // Return real detached DOM elements for missing IDs
+    // (has .closest, .classList, .value, .textContent, etc.)
     var _origGetById = document.getElementById.bind(document);
     document.getElementById = function(id) {
-      return _origGetById(id) || {
-        value: '', textContent: '', innerHTML: '',
-        style: {}, dataset: {},
-        classList: { toggle(){}, add(){}, remove(){}, contains(){ return false; } },
-        addEventListener(){}
-      };
+      return _origGetById(id) || document.createElement('div');
     };
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
