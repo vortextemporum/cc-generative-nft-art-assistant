@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 2.9
+**Version:** 3.0
 **Framework:** p5.js + WebGL 1.0 GLSL
 
 A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
@@ -68,13 +68,26 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | fold_mode | 0-8 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015), 7=Destroy (×0.25). Triangle: 5=Crease (×0.02), 6=Ripple (×0.005), 8=Fracture (×0.05) |
 | fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
-### Post-Processing (GPU shader)
+### Post-Processing (GPU shader, 11 effects)
+
+**Color effects** (applied after `computeColor()`):
 | Effect | Description |
 |--------|-------------|
 | FXAA | Edge-detection anti-aliasing (5-tap luminance-based edge smoothing) |
 | Dither | Ordered Bayer 4×4 dithering, cycles through 1px/2px |
 | Posterize | 6-level color quantization |
 | Grain | Animated film noise |
+| Sharpen | Unsharp mask via 4-neighbor sampling (strength 1.2) |
+| Halftone | Dot-pattern rendering, dot size varies by luminance |
+| Solarize | Sabattier effect — inverts where brightness > 0.5 |
+| Color Remap | R→G→B→R channel rotation (false color) |
+
+**UV distortion effects** (applied before `computeColor()`):
+| Effect | Description |
+|--------|-------------|
+| Barrel | Fisheye lens distortion (k=0.4), bulges center outward |
+| Glitch | Random horizontal row displacement (~15% of rows), animated |
+| Ripple | Animated sinusoidal UV warp |
 
 ## Rendering Architecture
 
@@ -95,7 +108,8 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 7. Soft saturation (tanh)
 8. Bitcrush (amplitude quantize)
 9. Wavefolder (9 modes: 6 sine drive intensities + 3 triangle)
-10. Post-processing (FXAA, dither, posterize, grain)
+10. UV distortion post-FX (barrel, ripple, glitch) — applied before color computation
+11. Color post-FX (FXAA, sharpen, dither, posterize, grain, halftone, solarize, color remap)
 
 ## Animation System
 

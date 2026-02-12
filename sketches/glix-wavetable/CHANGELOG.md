@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.0] - 2026-02-12
+
+### Added
+- 7 new GPU post-processing effects (11 total):
+  - **Sharpen**: Unsharp mask via 4-neighbor sampling, strength 1.2
+  - **Halftone**: Dot-pattern rendering, dot size varies by luminance
+  - **Solarize**: Sabattier effect — inverts where brightness > 0.5
+  - **Barrel**: Fisheye lens distortion, bulges center outward (k=0.4)
+  - **Color Remap**: R→G→B→R channel rotation (false color)
+  - **Glitch**: Random horizontal row displacement (~15% of rows), animated
+  - **Ripple**: Animated sinusoidal UV warp
+
+### Changed
+- Restructured GLSL `main()` pipeline: UV distortion effects (Barrel, Ripple, Glitch) applied before `computeColor()`, color effects applied after
+- FXAA and Sharpen now sample from UV-distorted coordinates when combined with distortion effects
+
 ## [2.9] - 2026-02-11
 
 ### Added
