@@ -976,7 +976,7 @@ function initWebGL() {
 
 function resizeGLCanvas() {
   if (!gl) return;
-  let sz = renderSize * SSAA_LEVELS[ppSSAA];
+  let sz = Math.min(renderSize * SSAA_LEVELS[ppSSAA], 4096);
   glCanvas.width = sz;
   glCanvas.height = sz;
   gl.viewport(0, 0, sz, sz);
@@ -1393,7 +1393,7 @@ function renderWavetable() {
 
 function renderWavetableGPU() {
   let palette = palettes[currentPalette];
-  let canvasSize = renderSize * SSAA_LEVELS[ppSSAA];
+  let canvasSize = Math.min(renderSize * SSAA_LEVELS[ppSSAA], 4096);
   // Ensure canvas is correct size for 2D
   if (glCanvas.width !== canvasSize || glCanvas.height !== canvasSize) {
     glCanvas.width = canvasSize;
