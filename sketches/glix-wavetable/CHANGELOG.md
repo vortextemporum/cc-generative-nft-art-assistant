@@ -3,6 +3,14 @@
 ## [3.0] - 2026-02-12
 
 ### Added
+- **Hash-based deterministic randomness** (Art Blocks compatible):
+  - sfc32 PRNG seeded from 256-bit hex hash (`tokenData.hash` or random fallback)
+  - `generateFeatures()` consumes R() calls to produce deterministic initial state
+  - Same hash always produces identical output (params, palette, animation, post-FX)
+  - `window.getFeatures()` exposes key traits (oscillator, palette, foldMode, etc.)
+  - `randomizeAll()` (R key) generates new random hash and re-calls `generateFeatures()`
+  - Bounce animation phases seeded from hash (no more `Math.random()` at load)
+  - Helper functions: `rnd()`, `rndInt()`, `rndChoice()`, `rndBool()`
 - 2 new GPU post-processing effects:
   - **Sharpen**: Unsharp mask via 4-neighbor sampling, strength 1.2
   - **Halftone**: Dot-pattern rendering, dot size varies by luminance

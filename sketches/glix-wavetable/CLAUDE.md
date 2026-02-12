@@ -83,14 +83,23 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 Dither algorithms are combinable — stacking Bayer + Noise + Lines creates complex textures.
 Randomization (R press) gives each PP effect <10% chance to trigger.
 
+## Hash-Based Randomness (Art Blocks Compatible)
+
+- **Hash**: 256-bit hex string (`"0x" + 64 hex chars`), from `tokenData.hash` or random fallback
+- **PRNG**: sfc32 (Small Fast Counter), seeded from 4×32-bit values extracted from hash
+- **Global**: `R()` returns float [0,1), helpers: `rnd(min,max)`, `rndInt(min,max)`, `rndChoice(arr)`, `rndBool(p)`
+- **Init**: `generateFeatures()` called in `setup()`, consumes R() for all initial state
+- **Features**: `window.getFeatures()` exposes: oscillator, palette, hueShift, foldMode, animMode, hasFold, hasCrush, mirror, invert
+- **Randomize (R key)**: Generates new random hash, re-calls `generateFeatures()`, updates all UI
+- **Animation**: Uses `noise()` (Perlin, time-based) and math functions — does NOT consume R()
+
 ## Rendering Architecture
 
 - **Primary renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU)
 - **Fallback**: CPU pixel-by-pixel via p5.js pixels[] array
 - **Display**: 2048×2048 canvas (CSS-constrained to 700px in index.html), internal render at 128-2048px (default 2048)
-- **Headless mode**: `window._GLIX_RANDOM = true` skips UI, auto-randomizes, stubs DOM functions
+- **Headless mode**: `window._GLIX_RANDOM = true` skips UI, `generateFeatures()` runs with hash
 - **Isometric 3D**: WebGL mesh rendering (VBO/IBO), grid capped at 256, GPU depth testing, 30fps throttle
-- **FXAA**: Edge-detection AA in GLSL — `computeColor()` sampled at 5 positions, luminance-based blending
 
 ### Signal Flow (in GLSL)
 1. Y-warp (time bending via power function)

@@ -3,6 +3,58 @@
 //   Based on GenDSP v3.0 - Extended Post-FX Pipeline
 // ==========================================
 
+// ============================================================
+// HASH-BASED RANDOMNESS (Art Blocks Compatible)
+// ============================================================
+
+let hash = "0x" + Array(64).fill(0).map(() =>
+  "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
+
+if (typeof tokenData !== "undefined" && tokenData.hash) {
+  hash = tokenData.hash;
+}
+
+function sfc32(a, b, c, d) {
+  return function() {
+    a |= 0; b |= 0; c |= 0; d |= 0;
+    let t = (a + b | 0) + d | 0;
+    d = d + 1 | 0;
+    a = b ^ b >>> 9;
+    b = c + (c << 3) | 0;
+    c = (c << 21 | c >>> 11);
+    c = c + t | 0;
+    return (t >>> 0) / 4294967296;
+  };
+}
+
+function initRandom(hashStr) {
+  const seeds = [];
+  for (let i = 2; i < 66; i += 8) {
+    seeds.push(parseInt(hashStr.slice(i, i + 8), 16));
+  }
+  return sfc32(seeds[0], seeds[1], seeds[2], seeds[3]);
+}
+
+let R;
+
+function rnd(min = 0, max = 1) {
+  return R() * (max - min) + min;
+}
+
+function rndInt(min, max) {
+  return Math.floor(rnd(min, max + 1));
+}
+
+function rndChoice(arr) {
+  return arr[Math.floor(R() * arr.length)];
+}
+
+function rndBool(p = 0.5) {
+  return R() < p;
+}
+
+// ============================================================
+
 let canvas;
 const DISPLAY_SIZE = 2048;
 
@@ -75,14 +127,14 @@ function applyRandomLocks() {
   let cat = LOCK_CATEGORIES[lockCategory];
   let animCount;
   if (Array.isArray(cat.count)) {
-    animCount = cat.count[0] + floor(random(cat.count[1] - cat.count[0] + 1));
+    animCount = cat.count[0] + rndInt(0, cat.count[1] - cat.count[0]);
   } else {
     animCount = cat.count;
   }
   // Shuffle param list and pick which ones to animate
   let shuffled = [...ANIM_PARAMS];
   for (let i = shuffled.length - 1; i > 0; i--) {
-    let j = floor(random(i + 1));
+    let j = Math.floor(R() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   for (let i = 0; i < ANIM_PARAMS.length; i++) {
@@ -134,10 +186,6 @@ const SEQ_PRESETS = [
 
 // Bounce state
 let bouncePhases = {};
-(function() {
-  let keys = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush'];
-  for (let k of keys) bouncePhases[k] = Math.random() * Math.PI * 2;
-})();
 
 // Post-processing flags
 let ppDitherBayer = false;  // Ordered Bayer dithering
@@ -1265,6 +1313,9 @@ function setup() {
   if (useWebGL) initIsoWebGL();
   if (!useWebGL) createPixelBuffer();
 
+  // Generate deterministic initial state from hash
+  generateFeatures();
+
   if (window._GLIX_RANDOM) {
     // Headless mode: stub UI functions so draw loop doesn't touch DOM
     updateUIValues = function() {};
@@ -1273,15 +1324,16 @@ function setup() {
     updateWaveModButtons = function() {};
     updateColorPreview = function() {};
     updateResolutionDisplay = function() {};
-    // Temporarily patch getElementById for randomizeAll's DOM access
-    var _origGEBI = document.getElementById;
-    document.getElementById = function(id) {
-      return _origGEBI.call(document, id) || document.createElement('div');
-    };
-    randomizeAll();
-    document.getElementById = _origGEBI;
   } else {
     setupUI();
+    // Sync UI to generated state
+    updateShapeButtons();
+    updateFoldButtons();
+    updateWaveModButtons();
+    updateUIValues();
+    document.getElementById('palette-select').value = currentPalette;
+    document.getElementById('param-hueshift').value = hueShift;
+    document.getElementById('val-hueshift').textContent = hueShift + '°';
     updateColorPreview();
     updateResolutionDisplay();
     // Show renderer info
@@ -2328,98 +2380,164 @@ function updateColorPreview() {
 }
 
 // --- GLOBAL FUNCTIONS ---
-window.randomizeAll = function() {
-  params.shape = floor(random(16));
-  params.pw = random(0.0, 1.0);
-  params.soften = expMap(random(), 0.001, 50);
-  params.y_bend = random(-0.25, 1.0);
+// ============================================================
+// DETERMINISTIC FEATURE GENERATION (hash-seeded)
+// ============================================================
+
+let features = {};
+
+function generateFeatures() {
+  R = initRandom(hash);
+
+  // --- Oscillator ---
+  params.shape = rndInt(0, 15);
+  params.pw = rnd();
+  params.soften = expMap(R(), 0.001, 50);
+  params.y_bend = rnd(-0.25, 1.0);
+
   // fx_bend: 30% chance of zero, otherwise exp-biased
-  params.fx_bend = random() < 0.3 ? 0 : expMap(pow(random(), 1.5), 0, 1000);
-  // fx_noise: 40% zero, rest biased low (power curve)
-  params.fx_noise = random() < 0.4 ? 0 : pow(random(), 3) * 0.8;
+  params.fx_bend = rndBool(0.3) ? 0 : expMap(Math.pow(R(), 1.5), 0, 1000);
+  // fx_noise: 40% zero, rest biased low
+  params.fx_noise = rndBool(0.4) ? 0 : Math.pow(R(), 3) * 0.8;
   // fx_quantize: 40% zero, rest biased low
-  params.fx_quantize = random() < 0.4 ? 0 : pow(random(), 3) * 0.7;
+  params.fx_quantize = rndBool(0.4) ? 0 : Math.pow(R(), 3) * 0.7;
   // pw_morph: biased toward center
-  params.pw_morph = pow(random(), 1.5) * 50 * (random() < 0.5 ? -1 : 1);
+  params.pw_morph = Math.pow(R(), 1.5) * 50 * (rndBool() ? -1 : 1);
+
   // fx_fold: 30% zero/low, 69% moderate, 1% extreme
-  let foldRoll = random();
-  if (foldRoll < 0.3) params.fx_fold = random(0, 50);
-  else if (foldRoll < 0.99) params.fx_fold = expMap(pow(random(), 1.5), 0, 2000);
-  else params.fx_fold = expMap(random(), 5000, 10000);
-  params.fold_mode = floor(random(9));
-  // fx_crush: 35% zero, rest exp-biased (0-1)
-  params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
-  // Wave mirror/invert: randomly pick a variation
-  params.wave_mirror = random() < 0.5 ? 1 : 0;
-  params.wave_invert = random() < 0.5 ? 1 : 0;
-  // Snap targets to match (no slow interpolation)
-  targetParams = { ...params };
-  updateShapeButtons();
-  updateFoldButtons();
-  updateWaveModButtons();
+  let foldRoll = R();
+  if (foldRoll < 0.3) params.fx_fold = rnd(0, 50);
+  else if (foldRoll < 0.99) params.fx_fold = expMap(Math.pow(R(), 1.5), 0, 2000);
+  else params.fx_fold = expMap(R(), 5000, 10000);
+  params.fold_mode = rndInt(0, 8);
 
-  updateUIValues();
+  // fx_crush: 35% zero, rest exp-biased
+  params.fx_crush = rndBool(0.35) ? 0 : expMap(Math.pow(R(), 1.5), 0, 1);
 
-  // Random palette + hue shift
-  currentPalette = random(paletteNames);
-  hueShift = floor(random(360));
-  document.getElementById('palette-select').value = currentPalette;
-  document.getElementById('param-hueshift').value = hueShift;
-  document.getElementById('val-hueshift').textContent = hueShift + '°';
-  updateColorPreview();
+  // Wave mirror/invert
+  params.wave_mirror = rndBool() ? 1 : 0;
+  params.wave_invert = rndBool() ? 1 : 0;
 
-  // Random animation mode
-  let newMode = random(ANIM_MODES);
-  setAnimMode(newMode);
+  // --- Palette + hue shift ---
+  currentPalette = rndChoice(paletteNames);
+  hueShift = rndInt(0, 359);
 
-  // Random resolution (full range)
-  setResolution(floor(random(RESOLUTIONS.length)));
+  // --- Animation ---
+  let animModeChoice = rndChoice(ANIM_MODES);
+  let resChoice = rndInt(0, RESOLUTIONS.length - 1);
+  lockCategory = rndInt(0, LOCK_CATEGORIES.length - 1);
 
-  // Random per-param animation ranges
+  // Per-param animation ranges
   randomizeParamRanges();
 
-  // Random lock category
-  lockCategory = floor(random(LOCK_CATEGORIES.length));
-  document.querySelectorAll('.lock-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.lockcat) === lockCategory);
-  });
-
-  // Apply param locks based on category
+  // Param locks
   applyRandomLocks();
 
-  // Guarantee visible animation after randomization
-  // 1. Floor animSpeed and driftAmount so animation is always perceptible
-  if (animSpeed < 0.15) {
-    animSpeed = 0.15;
-    document.getElementById('param-speed').value = animSpeed * 100;
-    document.getElementById('val-speed').textContent = animSpeed.toFixed(2);
-  }
-  if (driftAmount < 0.2) {
-    driftAmount = 0.2;
-    document.getElementById('param-drift').value = driftAmount * 100;
-    document.getElementById('val-drift').textContent = driftAmount.toFixed(2);
-  }
-  // 2. Ensure at least one unlocked, visually impactful param has full-speed range
+  // Bounce phases (deterministic from hash)
+  let bKeys = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush'];
+  for (let k of bKeys) bouncePhases[k] = R() * Math.PI * 2;
+
+  // Guarantee visible animation
+  let aSpd = rnd(0.15, 0.6);
+  let aDrift = rnd(0.2, 0.8);
+
+  // Ensure at least one unlocked visual param at full-speed
   let unlocked = ANIM_PARAMS.filter(k => !paramLocks[k]);
   let visualParams = ['fx_fold','fx_bend','pw_morph','y_bend','fx_noise','fx_quantize'];
   let unlockedVisual = unlocked.filter(k => visualParams.includes(k));
   if (unlocked.length > 0 && !unlocked.some(k => paramRanges[k] >= 1.0)) {
     let pick = unlockedVisual.length > 0 ? unlockedVisual : unlocked;
-    paramRanges[pick[floor(random(pick.length))]] = 1.0;
+    paramRanges[rndChoice(pick)] = 1.0;
   }
 
   // Post-FX: each has <10% chance to trigger
-  ppDitherBayer = random() < 0.07;
-  ppDitherBayerScale = floor(random(4));
-  ppDitherNoise = random() < 0.05;
-  ppDitherNoiseScale = floor(random(4));
-  ppDitherLines = random() < 0.05;
-  ppDitherLinesScale = floor(random(4));
-  ppPosterize = random() < 0.06;
-  ppGrain = random() < 0.08;
-  ppSharpen = random() < 0.06;
-  ppHalftone = random() < 0.05;
-  ppHalftoneScale = floor(random(4));
+  ppDitherBayer = rndBool(0.07);
+  ppDitherBayerScale = rndInt(0, 3);
+  ppDitherNoise = rndBool(0.05);
+  ppDitherNoiseScale = rndInt(0, 3);
+  ppDitherLines = rndBool(0.05);
+  ppDitherLinesScale = rndInt(0, 3);
+  ppPosterize = rndBool(0.06);
+  ppGrain = rndBool(0.08);
+  ppSharpen = rndBool(0.06);
+  ppHalftone = rndBool(0.05);
+  ppHalftoneScale = rndInt(0, 3);
+
+  // Store features for getFeatures()
+  features = {
+    oscillator: ['Sine','Triangle','Sawtooth','Pulse','HalfRect','Staircase',
+      'Parabolic','SuperSaw','Schrodinger','Chebyshev','FM','Harmonic',
+      'Fractal','Chirp','Formant','Chaos'][params.shape],
+    palette: currentPalette,
+    hueShift: hueShift,
+    foldMode: params.fold_mode,
+    animMode: animModeChoice,
+    hasFold: params.fx_fold > 50,
+    hasCrush: params.fx_crush > 0,
+    mirror: params.wave_mirror === 1,
+    invert: params.wave_invert === 1
+  };
+
+  // --- Apply to state (non-R stuff) ---
+  targetParams = { ...params };
+  animSpeed = aSpd;
+  driftAmount = aDrift;
+
+  // Apply animation mode + resolution
+  animMode = animModeChoice;
+  if (animMode === 'chaos') { lorenzX = 1; lorenzY = 1; lorenzZ = 1; }
+  if (animMode === 'sequencer') { seqStep = 0; seqTimer = 0; }
+  setResolution(resChoice);
+
+  needsRender = true;
+}
+
+window.getFeatures = function() { return features; };
+
+// ============================================================
+// UI-FACING RANDOMIZE (generates new hash, re-generates)
+// ============================================================
+
+window.randomizeAll = function() {
+  // Generate new random hash
+  hash = "0x" + Array(64).fill(0).map(() =>
+    "0123456789abcdef"[Math.floor(Math.random() * 16)]).join("");
+
+  generateFeatures();
+
+  // Update all UI to match new state
+  updateShapeButtons();
+  updateFoldButtons();
+  updateWaveModButtons();
+  updateUIValues();
+
+  document.getElementById('palette-select').value = currentPalette;
+  document.getElementById('param-hueshift').value = hueShift;
+  document.getElementById('val-hueshift').textContent = hueShift + '°';
+  updateColorPreview();
+
+  // Update anim mode UI
+  let el = document.getElementById('anim-mode-display');
+  if (el) el.textContent = animMode.charAt(0).toUpperCase() + animMode.slice(1);
+  let animPanel = el ? el.closest('.panel') : null;
+  if (animPanel) {
+    animPanel.querySelectorAll('.shape-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase() === animMode ||
+        (animMode === 'sequencer' && btn.textContent === 'Seq'));
+    });
+  }
+
+  // Update speed/drift UI
+  document.getElementById('param-speed').value = animSpeed * 100;
+  document.getElementById('val-speed').textContent = animSpeed.toFixed(2);
+  document.getElementById('param-drift').value = driftAmount * 100;
+  document.getElementById('val-drift').textContent = driftAmount.toFixed(2);
+
+  // Update lock category UI
+  document.querySelectorAll('.lock-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.lockcat) === lockCategory);
+  });
+
   // Update PP button states
   let sLabels = ['1px','2px','4px','8px'];
   let hLabels = ['4px','6px','10px','16px'];
@@ -2542,7 +2660,7 @@ window.setAnimRange = function(idx) {
 
 function randomizeParamRanges() {
   for (let k of ANIM_PARAMS) {
-    paramRanges[k] = ANIM_RANGES[floor(random(ANIM_RANGES.length))];
+    paramRanges[k] = rndChoice(ANIM_RANGES);
   }
   // Clear button active states (mixed mode)
   animRangeIndex = -1;
