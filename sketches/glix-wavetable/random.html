@@ -23,7 +23,6 @@
 <body>
   <script>
     // Return real detached DOM elements for missing IDs
-    // (has .closest, .classList, .value, .textContent, etc.)
     var _origGetById = document.getElementById.bind(document);
     document.getElementById = function(id) {
       return _origGetById(id) || document.createElement('div');
@@ -32,17 +31,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="sketch.js"></script>
   <script>
-    // Override setup: no UI, randomize on load
-    window.setup = function() {
-      canvas = createCanvas(DISPLAY_SIZE, DISPLAY_SIZE);
-      pixelDensity(1);
-      noSmooth();
-      useWebGL = initWebGL();
-      if (!useWebGL) createPixelBuffer();
-      randomizeAll();
-    };
-
-    // Stub all UI update functions
+    // Stub all UI functions before anything runs
     window.setupUI = function() {};
     window.updateUIValues = function() {};
     window.updateShapeButtons = function() {};
@@ -50,6 +39,52 @@
     window.updateWaveModButtons = function() {};
     window.updateColorPreview = function() {};
     window.updateResolutionDisplay = function() {};
+
+    // Override setup: no UI, randomize on load
+    window.setup = function() {
+      canvas = createCanvas(DISPLAY_SIZE, DISPLAY_SIZE);
+      pixelDensity(1);
+      noSmooth();
+
+      useWebGL = initWebGL();
+      if (useWebGL) {
+        initIsoWebGL();
+      } else {
+        createPixelBuffer();
+      }
+
+      // Manual randomization (avoids setResolution/UI calls in randomizeAll)
+      renderSize = 1024;
+      resizeGLCanvas();
+      if (!useWebGL) createPixelBuffer();
+
+      params.shape = floor(random(16));
+      params.pw = random(0.0, 1.0);
+      params.soften = expMap(random(), 0.001, 50);
+      params.y_bend = random(-0.25, 1.0);
+      params.fx_bend = random() < 0.3 ? 0 : expMap(pow(random(), 1.5), 0, 1000);
+      params.fx_noise = random() < 0.4 ? 0 : pow(random(), 3) * 0.8;
+      params.fx_quantize = random() < 0.4 ? 0 : pow(random(), 3) * 0.7;
+      params.pw_morph = pow(random(), 1.5) * 50 * (random() < 0.5 ? -1 : 1);
+      params.fx_fold = random() < 0.2 ? random(0, 50) : expMap(pow(random(), 1.3), 0, 10000);
+      params.fold_mode = floor(random(9));
+      params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
+      params.wave_mirror = random() < 0.5 ? 1 : 0;
+      params.wave_invert = random() < 0.5 ? 1 : 0;
+      targetParams = { ...params };
+
+      currentPalette = random(paletteNames);
+      hueShift = floor(random(360));
+
+      animMode = random(ANIM_MODES);
+      if (animMode === 'chaos') { lorenzX = 1; lorenzY = 1; lorenzZ = 1; }
+      if (animMode === 'sequencer') { seqStep = 0; seqTimer = 0; }
+
+      animSpeed = 0.3;
+      driftAmount = 0.5;
+
+      needsRender = true;
+    };
   </script>
 </body>
 </html>
