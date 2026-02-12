@@ -18,7 +18,7 @@ let isoRotation = -0.7;   // rotation around Y axis (radians)
 let isoTilt = 0.65;       // tilt angle (0=top-down, PI/2=side)
 let isoZoom = 0.85;
 let isoPanX = 0;
-let isoPanY = 0;
+let isoPanY = 25;
 let isoDragging = false;
 let isoPanning = false;
 let isoDragStartX = 0;
@@ -2143,7 +2143,7 @@ window.resetCamera = function() {
   isoTilt = 0.65;
   isoZoom = 0.85;
   isoPanX = 0;
-  isoPanY = 0;
+  isoPanY = 25;
   needsRender = true;
 };
 
