@@ -146,6 +146,7 @@ let ppPosterize = false; // Reduce color depth
 let ppGrain = false;     // Film grain
 let ppSharpen = false;   // Unsharp mask sharpening
 let ppHalftone = false;  // Dot-pattern halftone
+let ppHalftoneScale = 0; // Halftone dot size: 0=4px, 1=6px, 2=10px, 3=16px
 
 // Rendering throttle (30fps max for wavetable)
 const TARGET_UPDATE_FPS = 30;
@@ -533,6 +534,7 @@ uniform float u_pp_posterize;
 uniform float u_pp_grain;
 uniform float u_pp_sharpen;
 uniform float u_pp_halftone;
+uniform float u_pp_halftone_scale;
 uniform float u_time;
 uniform float u_canvas_size;
 uniform vec3 u_palette[7];
@@ -885,7 +887,7 @@ void main() {
 
   // Halftone (dot pattern based on luminance)
   if (u_pp_halftone > 0.5) {
-    float dotSize = 6.0;
+    float dotSize = u_pp_halftone_scale;
     vec2 cell = floor(pixCoord / dotSize) * dotSize + dotSize * 0.5;
     float dist = length(pixCoord - cell) / (dotSize * 0.5);
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
@@ -1021,7 +1023,7 @@ function initWebGL() {
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
                'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
                'u_pp_dither','u_pp_dither_scale','u_pp_posterize','u_pp_grain',
-               'u_pp_sharpen','u_pp_halftone',
+               'u_pp_sharpen','u_pp_halftone','u_pp_halftone_scale',
                'u_time','u_canvas_size','u_hue_shift',
                'u_wave_mirror','u_wave_invert'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
@@ -1524,6 +1526,7 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_pp_grain, ppGrain ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_sharpen, ppSharpen ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_halftone, ppHalftone ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_halftone_scale, [4, 6, 10, 16][ppHalftoneScale]);
   gl.uniform1f(uLocations.u_time, animTime * 100.0);
   gl.uniform1f(uLocations.u_canvas_size, renderSize);
 
@@ -2197,6 +2200,7 @@ window.randomizeAll = function() {
   ppGrain = random() < 0.08;
   ppSharpen = random() < 0.06;
   ppHalftone = random() < 0.05;
+  ppHalftoneScale = floor(random(4));
   // Update PP button states
   document.querySelectorAll('.pp-btn').forEach(btn => {
     let pp = btn.dataset.pp;
@@ -2206,6 +2210,9 @@ window.randomizeAll = function() {
     btn.classList.toggle('active', on);
     if (pp === 'dither') {
       btn.textContent = ppDither ? 'Dither ' + ['1px','2px','4px','8px'][ppDitherScale] : 'Dither';
+    }
+    if (pp === 'halftone') {
+      btn.textContent = ppHalftone ? 'Halftone ' + ['4px','6px','10px','16px'][ppHalftoneScale] : 'Halftone';
     }
   });
 
@@ -2345,9 +2352,21 @@ function togglePP(name) {
   else if (name === 'posterize') ppPosterize = !ppPosterize;
   else if (name === 'grain') ppGrain = !ppGrain;
   else if (name === 'sharpen') ppSharpen = !ppSharpen;
-  else if (name === 'halftone') ppHalftone = !ppHalftone;
+  else if (name === 'halftone') {
+    if (!ppHalftone) {
+      ppHalftone = true;
+      ppHalftoneScale = 0;
+    } else {
+      ppHalftoneScale++;
+      if (ppHalftoneScale > 3) {
+        ppHalftone = false;
+        ppHalftoneScale = 0;
+      }
+    }
+  }
   // Update button states
   let ditherLabels = ['1px', '2px', '4px', '8px'];
+  let halftoneLabels = ['4px', '6px', '10px', '16px'];
   document.querySelectorAll('.pp-btn').forEach(btn => {
     let pp = btn.dataset.pp;
     let on = (pp === 'dither' && ppDither) ||
@@ -2356,6 +2375,9 @@ function togglePP(name) {
     btn.classList.toggle('active', on);
     if (pp === 'dither') {
       btn.textContent = ppDither ? 'Dither ' + ditherLabels[ppDitherScale] : 'Dither';
+    }
+    if (pp === 'halftone') {
+      btn.textContent = ppHalftone ? 'Halftone ' + halftoneLabels[ppHalftoneScale] : 'Halftone';
     }
   });
   needsRender = true;
