@@ -68,16 +68,19 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | fold_mode | 0-8 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015), 7=Destroy (×0.25). Triangle: 5=Crease (×0.02), 6=Ripple (×0.005), 8=Fracture (×0.05) |
 | fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
-### Post-Processing (GPU shader, 6 effects)
+### Post-Processing (GPU shader, 8 effects)
 | Effect | Description |
 |--------|-------------|
 | Smooth | CSS image-rendering toggle (bilinear upscale) |
-| Dither | Ordered Bayer 4×4 dithering, cycles through 1px/2px/4px/8px |
+| Bayer | Ordered 4×4 matrix dither, cycles 1px/2px/4px/8px |
+| Noise | Random threshold dither, cycles 1px/2px/4px/8px |
+| Lines | Horizontal scanline dither, luminance-weighted, cycles 1px/2px/4px/8px |
 | Posterize | 6-level color quantization |
 | Grain | Animated film noise |
 | Sharpen | Unsharp mask via 4-neighbor sampling (strength 1.2) |
-| Halftone | Dot-pattern rendering, dot size varies by luminance |
+| Halftone | Dot-pattern rendering, cycles 4px/6px/10px/16px |
 
+Dither algorithms are combinable — stacking Bayer + Noise + Lines creates complex textures.
 Randomization (R press) gives each PP effect <10% chance to trigger.
 
 ## Rendering Architecture

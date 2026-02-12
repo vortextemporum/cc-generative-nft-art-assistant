@@ -6,7 +6,11 @@
 - 2 new GPU post-processing effects:
   - **Sharpen**: Unsharp mask via 4-neighbor sampling, strength 1.2
   - **Halftone**: Dot-pattern rendering, dot size varies by luminance
-- Dither now cycles through 4 sizes: 1px, 2px, 4px, 8px (was 2)
+- 3 dither algorithms replacing single Dither button, each cycles 1px/2px/4px/8px:
+  - **Bayer**: Ordered 4×4 matrix dithering (classic)
+  - **Noise**: Random threshold per cell (stipple texture)
+  - **Lines**: Horizontal scanline pattern, luminance-weighted
+  - All combinable — stack multiple algorithms for complex textures
 - Post-FX randomization on R press — each effect has <10% chance to trigger
 - Smooth upscale button moved to Post FX panel (uses CSS `image-rendering` toggle)
 

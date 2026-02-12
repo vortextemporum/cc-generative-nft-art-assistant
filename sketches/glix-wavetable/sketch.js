@@ -140,8 +140,12 @@ let bouncePhases = {};
 })();
 
 // Post-processing flags
-let ppDither = false;    // Ordered Bayer dithering
-let ppDitherScale = 0;   // Dither cell size: 0=fine(1px), 1=medium(2px)
+let ppDitherBayer = false;  // Ordered Bayer dithering
+let ppDitherBayerScale = 0; // 0=1px, 1=2px, 2=4px, 3=8px
+let ppDitherNoise = false;  // Random noise dithering
+let ppDitherNoiseScale = 0;
+let ppDitherLines = false;  // Scanline dithering
+let ppDitherLinesScale = 0;
 let ppPosterize = false; // Reduce color depth
 let ppGrain = false;     // Film grain
 let ppSharpen = false;   // Unsharp mask sharpening
@@ -528,8 +532,12 @@ uniform float u_fx_fold;
 uniform float u_fold_mode;
 uniform float u_fx_crush;
 uniform float u_size;
-uniform float u_pp_dither;
-uniform float u_pp_dither_scale;
+uniform float u_pp_dither_bayer;
+uniform float u_pp_dither_bayer_scale;
+uniform float u_pp_dither_noise;
+uniform float u_pp_dither_noise_scale;
+uniform float u_pp_dither_lines;
+uniform float u_pp_dither_lines_scale;
 uniform float u_pp_posterize;
 uniform float u_pp_grain;
 uniform float u_pp_sharpen;
@@ -866,11 +874,27 @@ void main() {
 
   vec2 pixCoord = v_uv * u_canvas_size;
 
-  // Ordered dithering (scaled cell size)
-  if (u_pp_dither > 0.5) {
-    vec2 ditherCoord = floor(pixCoord / u_pp_dither_scale);
+  // Bayer ordered dithering
+  if (u_pp_dither_bayer > 0.5) {
+    vec2 ditherCoord = floor(pixCoord / u_pp_dither_bayer_scale);
     float dith = bayerMatrix(ditherCoord) - 0.5;
-    col += dith * (0.06 + u_pp_dither_scale * 0.015);
+    col += dith * (0.06 + u_pp_dither_bayer_scale * 0.015);
+  }
+
+  // Noise dithering (random threshold per cell)
+  if (u_pp_dither_noise > 0.5) {
+    vec2 cell = floor(pixCoord / u_pp_dither_noise_scale);
+    float noise = fract2(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+    col += noise * (0.08 + u_pp_dither_noise_scale * 0.012);
+  }
+
+  // Line dithering (horizontal scanline pattern)
+  if (u_pp_dither_lines > 0.5) {
+    float row = floor(pixCoord.y / u_pp_dither_lines_scale);
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+    float pattern = mod(row, 2.0);
+    float strength = 0.06 + u_pp_dither_lines_scale * 0.02;
+    col += (pattern - 0.5) * strength * (1.0 - lum * 0.5);
   }
 
   // Posterize (reduce to N color levels)
@@ -1022,7 +1046,10 @@ function initWebGL() {
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
                'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
-               'u_pp_dither','u_pp_dither_scale','u_pp_posterize','u_pp_grain',
+               'u_pp_dither_bayer','u_pp_dither_bayer_scale',
+               'u_pp_dither_noise','u_pp_dither_noise_scale',
+               'u_pp_dither_lines','u_pp_dither_lines_scale',
+               'u_pp_posterize','u_pp_grain',
                'u_pp_sharpen','u_pp_halftone','u_pp_halftone_scale',
                'u_time','u_canvas_size','u_hue_shift',
                'u_wave_mirror','u_wave_invert'];
@@ -1520,8 +1547,12 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_fold_mode, params.fold_mode);
   gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
   gl.uniform1f(uLocations.u_size, renderSize);
-  gl.uniform1f(uLocations.u_pp_dither, ppDither ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_dither_scale, [1, 2, 4, 8][ppDitherScale]);
+  gl.uniform1f(uLocations.u_pp_dither_bayer, ppDitherBayer ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_dither_bayer_scale, [1, 2, 4, 8][ppDitherBayerScale]);
+  gl.uniform1f(uLocations.u_pp_dither_noise, ppDitherNoise ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_dither_noise_scale, [1, 2, 4, 8][ppDitherNoiseScale]);
+  gl.uniform1f(uLocations.u_pp_dither_lines, ppDitherLines ? 1.0 : 0.0);
+  gl.uniform1f(uLocations.u_pp_dither_lines_scale, [1, 2, 4, 8][ppDitherLinesScale]);
   gl.uniform1f(uLocations.u_pp_posterize, ppPosterize ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_grain, ppGrain ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_sharpen, ppSharpen ? 1.0 : 0.0);
@@ -2194,26 +2225,32 @@ window.randomizeAll = function() {
   }
 
   // Post-FX: each has <10% chance to trigger
-  ppDither = random() < 0.07;
-  ppDitherScale = floor(random(4));
+  ppDitherBayer = random() < 0.07;
+  ppDitherBayerScale = floor(random(4));
+  ppDitherNoise = random() < 0.05;
+  ppDitherNoiseScale = floor(random(4));
+  ppDitherLines = random() < 0.05;
+  ppDitherLinesScale = floor(random(4));
   ppPosterize = random() < 0.06;
   ppGrain = random() < 0.08;
   ppSharpen = random() < 0.06;
   ppHalftone = random() < 0.05;
   ppHalftoneScale = floor(random(4));
   // Update PP button states
+  let sLabels = ['1px','2px','4px','8px'];
+  let hLabels = ['4px','6px','10px','16px'];
   document.querySelectorAll('.pp-btn').forEach(btn => {
     let pp = btn.dataset.pp;
-    let on = (pp === 'dither' && ppDither) ||
+    let on = (pp === 'dither-bayer' && ppDitherBayer) ||
+             (pp === 'dither-noise' && ppDitherNoise) ||
+             (pp === 'dither-lines' && ppDitherLines) ||
              (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
              (pp === 'sharpen' && ppSharpen) || (pp === 'halftone' && ppHalftone);
     btn.classList.toggle('active', on);
-    if (pp === 'dither') {
-      btn.textContent = ppDither ? 'Dither ' + ['1px','2px','4px','8px'][ppDitherScale] : 'Dither';
-    }
-    if (pp === 'halftone') {
-      btn.textContent = ppHalftone ? 'Halftone ' + ['4px','6px','10px','16px'][ppHalftoneScale] : 'Halftone';
-    }
+    if (pp === 'dither-bayer') btn.textContent = ppDitherBayer ? 'Bayer ' + sLabels[ppDitherBayerScale] : 'Bayer';
+    if (pp === 'dither-noise') btn.textContent = ppDitherNoise ? 'Noise ' + sLabels[ppDitherNoiseScale] : 'Noise';
+    if (pp === 'dither-lines') btn.textContent = ppDitherLines ? 'Lines ' + sLabels[ppDitherLinesScale] : 'Lines';
+    if (pp === 'halftone') btn.textContent = ppHalftone ? 'Halftone ' + hLabels[ppHalftoneScale] : 'Halftone';
   });
 
   needsRender = true;
@@ -2337,17 +2374,17 @@ window.toggleSmooth = function() {
 };
 
 function togglePP(name) {
-  if (name === 'dither') {
-    if (!ppDither) {
-      ppDither = true;
-      ppDitherScale = 0;
-    } else {
-      ppDitherScale++;
-      if (ppDitherScale > 3) {
-        ppDither = false;
-        ppDitherScale = 0;
-      }
-    }
+  if (name === 'dither-bayer') {
+    if (!ppDitherBayer) { ppDitherBayer = true; ppDitherBayerScale = 0; }
+    else { ppDitherBayerScale++; if (ppDitherBayerScale > 3) { ppDitherBayer = false; ppDitherBayerScale = 0; } }
+  }
+  else if (name === 'dither-noise') {
+    if (!ppDitherNoise) { ppDitherNoise = true; ppDitherNoiseScale = 0; }
+    else { ppDitherNoiseScale++; if (ppDitherNoiseScale > 3) { ppDitherNoise = false; ppDitherNoiseScale = 0; } }
+  }
+  else if (name === 'dither-lines') {
+    if (!ppDitherLines) { ppDitherLines = true; ppDitherLinesScale = 0; }
+    else { ppDitherLinesScale++; if (ppDitherLinesScale > 3) { ppDitherLines = false; ppDitherLinesScale = 0; } }
   }
   else if (name === 'posterize') ppPosterize = !ppPosterize;
   else if (name === 'grain') ppGrain = !ppGrain;
@@ -2365,20 +2402,20 @@ function togglePP(name) {
     }
   }
   // Update button states
-  let ditherLabels = ['1px', '2px', '4px', '8px'];
+  let sizeLabels = ['1px', '2px', '4px', '8px'];
   let halftoneLabels = ['4px', '6px', '10px', '16px'];
   document.querySelectorAll('.pp-btn').forEach(btn => {
     let pp = btn.dataset.pp;
-    let on = (pp === 'dither' && ppDither) ||
+    let on = (pp === 'dither-bayer' && ppDitherBayer) ||
+             (pp === 'dither-noise' && ppDitherNoise) ||
+             (pp === 'dither-lines' && ppDitherLines) ||
              (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
              (pp === 'sharpen' && ppSharpen) || (pp === 'halftone' && ppHalftone);
     btn.classList.toggle('active', on);
-    if (pp === 'dither') {
-      btn.textContent = ppDither ? 'Dither ' + ditherLabels[ppDitherScale] : 'Dither';
-    }
-    if (pp === 'halftone') {
-      btn.textContent = ppHalftone ? 'Halftone ' + halftoneLabels[ppHalftoneScale] : 'Halftone';
-    }
+    if (pp === 'dither-bayer') btn.textContent = ppDitherBayer ? 'Bayer ' + sizeLabels[ppDitherBayerScale] : 'Bayer';
+    if (pp === 'dither-noise') btn.textContent = ppDitherNoise ? 'Noise ' + sizeLabels[ppDitherNoiseScale] : 'Noise';
+    if (pp === 'dither-lines') btn.textContent = ppDitherLines ? 'Lines ' + sizeLabels[ppDitherLinesScale] : 'Lines';
+    if (pp === 'halftone') btn.textContent = ppHalftone ? 'Halftone ' + halftoneLabels[ppHalftoneScale] : 'Halftone';
   });
   needsRender = true;
 }
