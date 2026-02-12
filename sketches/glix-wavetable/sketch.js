@@ -1498,18 +1498,17 @@ function getColorFromPalette(t, palette) {
 // --- ISOMETRIC HEIGHTMAP VIEW ---
 function projectPoint(nx, ny, nz) {
   // nx, ny, nz are normalized (-0.5 to 0.5) centered coordinates
-  // Rotate around Y axis
+  // Rotate around vertical axis
   let cosR = Math.cos(isoRotation);
   let sinR = Math.sin(isoRotation);
   let rx = nx * cosR - ny * sinR;
-  let ry = nx * sinR + ny * cosR;
-  let rz = nz;
+  let ry = -(nx * sinR + ny * cosR); // negate for top-down view
 
   // Tilt (rotate around X axis)
   let cosT = Math.cos(isoTilt);
   let sinT = Math.sin(isoTilt);
-  let ty = ry * cosT - rz * sinT;
-  let tz = ry * sinT + rz * cosT;
+  let ty = ry * cosT - nz * sinT;
+  let tz = ry * sinT + nz * cosT;
 
   // Project to screen with zoom + pan
   let scale = DISPLAY_SIZE * 0.75 * isoZoom;
@@ -1517,6 +1516,13 @@ function projectPoint(nx, ny, nz) {
   let sy = DISPLAY_SIZE * 0.5 + ty * scale + isoPanY;
 
   return { x: sx, y: sy, z: tz };
+}
+
+function getIsoBg(palette) {
+  let avg = 0;
+  for (let c of palette) avg += (c[0] + c[1] + c[2]) / 3;
+  avg /= palette.length;
+  return avg > 128 ? [15, 15, 20] : [230, 228, 222];
 }
 
 function renderIsometric() {
@@ -1531,7 +1537,8 @@ function renderIsometric() {
   }
 
   // CPU fallback (p5.js drawing)
-  background(10, 10, 15);
+  let bg = getIsoBg(palette);
+  background(bg[0], bg[1], bg[2]);
   let grid = [];
   let projected = [];
   for (let gy = 0; gy <= gridRes; gy++) {
@@ -1622,7 +1629,7 @@ function renderIsometricWebGL(palette, gridRes, heightAmt) {
 
       // Projection (inline for speed)
       let rx = nx * cosR - ny * sinR;
-      let ry = nx * sinR + ny * cosR;
+      let ry = -(nx * sinR + ny * cosR); // negate for top-down view
       let ty = ry * cosT - nz * sinT;
       let tz = ry * sinT + nz * cosT;
       let sx = cx + rx * scale;
@@ -1631,8 +1638,8 @@ function renderIsometricWebGL(palette, gridRes, heightAmt) {
       // Convert to clip space (-1 to 1)
       let clipX = sx * invDS * 2.0 - 1.0;
       let clipY = 1.0 - sy * invDS * 2.0;
-      // Depth: map tz to 0-1 range for depth buffer
-      let depth = (tz + 1.0) * 0.5;
+      // Depth: invert so near=small, far=large for depth buffer
+      let depth = (1.0 - tz) * 0.5;
 
       let off = vi * ISO_STRIDE;
       vertData[off] = clipX;
@@ -1714,8 +1721,9 @@ function renderIsometricWebGL(palette, gridRes, heightAmt) {
   }
   gl.viewport(0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
 
-  // Clear with background color
-  gl.clearColor(10/255, 10/255, 15/255, 1.0);
+  // Clear with contrasting background
+  let bg = getIsoBg(palette);
+  gl.clearColor(bg[0]/255, bg[1]/255, bg[2]/255, 1.0);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
