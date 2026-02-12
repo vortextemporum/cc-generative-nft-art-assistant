@@ -144,14 +144,8 @@ let ppDither = false;    // Ordered Bayer dithering
 let ppDitherScale = 0;   // Dither cell size: 0=fine(1px), 1=medium(2px)
 let ppPosterize = false; // Reduce color depth
 let ppGrain = false;     // Film grain
-let ppFXAA = false;      // FXAA edge smoothing
 let ppSharpen = false;   // Unsharp mask sharpening
 let ppHalftone = false;  // Dot-pattern halftone
-let ppSolarize = false;  // Sabattier effect (partial inversion)
-let ppBarrel = false;    // Fisheye lens distortion
-let ppColorRemap = false;// R→G→B→R channel rotation
-let ppGlitch = false;    // Horizontal row displacement
-let ppRipple = false;    // Sinusoidal UV warp
 
 // Rendering throttle (30fps max for wavetable)
 const TARGET_UPDATE_FPS = 30;
@@ -537,14 +531,8 @@ uniform float u_pp_dither;
 uniform float u_pp_dither_scale;
 uniform float u_pp_posterize;
 uniform float u_pp_grain;
-uniform float u_pp_fxaa;
 uniform float u_pp_sharpen;
 uniform float u_pp_halftone;
-uniform float u_pp_solarize;
-uniform float u_pp_barrel;
-uniform float u_pp_color_remap;
-uniform float u_pp_glitch;
-uniform float u_pp_ripple;
 uniform float u_time;
 uniform float u_canvas_size;
 uniform vec3 u_palette[7];
@@ -861,90 +849,20 @@ vec3 computeColor(vec2 uv) {
 }
 
 void main() {
-  vec2 uv = v_uv;
-
-  // === UV DISTORTION EFFECTS (before color computation) ===
-
-  // Barrel distortion (fisheye)
-  if (u_pp_barrel > 0.5) {
-    vec2 centered = uv - 0.5;
-    float r2 = dot(centered, centered);
-    float distort = 1.0 + 0.4 * r2;
-    uv = 0.5 + centered * distort;
-    uv = clamp(uv, 0.0, 1.0);
-  }
-
-  // Ripple (sinusoidal UV warp)
-  if (u_pp_ripple > 0.5) {
-    uv.x += sin(uv.y * 25.0 + u_time * 2.0) * 0.015;
-    uv.y += cos(uv.x * 25.0 + u_time * 2.0) * 0.015;
-    uv = clamp(uv, 0.0, 1.0);
-  }
-
-  // Glitch (horizontal row displacement)
-  if (u_pp_glitch > 0.5) {
-    float rowSeed = floor(uv.y * 80.0);
-    float glitchRand = fract2(sin(rowSeed * 91.7 + floor(u_time * 4.0)) * 43758.5);
-    if (glitchRand > 0.85) {
-      float offset = (fract2(sin(rowSeed * 127.1 + floor(u_time * 4.0)) * 17483.3) - 0.5) * 0.08;
-      uv.x = fract(uv.x + offset);
-    }
-  }
-
-  // === COLOR COMPUTATION (with FXAA or direct) ===
-  vec3 col;
-
-  if (u_pp_fxaa > 0.5) {
-    // FXAA: sample center + 4 cardinal neighbors for edge detection
-    vec2 texel = vec2(1.0 / u_canvas_size);
-    vec3 cM = computeColor(uv);
-    vec3 cN = computeColor(uv + vec2(0.0, texel.y));
-    vec3 cS = computeColor(uv - vec2(0.0, texel.y));
-    vec3 cE = computeColor(uv + vec2(texel.x, 0.0));
-    vec3 cW = computeColor(uv - vec2(texel.x, 0.0));
-
-    // Luminance (rec. 709)
-    float lumM = dot(cM, vec3(0.299, 0.587, 0.114));
-    float lumN = dot(cN, vec3(0.299, 0.587, 0.114));
-    float lumS = dot(cS, vec3(0.299, 0.587, 0.114));
-    float lumE = dot(cE, vec3(0.299, 0.587, 0.114));
-    float lumW = dot(cW, vec3(0.299, 0.587, 0.114));
-
-    float rangeMax = max(max(max(lumN, lumS), max(lumE, lumW)), lumM);
-    float rangeMin = min(min(min(lumN, lumS), min(lumE, lumW)), lumM);
-    float range = rangeMax - rangeMin;
-
-    // Only blend at edges with sufficient contrast
-    if (range < 0.05) {
-      col = cM;
-    } else {
-      // Detect edge direction
-      float gradH = abs(lumW - lumM) + abs(lumE - lumM);
-      float gradV = abs(lumN - lumM) + abs(lumS - lumM);
-      float blend = clamp(range * 4.0, 0.0, 0.5);
-
-      if (gradV > gradH) {
-        col = mix(cM, (cN + cS) * 0.5, blend);
-      } else {
-        col = mix(cM, (cE + cW) * 0.5, blend);
-      }
-    }
-  } else {
-    col = computeColor(uv);
-  }
+  vec3 col = computeColor(v_uv);
 
   // === SHARPEN (unsharp mask via neighbor sampling) ===
   if (u_pp_sharpen > 0.5) {
     vec2 texel = vec2(1.0 / u_canvas_size);
-    vec3 cN = computeColor(uv + vec2(0.0, texel.y));
-    vec3 cS = computeColor(uv - vec2(0.0, texel.y));
-    vec3 cE = computeColor(uv + vec2(texel.x, 0.0));
-    vec3 cW = computeColor(uv - vec2(texel.x, 0.0));
+    vec3 cN = computeColor(v_uv + vec2(0.0, texel.y));
+    vec3 cS = computeColor(v_uv - vec2(0.0, texel.y));
+    vec3 cE = computeColor(v_uv + vec2(texel.x, 0.0));
+    vec3 cW = computeColor(v_uv - vec2(texel.x, 0.0));
     vec3 blur = (cN + cS + cE + cW) * 0.25;
     col = col + (col - blur) * 1.2;
   }
 
-  vec2 pixCoord = uv * u_canvas_size;
+  vec2 pixCoord = v_uv * u_canvas_size;
 
   // Ordered dithering (scaled cell size)
   if (u_pp_dither > 0.5) {
@@ -972,16 +890,6 @@ void main() {
     float dist = length(pixCoord - cell) / (dotSize * 0.5);
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
     col = mix(vec3(0.0), col, step(dist, lum));
-  }
-
-  // Solarize (partial inversion at mid-tones)
-  if (u_pp_solarize > 0.5) {
-    col = mix(col, 1.0 - col, step(0.5, col));
-  }
-
-  // Color Remap (R→G→B→R channel rotation)
-  if (u_pp_color_remap > 0.5) {
-    col = col.gbr;
   }
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
@@ -1112,8 +1020,8 @@ function initWebGL() {
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
                'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
-               'u_pp_dither','u_pp_dither_scale','u_pp_posterize','u_pp_grain','u_pp_fxaa',
-               'u_pp_sharpen','u_pp_halftone','u_pp_solarize','u_pp_barrel','u_pp_color_remap','u_pp_glitch','u_pp_ripple',
+               'u_pp_dither','u_pp_dither_scale','u_pp_posterize','u_pp_grain',
+               'u_pp_sharpen','u_pp_halftone',
                'u_time','u_canvas_size','u_hue_shift',
                'u_wave_mirror','u_wave_invert'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
@@ -1611,17 +1519,11 @@ function renderWavetableGPU() {
   gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
   gl.uniform1f(uLocations.u_size, renderSize);
   gl.uniform1f(uLocations.u_pp_dither, ppDither ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_dither_scale, [1, 2][ppDitherScale]);
+  gl.uniform1f(uLocations.u_pp_dither_scale, [1, 2, 4, 8][ppDitherScale]);
   gl.uniform1f(uLocations.u_pp_posterize, ppPosterize ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_grain, ppGrain ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_fxaa, ppFXAA ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_sharpen, ppSharpen ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_halftone, ppHalftone ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_solarize, ppSolarize ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_barrel, ppBarrel ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_color_remap, ppColorRemap ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_glitch, ppGlitch ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_ripple, ppRipple ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_time, animTime * 100.0);
   gl.uniform1f(uLocations.u_canvas_size, renderSize);
 
@@ -2288,6 +2190,25 @@ window.randomizeAll = function() {
     paramRanges[pick[floor(random(pick.length))]] = 1.0;
   }
 
+  // Post-FX: each has <10% chance to trigger
+  ppDither = random() < 0.07;
+  ppDitherScale = floor(random(4));
+  ppPosterize = random() < 0.06;
+  ppGrain = random() < 0.08;
+  ppSharpen = random() < 0.06;
+  ppHalftone = random() < 0.05;
+  // Update PP button states
+  document.querySelectorAll('.pp-btn').forEach(btn => {
+    let pp = btn.dataset.pp;
+    let on = (pp === 'dither' && ppDither) ||
+             (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
+             (pp === 'sharpen' && ppSharpen) || (pp === 'halftone' && ppHalftone);
+    btn.classList.toggle('active', on);
+    if (pp === 'dither') {
+      btn.textContent = ppDither ? 'Dither ' + ['1px','2px','4px','8px'][ppDitherScale] : 'Dither';
+    }
+  });
+
   needsRender = true;
 };
 
@@ -2404,7 +2325,7 @@ let smoothUpscale = false;
 window.toggleSmooth = function() {
   smoothUpscale = !smoothUpscale;
   let el = document.getElementById('smooth-btn');
-  if (el) el.textContent = smoothUpscale ? 'Smooth: On' : 'Smooth: Off';
+  if (el) el.classList.toggle('active', smoothUpscale);
   needsRender = true;
 };
 
@@ -2415,7 +2336,7 @@ function togglePP(name) {
       ppDitherScale = 0;
     } else {
       ppDitherScale++;
-      if (ppDitherScale > 1) {
+      if (ppDitherScale > 3) {
         ppDither = false;
         ppDitherScale = 0;
       }
@@ -2423,24 +2344,15 @@ function togglePP(name) {
   }
   else if (name === 'posterize') ppPosterize = !ppPosterize;
   else if (name === 'grain') ppGrain = !ppGrain;
-  else if (name === 'fxaa') ppFXAA = !ppFXAA;
   else if (name === 'sharpen') ppSharpen = !ppSharpen;
   else if (name === 'halftone') ppHalftone = !ppHalftone;
-  else if (name === 'solarize') ppSolarize = !ppSolarize;
-  else if (name === 'barrel') ppBarrel = !ppBarrel;
-  else if (name === 'colorremap') ppColorRemap = !ppColorRemap;
-  else if (name === 'glitch') ppGlitch = !ppGlitch;
-  else if (name === 'ripple') ppRipple = !ppRipple;
   // Update button states
-  let ditherLabels = ['1px', '2px'];
+  let ditherLabels = ['1px', '2px', '4px', '8px'];
   document.querySelectorAll('.pp-btn').forEach(btn => {
     let pp = btn.dataset.pp;
     let on = (pp === 'dither' && ppDither) ||
              (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
-             (pp === 'fxaa' && ppFXAA) || (pp === 'sharpen' && ppSharpen) ||
-             (pp === 'halftone' && ppHalftone) || (pp === 'solarize' && ppSolarize) ||
-             (pp === 'barrel' && ppBarrel) || (pp === 'colorremap' && ppColorRemap) ||
-             (pp === 'glitch' && ppGlitch) || (pp === 'ripple' && ppRipple);
+             (pp === 'sharpen' && ppSharpen) || (pp === 'halftone' && ppHalftone);
     btn.classList.toggle('active', on);
     if (pp === 'dither') {
       btn.textContent = ppDither ? 'Dither ' + ditherLabels[ppDitherScale] : 'Dither';

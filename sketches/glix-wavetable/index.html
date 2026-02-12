@@ -374,7 +374,6 @@
             <span id="view-btn-text">3D View</span>
           </button>
           <button class="btn btn-secondary" onclick="resetCamera()">Reset Cam</button>
-          <button class="btn btn-secondary" id="smooth-btn" onclick="toggleSmooth()">Smooth: Off</button>
           <button class="btn btn-secondary" onclick="saveImage()">Save</button>
         </div>
       </div>
@@ -551,17 +550,12 @@
         <div class="section-title">Post FX</div>
         <div class="param-group">
           <div class="shape-buttons" style="flex-wrap: wrap;">
-            <button class="shape-btn pp-btn" data-pp="fxaa" onclick="togglePP('fxaa')">FXAA</button>
+            <button class="shape-btn pp-btn" id="smooth-btn" data-pp="smooth" onclick="toggleSmooth()">Smooth</button>
             <button class="shape-btn pp-btn" data-pp="dither" onclick="togglePP('dither')">Dither</button>
             <button class="shape-btn pp-btn" data-pp="posterize" onclick="togglePP('posterize')">Posterize</button>
             <button class="shape-btn pp-btn" data-pp="grain" onclick="togglePP('grain')">Grain</button>
             <button class="shape-btn pp-btn" data-pp="sharpen" onclick="togglePP('sharpen')">Sharpen</button>
             <button class="shape-btn pp-btn" data-pp="halftone" onclick="togglePP('halftone')">Halftone</button>
-            <button class="shape-btn pp-btn" data-pp="solarize" onclick="togglePP('solarize')">Solarize</button>
-            <button class="shape-btn pp-btn" data-pp="barrel" onclick="togglePP('barrel')">Barrel</button>
-            <button class="shape-btn pp-btn" data-pp="colorremap" onclick="togglePP('colorremap')">Remap</button>
-            <button class="shape-btn pp-btn" data-pp="glitch" onclick="togglePP('glitch')">Glitch</button>
-            <button class="shape-btn pp-btn" data-pp="ripple" onclick="togglePP('ripple')">Ripple</button>
           </div>
         </div>
       </div>
