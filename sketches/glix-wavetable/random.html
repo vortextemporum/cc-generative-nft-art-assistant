@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLIX Random</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #111;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      width: min(100vw, 100vh) !important;
+      height: min(100vw, 100vh) !important;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    // Stub getElementById for missing UI elements
+    var _origGetById = document.getElementById.bind(document);
+    document.getElementById = function(id) {
+      return _origGetById(id) || {
+        value: '', textContent: '', innerHTML: '',
+        style: {}, dataset: {},
+        classList: { toggle(){}, add(){}, remove(){}, contains(){ return false; } },
+        addEventListener(){}
+      };
+    };
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="sketch.js"></script>
+  <script>
+    // Override setup: no UI, randomize on load
+    window.setup = function() {
+      canvas = createCanvas(DISPLAY_SIZE, DISPLAY_SIZE);
+      pixelDensity(1);
+      noSmooth();
+      useWebGL = initWebGL();
+      if (!useWebGL) createPixelBuffer();
+      randomizeAll();
+    };
+
+    // Stub all UI update functions
+    window.setupUI = function() {};
+    window.updateUIValues = function() {};
+    window.updateShapeButtons = function() {};
+    window.updateFoldButtons = function() {};
+    window.updateWaveModButtons = function() {};
+    window.updateColorPreview = function() {};
+    window.updateResolutionDisplay = function() {};
+  </script>
+</body>
+</html>
