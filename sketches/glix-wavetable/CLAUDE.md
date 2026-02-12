@@ -133,8 +133,8 @@ Randomization (R press) gives each PP effect <10% chance to trigger.
 
 ## Color Palettes
 
-36 base palettes × continuous hue shift (0-360°):
-- 7 original gradients, 9 scientific/themed gradients, 10 chaotic, 7 structurally unique (duotone, banded, coal, neonline, pastel, split, prism)
+55 base palettes × continuous hue shift (0-360°):
+- 7 original, 9 scientific/themed, 10 chaotic, 7 structural, 3 metallic, 3 mono-color, 3 film, 3 hard-step, 2 earthy, 2 inverted, 3 subdued
 - Hue shift: Rodrigues rotation around (1,1,1) axis in RGB space (GPU + CPU)
 
 ## View Modes

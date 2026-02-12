@@ -14,6 +14,15 @@
 - Post-FX randomization on R press — each effect has <10% chance to trigger
 - Smooth upscale button moved to Post FX panel (uses CSS `image-rendering` toggle)
 
+- 19 new palettes across 6 categories (55 total):
+  - **Metallic** (3): Gold, Silver, Copper
+  - **Monochromatic colored** (3): Deep Blue, Crimson, Jade
+  - **Film/photographic** (3): Sepia, Cyanotype, Cross Process
+  - **High contrast/hard step** (3): Red/Blue, Traffic, Stamp
+  - **Warm/earthy** (2): Terracotta, Sahara
+  - **Inverted** (2): X-Ray (light→dark), Infrared (hot→cold)
+  - **Subdued/low chroma** (3): Overcast, Fog, Bruise
+
 ### Changed
 - Pulse oscillator now uses soft edge transition controlled by soften parameter
   - High soften (default 5.0) = sharp edge like before
