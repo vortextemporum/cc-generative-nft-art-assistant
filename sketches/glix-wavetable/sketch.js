@@ -761,6 +761,20 @@ float generateSample(float raw_phase, float scan_pos) {
         folded = folded > 0.0 ? 2.0 - folded : -2.0 - folded;
       }
       samp = clamp(folded, -1.0, 1.0);
+    } else if (fm == 7) {
+      // Destroy: ultra-aggressive sine
+      float drive = 1.0 + (current_fold * 0.25);
+      float safe_in = clamp(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm == 8) {
+      // Fracture: harsh triangle fold
+      float drive = 1.0 + (current_fold * 0.05);
+      float folded = samp * drive;
+      folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
+      if (abs(folded) > 1.0) {
+        folded = folded > 0.0 ? 2.0 - folded : -2.0 - folded;
+      }
+      samp = clamp(folded, -1.0, 1.0);
     } else {
       // Ripple: gentle triangle fold
       float drive = 1.0 + (current_fold * 0.005);
@@ -1436,6 +1450,18 @@ function generateSample(raw_phase, scan_pos) {
       folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
       samp = abs(folded) <= 1.0 ? folded : (folded > 0.0 ? 2.0 - folded : -2.0 - folded);
       samp = constrain(samp, -1.0, 1.0);
+    } else if (fm === 7) {
+      // Destroy: ultra-aggressive sine
+      let drive = 1.0 + (current_fold * 0.25);
+      let safe_in = constrain(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm === 8) {
+      // Fracture: harsh triangle fold
+      let drive = 1.0 + (current_fold * 0.05);
+      let folded = samp * drive;
+      folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
+      samp = abs(folded) <= 1.0 ? folded : (folded > 0.0 ? 2.0 - folded : -2.0 - folded);
+      samp = constrain(samp, -1.0, 1.0);
     } else {
       // Ripple: gentle triangle fold
       let drive = 1.0 + (current_fold * 0.005);
@@ -2099,7 +2125,7 @@ window.randomizeAll = function() {
   params.pw_morph = pow(random(), 1.5) * 50 * (random() < 0.5 ? -1 : 1);
   // fx_fold: 20% very low (<50), rest exp-biased
   params.fx_fold = random() < 0.2 ? random(0, 50) : expMap(pow(random(), 1.3), 0, 10000);
-  params.fold_mode = floor(random(7));
+  params.fold_mode = floor(random(9));
   // fx_crush: 35% zero, rest exp-biased (0-1)
   params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
   // Wave mirror/invert: randomly pick a variation

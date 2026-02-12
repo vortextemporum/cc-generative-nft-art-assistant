@@ -64,7 +64,7 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 |-----------|-------|-------------|
 | pw_morph | -50 to 50 | Spiraling / PWM shift over Y |
 | fx_fold | 0-10000 | Wavefolder intensity, logarithmic slider |
-| fold_mode | 0-6 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015). Triangle: 5=Crease (×0.02), 6=Ripple (×0.005) |
+| fold_mode | 0-8 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015), 7=Destroy (×0.25). Triangle: 5=Crease (×0.02), 6=Ripple (×0.005), 8=Fracture (×0.05) |
 | fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
 ### Post-Processing (GPU shader)
@@ -92,7 +92,7 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 6. Morph/shift application
 7. Soft saturation (tanh)
 8. Bitcrush (amplitude quantize)
-9. Wavefolder (7 modes: 5 sine drive intensities + 2 triangle)
+9. Wavefolder (9 modes: 6 sine drive intensities + 3 triangle)
 10. Post-processing (FXAA, dither, posterize, grain)
 
 ## Animation System

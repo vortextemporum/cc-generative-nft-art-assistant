@@ -31,10 +31,10 @@
   - No canvas resizing needed (unlike SSAA which rendered at 2-4× resolution)
 
 ### Changed
-- Wavefolder expanded to 7 modes (was 5), renamed with audio-inspired names:
-  - Sine: Shred (×0.08), Drive (×0.03), Warm (×0.01), Soft (×0.004), Whisper (×0.0015)
-  - Triangle: Crease (×0.02), Ripple (×0.005)
-  - Each mode's sweet spot spans 20-55% of the slider range
+- Wavefolder expanded to 9 modes (was 5), renamed with audio-inspired names:
+  - Sine: Shred (×0.08), Drive (×0.03), Warm (×0.01), Soft (×0.004), Whisper (×0.0015), Destroy (×0.25)
+  - Triangle: Crease (×0.02), Ripple (×0.005), Fracture (×0.05)
+  - Each mode's sweet spot spans a wide region of the slider
 - Isometric 3D grid cap lowered from 512 to 256 for better performance
 - Isometric 3D view throttled to 30fps (was uncapped at 60fps)
 - Randomization now uses full resolution range (was skipping 64/128)
