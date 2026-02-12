@@ -2163,8 +2163,11 @@ window.randomizeAll = function() {
   params.fx_quantize = random() < 0.4 ? 0 : pow(random(), 3) * 0.7;
   // pw_morph: biased toward center
   params.pw_morph = pow(random(), 1.5) * 50 * (random() < 0.5 ? -1 : 1);
-  // fx_fold: 20% very low (<50), rest exp-biased
-  params.fx_fold = random() < 0.2 ? random(0, 50) : expMap(pow(random(), 1.3), 0, 10000);
+  // fx_fold: 30% zero/low, 69% moderate, 1% extreme
+  let foldRoll = random();
+  if (foldRoll < 0.3) params.fx_fold = random(0, 50);
+  else if (foldRoll < 0.99) params.fx_fold = expMap(pow(random(), 1.5), 0, 2000);
+  else params.fx_fold = expMap(random(), 5000, 10000);
   params.fold_mode = floor(random(9));
   // fx_crush: 35% zero, rest exp-biased (0-1)
   params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
