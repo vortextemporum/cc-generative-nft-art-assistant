@@ -25,8 +25,8 @@ let isoDragStartX = 0;
 let isoDragStartY = 0;
 
 // Resolution options (GPU-rendered, so higher is fine)
-const RESOLUTIONS = [32, 64, 128, 256, 512, 1024, 2048];
-let resolutionIndex = 6; // Default 2048
+const RESOLUTIONS = [128, 256, 512, 1024, 2048];
+let resolutionIndex = 4; // Default 2048
 let renderSize = RESOLUTIONS[resolutionIndex];
 
 // --- PARAMETERS (matching GenDSP) ---
