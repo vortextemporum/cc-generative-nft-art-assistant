@@ -728,28 +728,42 @@ float generateSample(float raw_phase, float scan_pos) {
   if (current_fold > 0.0) {
     int fm = int(u_fold_mode);
     if (fm == 0) {
-      // GenDSP: aggressive sine drive
-      float drive = 1.0 + (current_fold * 0.05);
+      // Shred: aggressive sine
+      float drive = 1.0 + (current_fold * 0.08);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm == 1) {
-      // Gentle: soft sine drive
-      float drive = 1.0 + (current_fold * 0.002);
+      // Drive: strong sine
+      float drive = 1.0 + (current_fold * 0.03);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm == 2) {
-      // Less Gentle: medium sine drive
-      float drive = 1.0 + (current_fold * 0.008);
+      // Warm: medium sine
+      float drive = 1.0 + (current_fold * 0.01);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm == 3) {
-      // Very Less Gentle: strong sine drive
-      float drive = 1.0 + (current_fold * 0.02);
+      // Soft: gentle sine
+      float drive = 1.0 + (current_fold * 0.004);
       float safe_in = clamp(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
+    } else if (fm == 4) {
+      // Whisper: very gentle sine
+      float drive = 1.0 + (current_fold * 0.0015);
+      float safe_in = clamp(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm == 5) {
+      // Crease: aggressive triangle fold
+      float drive = 1.0 + (current_fold * 0.02);
+      float folded = samp * drive;
+      folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
+      if (abs(folded) > 1.0) {
+        folded = folded > 0.0 ? 2.0 - folded : -2.0 - folded;
+      }
+      samp = clamp(folded, -1.0, 1.0);
     } else {
-      // Triangle fold: linear fold-back
-      float drive = 1.0 + (current_fold * 0.01);
+      // Ripple: gentle triangle fold
+      float drive = 1.0 + (current_fold * 0.005);
       float folded = samp * drive;
       folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
       if (abs(folded) > 1.0) {
@@ -1391,28 +1405,40 @@ function generateSample(raw_phase, scan_pos) {
   if (current_fold > 0.0) {
     let fm = floor(params.fold_mode);
     if (fm === 0) {
-      // GenDSP: aggressive sine drive
-      let drive = 1.0 + (current_fold * 0.05);
+      // Shred: aggressive sine
+      let drive = 1.0 + (current_fold * 0.08);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm === 1) {
-      // Gentle: soft sine drive
-      let drive = 1.0 + (current_fold * 0.002);
+      // Drive: strong sine
+      let drive = 1.0 + (current_fold * 0.03);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm === 2) {
-      // Less Gentle: medium sine drive
-      let drive = 1.0 + (current_fold * 0.008);
+      // Warm: medium sine
+      let drive = 1.0 + (current_fold * 0.01);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
     } else if (fm === 3) {
-      // Very Less Gentle: strong sine drive
-      let drive = 1.0 + (current_fold * 0.02);
+      // Soft: gentle sine
+      let drive = 1.0 + (current_fold * 0.004);
       let safe_in = constrain(samp * drive, -100000.0, 100000.0);
       samp = sin(safe_in);
+    } else if (fm === 4) {
+      // Whisper: very gentle sine
+      let drive = 1.0 + (current_fold * 0.0015);
+      let safe_in = constrain(samp * drive, -100000.0, 100000.0);
+      samp = sin(safe_in);
+    } else if (fm === 5) {
+      // Crease: aggressive triangle fold
+      let drive = 1.0 + (current_fold * 0.02);
+      let folded = samp * drive;
+      folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
+      samp = abs(folded) <= 1.0 ? folded : (folded > 0.0 ? 2.0 - folded : -2.0 - folded);
+      samp = constrain(samp, -1.0, 1.0);
     } else {
-      // Triangle fold: linear fold-back at ±1 boundaries
-      let drive = 1.0 + (current_fold * 0.01);
+      // Ripple: gentle triangle fold
+      let drive = 1.0 + (current_fold * 0.005);
       let folded = samp * drive;
       folded = folded - 4.0 * floor((folded + 1.0) / 4.0);
       samp = abs(folded) <= 1.0 ? folded : (folded > 0.0 ? 2.0 - folded : -2.0 - folded);
@@ -2073,7 +2099,7 @@ window.randomizeAll = function() {
   params.pw_morph = pow(random(), 1.5) * 50 * (random() < 0.5 ? -1 : 1);
   // fx_fold: 20% very low (<50), rest exp-biased
   params.fx_fold = random() < 0.2 ? random(0, 50) : expMap(pow(random(), 1.3), 0, 10000);
-  params.fold_mode = floor(random(5));
+  params.fold_mode = floor(random(7));
   // fx_crush: 35% zero, rest exp-biased (0-1)
   params.fx_crush = random() < 0.35 ? 0 : expMap(pow(random(), 1.5), 0, 1);
   // Wave mirror/invert: randomly pick a variation
