@@ -65,15 +65,13 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | pw_morph | -50 to 50 | Spiraling / PWM shift over Y |
 | fx_fold | 0-10000 | Wavefolder intensity, logarithmic slider |
 | fold_mode | 0-2 | 0=GenDSP (×8.0), 1=Gentle (×0.008), 2=Triangle fold-back |
-| fx_crush | 0-10000 or 0-1 | Bitcrush intensity, logarithmic slider |
-| crush_mode | 0-1 | 0=Extreme (0-10000), 1=Classic (0-1) |
+| fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
 ### Post-Processing (GPU shader)
 | Effect | Description |
 |--------|-------------|
-| SSAA 2x | Supersampling antialiasing (render at 2× resolution) |
-| Dither | Ordered Bayer 4×4 dithering, cycles through 1px/2px/4px/8px |
-| Scanlines | CRT-style horizontal lines |
+| FXAA | Edge-detection anti-aliasing (5-tap luminance-based edge smoothing) |
+| Dither | Ordered Bayer 4×4 dithering, cycles through 1px/2px |
 | Posterize | 6-level color quantization |
 | Grain | Animated film noise |
 
@@ -81,9 +79,9 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 
 - **Primary renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU)
 - **Fallback**: CPU pixel-by-pixel via p5.js pixels[] array
-- **Display**: 700×700 canvas, internal render at 32-2048px (default 2048)
+- **Display**: 700×700 canvas, internal render at 128-2048px (default 2048)
 - **Isometric 3D**: WebGL mesh rendering (VBO/IBO), grid capped at 256, GPU depth testing, 30fps throttle
-- **SSAA**: Renders at 2× canvas size, browser downscales
+- **FXAA**: Edge-detection AA in GLSL — `computeColor()` sampled at 5 positions, luminance-based blending
 
 ### Signal Flow (in GLSL)
 1. Y-warp (time bending via power function)
@@ -95,7 +93,7 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 7. Soft saturation (tanh)
 8. Bitcrush (amplitude quantize)
 9. Wavefolder (3 modes: sine drive, gentle, triangle)
-10. Post-processing (SSAA, dither, scanlines, posterize, grain)
+10. Post-processing (FXAA, dither, posterize, grain)
 
 ## Animation System
 
@@ -156,7 +154,7 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 ## Key Implementation Notes
 
 - **expMap/logMap**: Exponential mapping (k=4) for logarithmic slider curves on large-range params
-- **vertexBuffer**: Stored globally for rebinding after WebGL canvas resize (SSAA toggle)
+- **vertexBuffer**: Stored globally for rebinding after WebGL canvas resize
 - **u_size vs u_canvas_size**: u_size = wavetable grid resolution, u_canvas_size = actual pixel dimensions (for post-FX)
 - **WebGL 1.0 constraints**: No dynamic array indexing, loops need constant bounds, use if/else chains for oscillator selection
 

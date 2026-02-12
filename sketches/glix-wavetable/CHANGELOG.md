@@ -25,7 +25,10 @@
   - Single `gl.drawElements()` call replaces ~65k individual p5.js draw calls
   - Grid cap raised from 256 to 512 (262k triangles at 60fps)
   - Vertex color averaging for smooth shading at shared vertices
-- 32px resolution option (7 total: 32, 64, 128, 256, 512, 1024, 2048)
+- FXAA edge-detection anti-aliasing (replaces SSAA)
+  - 5-tap luminance-based edge smoothing in GLSL
+  - Refactored color computation into `computeColor()` function for neighbor sampling
+  - No canvas resizing needed (unlike SSAA which rendered at 2-4× resolution)
 
 ### Changed
 - Isometric 3D grid cap lowered from 512 to 256 for better performance
@@ -33,6 +36,11 @@
 - Randomization now uses full resolution range (was skipping 64/128)
 - 2D GPU renderer rebinds vertex state on each frame (robust after iso→2D switch)
 - Skip 2D wavetable rendering when in isometric view mode (saves GPU time)
+
+### Removed
+- SSAA (supersampling anti-aliasing) — replaced by FXAA
+- Scanlines post-processing effect
+- 32px and 64px resolution options (now 128-2048)
 
 ## [2.7] - 2026-02-11
 
