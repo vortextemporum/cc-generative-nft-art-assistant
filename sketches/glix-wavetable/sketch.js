@@ -2166,10 +2166,25 @@ window.randomizeAll = function() {
   // Apply param locks based on category
   applyRandomLocks();
 
-  // Ensure at least one unlocked param has full-speed range
+  // Guarantee visible animation after randomization
+  // 1. Floor animSpeed and driftAmount so animation is always perceptible
+  if (animSpeed < 0.15) {
+    animSpeed = 0.15;
+    document.getElementById('param-speed').value = animSpeed * 100;
+    document.getElementById('val-speed').textContent = animSpeed.toFixed(2);
+  }
+  if (driftAmount < 0.2) {
+    driftAmount = 0.2;
+    document.getElementById('param-drift').value = driftAmount * 100;
+    document.getElementById('val-drift').textContent = driftAmount.toFixed(2);
+  }
+  // 2. Ensure at least one unlocked, visually impactful param has full-speed range
   let unlocked = ANIM_PARAMS.filter(k => !paramLocks[k]);
+  let visualParams = ['fx_fold','fx_bend','pw_morph','y_bend','fx_noise','fx_quantize'];
+  let unlockedVisual = unlocked.filter(k => visualParams.includes(k));
   if (unlocked.length > 0 && !unlocked.some(k => paramRanges[k] >= 1.0)) {
-    paramRanges[unlocked[floor(random(unlocked.length))]] = 1.0;
+    let pick = unlockedVisual.length > 0 ? unlockedVisual : unlocked;
+    paramRanges[pick[floor(random(pick.length))]] = 1.0;
   }
 
   needsRender = true;
