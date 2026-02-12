@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 2.8
+**Version:** 2.9
 **Framework:** p5.js + WebGL 1.0 GLSL
 
 A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
@@ -12,6 +12,7 @@ A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D 
 ```
 glix-wavetable/
 ├── index.html          # Viewer with controls panel (~600 lines)
+├── random.html         # Standalone full-screen random viewer (headless mode)
 ├── sketch.js           # Main p5.js sketch + GLSL shader (~1850 lines)
 ├── CLAUDE.md           # This file
 └── CHANGELOG.md        # Version history
@@ -79,7 +80,8 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 
 - **Primary renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU)
 - **Fallback**: CPU pixel-by-pixel via p5.js pixels[] array
-- **Display**: 700×700 canvas, internal render at 128-2048px (default 2048)
+- **Display**: 2048×2048 canvas (CSS-constrained to 700px in index.html), internal render at 128-2048px (default 2048)
+- **Headless mode**: `window._GLIX_RANDOM = true` skips UI, auto-randomizes, stubs DOM functions
 - **Isometric 3D**: WebGL mesh rendering (VBO/IBO), grid capped at 256, GPU depth testing, 30fps throttle
 - **FXAA**: Edge-detection AA in GLSL — `computeColor()` sampled at 5 positions, luminance-based blending
 

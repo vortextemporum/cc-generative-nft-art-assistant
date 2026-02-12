@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.9] - 2026-02-11
+
+### Added
+- Standalone `random.html` page — full-screen randomized wavetable on each refresh
+  - `_GLIX_RANDOM` flag triggers headless mode: no UI, automatic randomization
+  - Scoped getElementById override (temporary, only during randomizeAll) to avoid p5.js init conflict
+  - UI update functions stubbed to no-ops so draw loop never touches missing DOM
+- Canvas display size raised to 2048px for full-resolution output (CSS constrains visual display)
+
 ## [2.8] - 2026-02-11
 
 ### Added

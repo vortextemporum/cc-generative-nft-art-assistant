@@ -1,10 +1,10 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v2.8 - WebGL Isometric + Resolution Overhaul
+//   Based on GenDSP v2.9 - Headless Random Mode
 // ==========================================
 
 let canvas;
-const DISPLAY_SIZE = 700;
+const DISPLAY_SIZE = 2048;
 
 // --- WebGL SHADER RENDERER ---
 let glCanvas, gl, shaderProgram, vertexBuffer;
@@ -1071,13 +1071,30 @@ function setup() {
   useWebGL = initWebGL();
   if (useWebGL) initIsoWebGL();
   if (!useWebGL) createPixelBuffer();
-  setupUI();
-  updateColorPreview();
-  updateResolutionDisplay();
 
-  // Show renderer info
-  let ri = document.getElementById('renderer-indicator');
-  if (ri) ri.textContent = useWebGL ? 'GPU (WebGL)' : 'CPU (fallback)';
+  if (window._GLIX_RANDOM) {
+    // Headless mode: stub UI functions so draw loop doesn't touch DOM
+    updateUIValues = function() {};
+    updateShapeButtons = function() {};
+    updateFoldButtons = function() {};
+    updateWaveModButtons = function() {};
+    updateColorPreview = function() {};
+    updateResolutionDisplay = function() {};
+    // Temporarily patch getElementById for randomizeAll's DOM access
+    var _origGEBI = document.getElementById;
+    document.getElementById = function(id) {
+      return _origGEBI.call(document, id) || document.createElement('div');
+    };
+    randomizeAll();
+    document.getElementById = _origGEBI;
+  } else {
+    setupUI();
+    updateColorPreview();
+    updateResolutionDisplay();
+    // Show renderer info
+    let ri = document.getElementById('renderer-indicator');
+    if (ri) ri.textContent = useWebGL ? 'GPU (WebGL)' : 'CPU (fallback)';
+  }
 }
 
 function createPixelBuffer() {
