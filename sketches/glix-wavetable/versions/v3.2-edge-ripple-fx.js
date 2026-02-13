@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v3.3 - New Oscillators + Fold Mode Fix
+//   Based on GenDSP v3.2 - Edge Detect + Ripple Post-FX
 // ==========================================
 
 // ============================================================
@@ -941,69 +941,16 @@ float generateSample(float raw_phase, float scan_pos) {
     }
     samp *= 0.4; // normalize
   } else if (sel == 15) {
-    // Chaos (iterated sine waveshaping)
-    // Start with sine, iteratively apply sin(gain * x)
-    // Morph sweeps iteration depth 1-8, PW controls gain 1.5-5
-    float gain = 1.5 + u_pw * 3.5;
-    float n = 1.0 + scan_pos * 7.0;
-    float n_lo = floor(n);
-    float frac_n = n - n_lo;
-    float x = sin(shifted_phase * 6.28318530718);
-    float x_prev = x;
-    for (int i = 0; i < 8; i++) {
-      if (float(i) >= n_lo + 1.0) break;
-      x_prev = x;
-      x = sin(gain * x);
+    // Chaos (Logistic map): x = r*x*(1-x) iterated
+    // Phase → initial x, morph sweeps r 3.5-4.0 (chaotic regime)
+    float r = 3.5 + scan_pos * 0.5;
+    float x = clamp(shifted_phase, 0.01, 0.99);
+    float accum = 0.0;
+    for (int i = 0; i < 16; i++) {
+      x = r * x * (1.0 - x);
+      accum += x;
     }
-    samp = mix(x_prev, x, frac_n);
-  } else if (sel == 16) {
-    // Ring Mod: sin(2πφ) × sin(n*2πφ), morph sweeps ratio n 2-16
-    float ratio = 2.0 + scan_pos * 14.0;
-    float r_lo = floor(ratio);
-    float r_hi = r_lo + 1.0;
-    float frac_r = ratio - r_lo;
-    float carrier = sin(shifted_phase * 6.28318530718);
-    float mod_lo = sin(r_lo * shifted_phase * 6.28318530718);
-    float mod_hi = sin(r_hi * shifted_phase * 6.28318530718);
-    float modulator = mod_lo * (1.0 - frac_r) + mod_hi * frac_r;
-    samp = carrier * modulator;
-  } else if (sel == 17) {
-    // Phase Distortion (CZ-style): asymmetric phase warp
-    // Morph sweeps distortion amount, PW controls resonance harmonic
-    float pd_amount = scan_pos * 1.8;
-    float dp = shifted_phase;
-    if (shifted_phase < 0.5) {
-      dp = shifted_phase * (1.0 + pd_amount);
-      dp = min(dp, 1.0);
-    } else {
-      float remaining = 1.0 - 0.5 * (1.0 + pd_amount);
-      remaining = max(remaining, 0.001);
-      dp = 0.5 * (1.0 + pd_amount) + (shifted_phase - 0.5) / 0.5 * remaining;
-      dp = min(dp, 1.0);
-    }
-    float resonance = 1.0 + u_pw * 3.0;
-    samp = sin(dp * resonance * 6.28318530718);
-  } else if (sel == 18) {
-    // Shepard (infinite rise illusion): octave-spaced sines with gaussian envelope
-    // Morph shifts the octave offset, PW controls harmonic density
-    float offset = scan_pos;
-    float density = 1.0 + u_pw * 2.0;
-    samp = 0.0;
-    for (int i = 0; i < 6; i++) {
-      float freq = pow(2.0, float(i));
-      float op = fract2(shifted_phase * freq * 0.5 + offset);
-      float amp = sin(op * 3.14159265);
-      samp += sin(op * density * 6.28318530718) * amp;
-    }
-    samp *= 0.25;
-  } else if (sel == 19) {
-    // Wavelet (Morlet): gaussian-windowed cosine, morph controls envelope width
-    // PW controls wave frequency inside the envelope
-    float sigma = 0.08 + scan_pos * 0.35;
-    float freq = 3.0 + u_pw * 12.0;
-    float t = shifted_phase - 0.5;
-    float envelope = exp(-t * t / (2.0 * sigma * sigma));
-    samp = envelope * cos(freq * 6.28318530718 * t);
+    samp = (accum / 16.0) * 2.0 - 1.0;
   }
 
   // INVERT (flip output)
@@ -1155,10 +1102,10 @@ vec3 computeColor(vec2 uv) {
 void main() {
   vec2 uv = v_uv;
 
-  // Ripple (slow sinusoidal UV warp)
+  // Ripple (animated sinusoidal UV warp)
   if (u_pp_ripple > 0.5) {
-    uv.x += sin(uv.y * 20.0 + u_time * 0.04) * 0.02;
-    uv.y += cos(uv.x * 20.0 + u_time * 0.04) * 0.02;
+    uv.x += sin(uv.y * 25.0 + u_time * 2.0) * 0.02;
+    uv.y += cos(uv.x * 25.0 + u_time * 2.0) * 0.02;
     uv = clamp(uv, 0.0, 1.0);
   }
 
@@ -1744,64 +1691,15 @@ function generateSample(raw_phase, scan_pos) {
     }
     samp *= 0.4;
   } else if (sel === 15) {
-    // CHAOS (iterated sine waveshaping)
-    let gain = 1.5 + params.pw * 3.5;
-    let n = 1.0 + scan_pos * 7.0;
-    let n_lo = floor(n);
-    let frac_n = n - n_lo;
-    let x = sin(shifted_phase * TWO_PI);
-    let x_prev = x;
-    for (let i = 0; i < 8; i++) {
-      if (i >= n_lo + 1) break;
-      x_prev = x;
-      x = sin(gain * x);
+    // CHAOS (Logistic map): x = r*x*(1-x) iterated
+    let r = 3.5 + scan_pos * 0.5;
+    let x = constrain(shifted_phase, 0.01, 0.99);
+    let accum = 0.0;
+    for (let i = 0; i < 16; i++) {
+      x = r * x * (1.0 - x);
+      accum += x;
     }
-    samp = x_prev * (1.0 - frac_n) + x * frac_n;
-  } else if (sel === 16) {
-    // RING MOD: sin(2πφ) × sin(n*2πφ), morph sweeps ratio 2-16
-    let ratio = 2.0 + scan_pos * 14.0;
-    let r_lo = floor(ratio);
-    let r_hi = r_lo + 1;
-    let frac_r = ratio - r_lo;
-    let carrier = sin(shifted_phase * TWO_PI);
-    let mod_lo = sin(r_lo * shifted_phase * TWO_PI);
-    let mod_hi = sin(r_hi * shifted_phase * TWO_PI);
-    let modulator = mod_lo * (1.0 - frac_r) + mod_hi * frac_r;
-    samp = carrier * modulator;
-  } else if (sel === 17) {
-    // PHASE DISTORTION (CZ-style): asymmetric phase warp
-    let pd_amount = scan_pos * 1.8;
-    let dp = shifted_phase;
-    if (shifted_phase < 0.5) {
-      dp = shifted_phase * (1.0 + pd_amount);
-      dp = Math.min(dp, 1.0);
-    } else {
-      let remaining = 1.0 - 0.5 * (1.0 + pd_amount);
-      remaining = Math.max(remaining, 0.001);
-      dp = 0.5 * (1.0 + pd_amount) + (shifted_phase - 0.5) / 0.5 * remaining;
-      dp = Math.min(dp, 1.0);
-    }
-    let resonance = 1.0 + params.pw * 3.0;
-    samp = sin(dp * resonance * TWO_PI);
-  } else if (sel === 18) {
-    // SHEPARD: octave-spaced sines with gaussian envelope (infinite rise)
-    let offset = scan_pos;
-    let density = 1.0 + params.pw * 2.0;
-    samp = 0.0;
-    for (let i = 0; i < 6; i++) {
-      let freq = pow(2.0, i);
-      let op = (shifted_phase * freq * 0.5 + offset) % 1.0;
-      let amp = sin(op * PI);
-      samp += sin(op * density * TWO_PI) * amp;
-    }
-    samp *= 0.25;
-  } else if (sel === 19) {
-    // WAVELET (Morlet): gaussian-windowed cosine
-    let sigma = 0.08 + scan_pos * 0.35;
-    let freq = 3.0 + params.pw * 12.0;
-    let t = shifted_phase - 0.5;
-    let envelope = exp(-t * t / (2.0 * sigma * sigma));
-    samp = envelope * cos(freq * TWO_PI * t);
+    samp = (accum / 16.0) * 2.0 - 1.0;
   }
 
   // INVERT (flip output)
@@ -2506,7 +2404,7 @@ function generateFeatures() {
   R = initRandom(hash);
 
   // --- Oscillator ---
-  params.shape = rndInt(0, 19);
+  params.shape = rndInt(0, 15);
   params.pw = rnd();
   params.soften = expMap(R(), 0.001, 50);
   params.y_bend = rnd(-0.25, 1.0);
@@ -2525,7 +2423,7 @@ function generateFeatures() {
   if (foldRoll < 0.3) params.fx_fold = rnd(0, 50);
   else if (foldRoll < 0.99) params.fx_fold = expMap(Math.pow(R(), 1.5), 0, 2000);
   else params.fx_fold = expMap(R(), 5000, 10000);
-  params.fold_mode = rndInt(0, 10);
+  params.fold_mode = rndInt(0, 8);
 
   // fx_crush: 35% zero, rest exp-biased
   params.fx_crush = rndBool(0.35) ? 0 : expMap(Math.pow(R(), 1.5), 0, 1);
@@ -2585,8 +2483,7 @@ function generateFeatures() {
   features = {
     oscillator: ['Sine','Triangle','Sawtooth','Pulse','HalfRect','Staircase',
       'Parabolic','SuperSaw','Schrodinger','Chebyshev','FM','Harmonic',
-      'Fractal','Chirp','Formant','Chaos',
-      'RingMod','PhaseDist','Shepard','Wavelet'][params.shape],
+      'Fractal','Chirp','Formant','Chaos'][params.shape],
     palette: currentPalette,
     hueShift: hueShift,
     foldMode: params.fold_mode,

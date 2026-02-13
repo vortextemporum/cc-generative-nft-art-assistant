@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 3.2
+**Version:** 3.3
 **Framework:** p5.js + WebGL 1.0 GLSL (WebGL required, no CPU fallback)
 
 A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
@@ -13,7 +13,7 @@ A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D 
 glix-wavetable/
 ├── index.html          # Viewer with controls panel (~600 lines)
 ├── random.html         # Standalone full-screen random viewer (headless mode)
-├── sketch.js           # Main p5.js sketch + GLSL shader (~1850 lines)
+├── sketch.js           # Main p5.js sketch + GLSL shader (~2950 lines)
 ├── CLAUDE.md           # This file
 └── CHANGELOG.md        # Version history
 ```
@@ -22,7 +22,7 @@ glix-wavetable/
 
 Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitter that generates wavetables with extensive modulation options.
 
-## Oscillators (16 total)
+## Oscillators (20 total)
 
 | Index | Name | Formula / Description |
 |-------|------|----------------------|
@@ -41,14 +41,18 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | 12 | Fractal | Weierstrass Σsin(b^n·πφ)/a^n, morph sweeps octaves 1-12, PW controls freq ratio 2-5 |
 | 13 | Chirp | sin(2π·φ^k), morph sweeps exponent k 1-8 |
 | 14 | Formant | Gaussian-windowed harmonics, morph sweeps center freq 2-16, PW controls bandwidth |
-| 15 | Chaos | Logistic map r·x·(1-x) iterated 24×, morph sweeps r 2.5-4.0 |
+| 15 | Chaos | Iterated sine waveshaping sin(g·sin(g·...sin(2πφ))), morph sweeps depth 1-8, PW controls gain 1.5-5 |
+| 16 | Ring Mod | sin(2πφ)×sin(n·2πφ), morph sweeps modulator ratio 2-16 |
+| 17 | Phase Dist | CZ-style asymmetric phase warp, morph sweeps distortion, PW controls resonance |
+| 18 | Shepard | Octave-spaced sines with gaussian envelope, morph shifts octave offset (infinite rise) |
+| 19 | Wavelet | Morlet wavelet: gaussian-windowed cosine, morph controls envelope width, PW controls frequency |
 
 ## Parameters
 
 ### Oscillator
 | Parameter | Range | Description |
 |-----------|-------|-------------|
-| shape | 0-11 | Oscillator type (see table above) |
+| shape | 0-19 | Oscillator type (see table above) |
 | pw | 0-1 | Pulse width / phase shift / FM ratio |
 | soften | 0.001-50 | Soft saturation (tanh), logarithmic slider |
 
@@ -65,7 +69,7 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 |-----------|-------|-------------|
 | pw_morph | -50 to 50 | Spiraling / PWM shift over Y |
 | fx_fold | 0-10000 | Wavefolder intensity, logarithmic slider |
-| fold_mode | 0-8 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015), 7=Destroy (×0.25). Triangle: 5=Crease (×0.02), 6=Ripple (×0.005), 8=Fracture (×0.05) |
+| fold_mode | 0-10 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015), 6=Harsh (×0.25), 7=Mangle (×1.0), 8=Destroy (×8.0). Triangle: 5=Crease (×0.02), 9=Fracture (×0.05), 10=Ripple (×0.005) |
 | fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
 ### Post-Processing (GPU shader, 10 effects)

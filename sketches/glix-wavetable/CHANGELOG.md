@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.3] - 2026-02-13
+
+### Added
+- 4 new oscillators (20 total):
+  - **Ring Mod** (16): carrier × modulator, morph sweeps ratio 2-16, creates interference patterns
+  - **Phase Distortion** (17): CZ-style asymmetric phase warp, morph sweeps distortion, PW controls resonance
+  - **Shepard** (18): octave-spaced sines with gaussian envelope, morph creates infinite rise illusion
+  - **Wavelet** (19): Morlet wavelet (gaussian-windowed cosine), morph controls envelope width, PW controls frequency
+- 2 new fold modes: Fracture (triangle ×0.05) and Ripple (triangle ×0.005), bringing total to 11
+
+### Changed
+- **Chaos oscillator** redesigned: iterated sine waveshaping `sin(g * sin(g * ...sin(2πφ)))` — morph sweeps iteration depth 1-8, PW controls gain 1.5-5. Produces structured complex harmonics instead of noise
+- **Ripple post-FX** speed reduced 50× (nearly static, very slow drift)
+- Fold mode labels updated to match GLSL: Harsh (sine ×0.25), Mangle (sine ×1.0), Destroy (sine ×8.0)
+- Fold mode randomization expanded from 0-8 to 0-10
+
 ## [3.2] - 2026-02-13
 
 ### Added
