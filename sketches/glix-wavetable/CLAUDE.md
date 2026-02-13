@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 3.1
+**Version:** 3.2
 **Framework:** p5.js + WebGL 1.0 GLSL (WebGL required, no CPU fallback)
 
 A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
@@ -68,18 +68,21 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | fold_mode | 0-8 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015), 7=Destroy (×0.25). Triangle: 5=Crease (×0.02), 6=Ripple (×0.005), 8=Fracture (×0.05) |
 | fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
-### Post-Processing (GPU shader, 8 effects)
-| Effect | Description |
-|--------|-------------|
-| Smooth | CSS image-rendering toggle (bilinear upscale) |
-| Bayer | Ordered 4×4 matrix dither, cycles 1px/2px/4px/8px |
-| Noise | Random threshold dither, cycles 1px/2px/4px/8px |
-| Lines | Horizontal scanline dither, luminance-weighted, cycles 1px/2px/4px/8px |
-| Posterize | 6-level color quantization |
-| Grain | Animated film noise |
-| Sharpen | Unsharp mask via 4-neighbor sampling (strength 1.2) |
-| Halftone | Dot-pattern rendering, cycles 4px/6px/10px/16px |
+### Post-Processing (GPU shader, 10 effects)
+| Effect | Type | Description |
+|--------|------|-------------|
+| Smooth | CSS | image-rendering toggle (bilinear upscale) |
+| Bayer | Dither | Ordered 4×4 matrix dither, cycles 1px/2px/4px/8px |
+| Noise | Dither | Random threshold dither, cycles 1px/2px/4px/8px |
+| Lines | Dither | Horizontal scanline dither, luminance-weighted, cycles 1px/2px/4px/8px |
+| Posterize | Color | 6-level color quantization |
+| Grain | Color | Animated film noise |
+| Sharpen | Multi-sample | Unsharp mask via 4-neighbor sampling (strength 1.2) |
+| Halftone | Color | Dot-pattern rendering, cycles 4px/6px/10px/16px |
+| Edge Detect | Multi-sample | Gradient magnitude from 4 neighbors, amplified 3× |
+| Ripple | UV | Animated sinusoidal warp (sin/cos on X/Y axes) |
 
+Pipeline order: UV distortions (Ripple) → computeColor → multi-sample (Sharpen, Edge Detect) → dithers → color effects.
 Dither algorithms are combinable — stacking Bayer + Noise + Lines creates complex textures.
 Randomization (R press) gives each PP effect <10% chance to trigger.
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.2] - 2026-02-13
+
+### Added
+- **Edge Detect** post-FX — gradient magnitude from 4-neighbor sampling, amplified 3x for contour visualization
+- **Ripple** post-FX — animated sinusoidal UV warp (sin/cos on X/Y), creates wavy distortion
+- Restructured GLSL main() pipeline: UV distortions run before computeColor(), multi-sample effects after
+- Both effects have ~4% chance to trigger on randomize (R key)
+
 ## [3.1] - 2026-02-13
 
 ### Fixed

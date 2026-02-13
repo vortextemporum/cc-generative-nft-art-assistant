@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v3.2 - Edge Detect + Ripple Post-FX
+//   Based on GenDSP v3.1 - WebGL-only, Hash Display
 // ==========================================
 
 // ============================================================
@@ -199,8 +199,6 @@ let ppGrain = false;     // Film grain
 let ppSharpen = false;   // Unsharp mask sharpening
 let ppHalftone = false;  // Dot-pattern halftone
 let ppHalftoneScale = 0; // Halftone dot size: 0=4px, 1=6px, 2=10px, 3=16px
-let ppEdgeDetect = false;  // Edge detection (contours)
-let ppRipple = false;      // Animated sinusoidal UV warp
 
 // Rendering throttle (30fps max for wavetable)
 const TARGET_UPDATE_FPS = 30;
@@ -770,8 +768,6 @@ uniform float u_pp_grain;
 uniform float u_pp_sharpen;
 uniform float u_pp_halftone;
 uniform float u_pp_halftone_scale;
-uniform float u_pp_edge_detect;
-uniform float u_pp_ripple;
 uniform float u_time;
 uniform float u_canvas_size;
 uniform vec3 u_palette[7];
@@ -1100,41 +1096,20 @@ vec3 computeColor(vec2 uv) {
 }
 
 void main() {
-  vec2 uv = v_uv;
+  vec3 col = computeColor(v_uv);
 
-  // Ripple (animated sinusoidal UV warp)
-  if (u_pp_ripple > 0.5) {
-    uv.x += sin(uv.y * 25.0 + u_time * 2.0) * 0.02;
-    uv.y += cos(uv.x * 25.0 + u_time * 2.0) * 0.02;
-    uv = clamp(uv, 0.0, 1.0);
-  }
-
-  vec3 col = computeColor(uv);
-
-  // Sharpen (unsharp mask via neighbor sampling)
+  // === SHARPEN (unsharp mask via neighbor sampling) ===
   if (u_pp_sharpen > 0.5) {
     vec2 texel = vec2(1.0 / u_canvas_size);
-    vec3 cN = computeColor(uv + vec2(0.0, texel.y));
-    vec3 cS = computeColor(uv - vec2(0.0, texel.y));
-    vec3 cE = computeColor(uv + vec2(texel.x, 0.0));
-    vec3 cW = computeColor(uv - vec2(texel.x, 0.0));
+    vec3 cN = computeColor(v_uv + vec2(0.0, texel.y));
+    vec3 cS = computeColor(v_uv - vec2(0.0, texel.y));
+    vec3 cE = computeColor(v_uv + vec2(texel.x, 0.0));
+    vec3 cW = computeColor(v_uv - vec2(texel.x, 0.0));
     vec3 blur = (cN + cS + cE + cW) * 0.25;
     col = col + (col - blur) * 1.2;
   }
 
-  // Edge detect (gradient magnitude from neighbors)
-  if (u_pp_edge_detect > 0.5) {
-    vec2 texel = vec2(1.0 / u_canvas_size);
-    vec3 cN = computeColor(uv + vec2(0.0, texel.y));
-    vec3 cS = computeColor(uv - vec2(0.0, texel.y));
-    vec3 cE = computeColor(uv + vec2(texel.x, 0.0));
-    vec3 cW = computeColor(uv - vec2(texel.x, 0.0));
-    vec3 edgeH = abs(cE - cW);
-    vec3 edgeV = abs(cN - cS);
-    col = sqrt(edgeH * edgeH + edgeV * edgeV) * 3.0;
-  }
-
-  vec2 pixCoord = uv * u_canvas_size;
+  vec2 pixCoord = v_uv * u_canvas_size;
 
   // Bayer ordered dithering
   if (u_pp_dither_bayer > 0.5) {
@@ -1313,7 +1288,6 @@ function initWebGL() {
                'u_pp_dither_lines','u_pp_dither_lines_scale',
                'u_pp_posterize','u_pp_grain',
                'u_pp_sharpen','u_pp_halftone','u_pp_halftone_scale',
-               'u_pp_edge_detect','u_pp_ripple',
                'u_time','u_canvas_size','u_hue_shift',
                'u_wave_mirror','u_wave_invert'];
   for (let n of names) uLocations[n] = gl.getUniformLocation(shaderProgram, n);
@@ -1830,8 +1804,6 @@ function renderWavetable() {
   gl.uniform1f(uLocations.u_pp_sharpen, ppSharpen ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_halftone, ppHalftone ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_halftone_scale, [4, 6, 10, 16][ppHalftoneScale]);
-  gl.uniform1f(uLocations.u_pp_edge_detect, ppEdgeDetect ? 1.0 : 0.0);
-  gl.uniform1f(uLocations.u_pp_ripple, ppRipple ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_time, animTime * 100.0);
   gl.uniform1f(uLocations.u_canvas_size, renderSize);
 
@@ -2476,8 +2448,6 @@ function generateFeatures() {
   ppSharpen = rndBool(0.06);
   ppHalftone = rndBool(0.05);
   ppHalftoneScale = rndInt(0, 3);
-  ppEdgeDetect = rndBool(0.04);
-  ppRipple = rndBool(0.04);
 
   // Store features for getFeatures()
   features = {
@@ -2564,8 +2534,7 @@ window.randomizeAll = function() {
              (pp === 'dither-noise' && ppDitherNoise) ||
              (pp === 'dither-lines' && ppDitherLines) ||
              (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
-             (pp === 'sharpen' && ppSharpen) || (pp === 'edge-detect' && ppEdgeDetect) ||
-             (pp === 'ripple' && ppRipple) || (pp === 'halftone' && ppHalftone);
+             (pp === 'sharpen' && ppSharpen) || (pp === 'halftone' && ppHalftone);
     btn.classList.toggle('active', on);
     if (pp === 'dither-bayer') btn.textContent = ppDitherBayer ? 'Bayer ' + sLabels[ppDitherBayerScale] : 'Bayer';
     if (pp === 'dither-noise') btn.textContent = ppDitherNoise ? 'Noise ' + sLabels[ppDitherNoiseScale] : 'Noise';
@@ -2709,8 +2678,6 @@ function togglePP(name) {
   else if (name === 'posterize') ppPosterize = !ppPosterize;
   else if (name === 'grain') ppGrain = !ppGrain;
   else if (name === 'sharpen') ppSharpen = !ppSharpen;
-  else if (name === 'edge-detect') ppEdgeDetect = !ppEdgeDetect;
-  else if (name === 'ripple') ppRipple = !ppRipple;
   else if (name === 'halftone') {
     if (!ppHalftone) {
       ppHalftone = true;
@@ -2732,8 +2699,7 @@ function togglePP(name) {
              (pp === 'dither-noise' && ppDitherNoise) ||
              (pp === 'dither-lines' && ppDitherLines) ||
              (pp === 'posterize' && ppPosterize) || (pp === 'grain' && ppGrain) ||
-             (pp === 'sharpen' && ppSharpen) || (pp === 'edge-detect' && ppEdgeDetect) ||
-             (pp === 'ripple' && ppRipple) || (pp === 'halftone' && ppHalftone);
+             (pp === 'sharpen' && ppSharpen) || (pp === 'halftone' && ppHalftone);
     btn.classList.toggle('active', on);
     if (pp === 'dither-bayer') btn.textContent = ppDitherBayer ? 'Bayer ' + sizeLabels[ppDitherBayerScale] : 'Bayer';
     if (pp === 'dither-noise') btn.textContent = ppDitherNoise ? 'Noise ' + sizeLabels[ppDitherNoiseScale] : 'Noise';
