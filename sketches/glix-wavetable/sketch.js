@@ -938,14 +938,15 @@ float generateSample(float raw_phase, float scan_pos) {
     samp *= 0.4; // normalize
   } else if (sel == 15) {
     // Chaos (Logistic map): x = r*x*(1-x) iterated
-    // Phase → initial x, morph → r parameter (2.5-4.0)
-    float r = 2.5 + scan_pos * 1.5;
+    // Phase → initial x, morph sweeps r 3.5-4.0 (chaotic regime)
+    float r = 3.5 + scan_pos * 0.5;
     float x = clamp(shifted_phase, 0.01, 0.99);
-    // Iterate 24 times, use last value
-    for (int i = 0; i < 24; i++) {
+    float accum = 0.0;
+    for (int i = 0; i < 16; i++) {
       x = r * x * (1.0 - x);
+      accum += x;
     }
-    samp = x * 2.0 - 1.0; // map 0-1 to -1..1
+    samp = (accum / 16.0) * 2.0 - 1.0;
   }
 
   // INVERT (flip output)
@@ -1655,12 +1656,14 @@ function generateSample(raw_phase, scan_pos) {
     samp *= 0.4;
   } else if (sel === 15) {
     // CHAOS (Logistic map): x = r*x*(1-x) iterated
-    let r = 2.5 + scan_pos * 1.5;
+    let r = 3.5 + scan_pos * 0.5;
     let x = constrain(shifted_phase, 0.01, 0.99);
-    for (let i = 0; i < 24; i++) {
+    let accum = 0.0;
+    for (let i = 0; i < 16; i++) {
       x = r * x * (1.0 - x);
+      accum += x;
     }
-    samp = x * 2.0 - 1.0;
+    samp = (accum / 16.0) * 2.0 - 1.0;
   }
 
   // INVERT (flip output)

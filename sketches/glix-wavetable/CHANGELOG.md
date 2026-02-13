@@ -2,6 +2,12 @@
 
 ## [3.1] - 2026-02-13
 
+### Fixed
+- **Chaos oscillator** — r range narrowed from 2.5-4.0 to 3.5-4.0 (stays in chaotic regime)
+  - Old: bottom half was flat band (fixed point convergence at r < 3), top was pure noise
+  - New: uses running average of 16 iterations instead of final value of 24
+  - Produces structured patterns across the full wavetable instead of flat→noise
+
 ### Changed
 - **Removed CPU fallback renderer** — WebGL is now required
   - Removed `renderWavetableCPU()` pixel-by-pixel path
