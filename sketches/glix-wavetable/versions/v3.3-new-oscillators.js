@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v3.4 - 7 New DSP Effects
+//   Based on GenDSP v3.3 - New Oscillators + Fold Mode Fix
 // ==========================================
 
 // ============================================================
@@ -94,13 +94,6 @@ let params = {
   fx_fold: 100.0,     // Wavefolder (0-10000)
   fold_mode: 0,       // 0=GenDSP (aggressive sine), 1=Gentle (soft sine), 2=Triangle fold
   fx_crush: 0.0,      // Bitcrush (0-1)
-  fx_rectify: 0,      // 0=off, 1=full-wave, 2=half-wave
-  fx_clip: 0.0,       // Hard clip drive (0-1)
-  fx_asym: 0.0,       // Asymmetric drive (-1 to 1)
-  fx_ringmod: 0.0,    // Y-axis ring mod frequency (0-20)
-  fx_comb: 0.0,       // Comb filter phase delay (0-0.5)
-  fx_slew: 0.0,       // Horizontal smoothing (0-1)
-  fx_bitop: 0.0,      // Bit manipulation intensity (0-1)
   wave_mirror: 0,     // Mirror phase (0 or 1)
   wave_invert: 0      // Invert output (0 or 1)
 };
@@ -111,8 +104,7 @@ let animSpeed = 0.3;
 let driftAmount = 0.5;
 
 // Parameter locks — locked params are not updated by animation
-const ANIM_PARAMS = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush',
-                     'fx_clip','fx_asym','fx_ringmod','fx_comb','fx_slew','fx_bitop'];
+const ANIM_PARAMS = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush'];
 let paramLocks = {};
 for (let k of ANIM_PARAMS) paramLocks[k] = false;
 
@@ -125,10 +117,10 @@ function setTarget(key, val) {
 // 0=couple(2-3), 1=multiple(4-5), 2=almost all(7-8), 3=all(9)
 let lockCategory = 3; // default: all animate
 const LOCK_CATEGORIES = [
-  { name: 'Couple', count: [2, 4] },
-  { name: 'Multiple', count: [5, 8] },
-  { name: 'Most', count: [10, 13] },
-  { name: 'All', count: 15 }
+  { name: 'Couple', count: [2, 3] },
+  { name: 'Multiple', count: [4, 5] },
+  { name: 'Most', count: [7, 8] },
+  { name: 'All', count: 9 }
 ];
 
 function applyRandomLocks() {
@@ -160,7 +152,7 @@ const ANIM_RANGES = [1.0, 0.1, 0.01];
 const ANIM_RANGE_LABELS = ['Full', '1/10', '1/100'];
 let animRangeIndex = 0; // for UI button state
 let paramRanges = {};
-for (let k of ANIM_PARAMS) paramRanges[k] = 1.0;
+for (let k of ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush']) paramRanges[k] = 1.0;
 const ANIM_MODES = ['drift', 'lfo', 'chaos', 'sequencer', 'bounce'];
 
 // Exponential mapping for large-range params (more resolution at low end)
@@ -766,13 +758,6 @@ uniform float u_pw_morph;
 uniform float u_fx_fold;
 uniform float u_fold_mode;
 uniform float u_fx_crush;
-uniform float u_fx_rectify;
-uniform float u_fx_clip;
-uniform float u_fx_asym;
-uniform float u_fx_ringmod;
-uniform float u_fx_comb;
-uniform float u_fx_slew;
-uniform float u_fx_bitop;
 uniform float u_size;
 uniform float u_pp_dither_bayer;
 uniform float u_pp_dither_bayer_scale;
@@ -1024,57 +1009,14 @@ float generateSample(float raw_phase, float scan_pos) {
   // INVERT (flip output)
   if (u_wave_invert > 0.5) samp = -samp;
 
-  // RECTIFY (fold negative into positive)
-  if (u_fx_rectify > 0.5) {
-    if (u_fx_rectify > 1.5) {
-      samp = samp > 0.0 ? samp * 2.0 - 1.0 : -1.0;
-    } else {
-      samp = abs(samp) * 2.0 - 1.0;
-    }
-  }
-
-  // RING MOD Y (amplitude modulation along scan axis)
-  if (u_fx_ringmod > 0.01) {
-    samp *= sin(scan_pos * u_fx_ringmod * 6.28318530718);
-  }
-
   // SOFT SATURATION
   samp = tanh_approx(samp * u_soften);
-
-  // ASYMMETRIC DRIVE (different saturation for +/- halves)
-  if (abs(u_fx_asym) > 0.01) {
-    float pos_drive = 1.0 + max(u_fx_asym, 0.0) * 5.0;
-    float neg_drive = 1.0 + max(-u_fx_asym, 0.0) * 5.0;
-    if (samp >= 0.0) samp = tanh_approx(samp * pos_drive);
-    else samp = tanh_approx(samp * neg_drive);
-  }
-
-  // HARD CLIP (flat ceiling/floor)
-  if (u_fx_clip > 0.001) {
-    float clip_drive = 1.0 + u_fx_clip * 20.0;
-    samp = clamp(samp * clip_drive, -1.0, 1.0);
-  }
 
   // BITCRUSH
   float current_crush = u_fx_crush * scan_pos;
   if (current_crush > 0.0) {
     float c_steps = max(1.0, 2.0 + (1.0 - current_crush) * 50.0);
     samp = floor(samp * c_steps) / c_steps;
-  }
-
-  // BIT OPS (digital scrambling)
-  if (u_fx_bitop > 0.01) {
-    float q = floor((samp * 0.5 + 0.5) * 255.0);
-    float pattern = floor(shifted_phase * 255.0);
-    float a = q; float b = floor(pattern * u_fx_bitop);
-    float result = 0.0; float bit = 128.0;
-    for (int i = 0; i < 8; i++) {
-      float ba = step(bit, a); a -= ba * bit;
-      float bb = step(bit, b); b -= bb * bit;
-      result += abs(ba - bb) * bit;
-      bit *= 0.5;
-    }
-    samp = result / 255.0 * 2.0 - 1.0;
   }
 
   // WAVEFOLDER
@@ -1193,22 +1135,6 @@ vec3 computeColor(vec2 uv) {
   float raw_phase = (uv.x * u_size + 1.0) / (u_size + 1.0);
   float scan_pos = (uv.y * u_size + 1.0) / (u_size + 1.0);
   float sample_val = generateSample(raw_phase, scan_pos);
-
-  // COMB FILTER (mix with phase-offset copy)
-  if (u_fx_comb > 0.001) {
-    float comb_samp = generateSample(raw_phase - u_fx_comb, scan_pos);
-    sample_val = (sample_val + comb_samp) * 0.5;
-  }
-
-  // SLEW LIMIT (horizontal smoothing with neighbors)
-  if (u_fx_slew > 0.01) {
-    float delta = 1.0 / u_size;
-    float left_samp = generateSample(raw_phase - delta, scan_pos);
-    float right_samp = generateSample(raw_phase + delta, scan_pos);
-    float smoothed = (left_samp + sample_val + right_samp) / 3.0;
-    sample_val = mix(sample_val, smoothed, u_fx_slew);
-  }
-
   float colorVal = (sample_val + 1.0) * 0.5;
   vec3 col = getPaletteColor(colorVal);
 
@@ -1434,9 +1360,7 @@ function initWebGL() {
 
   // Cache uniform locations
   let names = ['u_shape','u_pw','u_soften','u_y_bend','u_fx_bend','u_fx_noise',
-               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush',
-               'u_fx_rectify','u_fx_clip','u_fx_asym','u_fx_ringmod',
-               'u_fx_comb','u_fx_slew','u_fx_bitop','u_size',
+               'u_fx_quantize','u_pw_morph','u_fx_fold','u_fold_mode','u_fx_crush','u_size',
                'u_pp_dither_bayer','u_pp_dither_bayer_scale',
                'u_pp_dither_noise','u_pp_dither_noise_scale',
                'u_pp_dither_lines','u_pp_dither_lines_scale',
@@ -1486,7 +1410,6 @@ function setup() {
     updateUIValues = function() {};
     updateShapeButtons = function() {};
     updateFoldButtons = function() {};
-    updateRectifyButtons = function() {};
     updateWaveModButtons = function() {};
     updateColorPreview = function() {};
     updateResolutionDisplay = function() {};
@@ -1651,12 +1574,6 @@ function animBounce() {
   setTarget('pw_morph', Math.sin(t * 0.5 + bouncePhases.pw_morph) * 40 * d);
   setTarget('fx_fold', expMap(Math.abs(Math.sin(t * 0.13 + bouncePhases.fx_fold)), 0, 8000) * d + 50);
   setTarget('fx_crush', expMap(Math.abs(Math.sin(t * 0.17 + bouncePhases.fx_crush)), 0, 1) * d);
-  setTarget('fx_clip', Math.abs(Math.sin(t * 0.23 + bouncePhases.fx_clip)) * 0.6 * d);
-  setTarget('fx_asym', Math.sin(t * 0.19 + bouncePhases.fx_asym) * 0.8 * d);
-  setTarget('fx_ringmod', Math.abs(Math.sin(t * 0.11 + bouncePhases.fx_ringmod)) * 15 * d);
-  setTarget('fx_comb', Math.abs(Math.sin(t * 0.29 + bouncePhases.fx_comb)) * 0.3 * d);
-  setTarget('fx_slew', Math.abs(Math.sin(t * 0.37 + bouncePhases.fx_slew)) * 0.4 * d);
-  setTarget('fx_bitop', Math.abs(Math.sin(t * 0.31 + bouncePhases.fx_bitop)) * 0.5 * d);
 }
 
 function interpolateParams() {
@@ -1890,50 +1807,14 @@ function generateSample(raw_phase, scan_pos) {
   // INVERT (flip output)
   if (params.wave_invert) samp = -samp;
 
-  // RECTIFY
-  if (params.fx_rectify > 0) {
-    if (params.fx_rectify > 1) {
-      samp = samp > 0 ? samp * 2.0 - 1.0 : -1.0;
-    } else {
-      samp = abs(samp) * 2.0 - 1.0;
-    }
-  }
-
-  // RING MOD Y
-  if (params.fx_ringmod > 0.01) {
-    samp *= sin(scan_pos * params.fx_ringmod * TWO_PI);
-  }
-
   // Soft Saturation
   samp = tanh_approx(samp * params.soften);
-
-  // ASYMMETRIC DRIVE
-  if (abs(params.fx_asym) > 0.01) {
-    let pos_drive = 1.0 + Math.max(params.fx_asym, 0.0) * 5.0;
-    let neg_drive = 1.0 + Math.max(-params.fx_asym, 0.0) * 5.0;
-    if (samp >= 0) samp = tanh_approx(samp * pos_drive);
-    else samp = tanh_approx(samp * neg_drive);
-  }
-
-  // HARD CLIP
-  if (params.fx_clip > 0.001) {
-    let clip_drive = 1.0 + params.fx_clip * 20.0;
-    samp = constrain(samp * clip_drive, -1.0, 1.0);
-  }
 
   // BITCRUSH
   let current_crush = params.fx_crush * scan_pos;
   if (current_crush > 0.0) {
     let c_steps = max(1.0, 2.0 + (1.0 - current_crush) * 50.0);
     samp = floor(samp * c_steps) / c_steps;
-  }
-
-  // BIT OPS
-  if (params.fx_bitop > 0.01) {
-    let q = Math.floor((samp * 0.5 + 0.5) * 255);
-    let pattern = Math.floor(shifted_phase * 255);
-    let b = Math.floor(pattern * params.fx_bitop);
-    samp = ((q ^ b) & 255) / 255.0 * 2.0 - 1.0;
   }
 
   // WAVEFOLDER
@@ -2039,13 +1920,6 @@ function renderWavetable() {
   gl.uniform1f(uLocations.u_fx_fold, params.fx_fold);
   gl.uniform1f(uLocations.u_fold_mode, params.fold_mode);
   gl.uniform1f(uLocations.u_fx_crush, params.fx_crush);
-  gl.uniform1f(uLocations.u_fx_rectify, params.fx_rectify);
-  gl.uniform1f(uLocations.u_fx_clip, params.fx_clip);
-  gl.uniform1f(uLocations.u_fx_asym, params.fx_asym);
-  gl.uniform1f(uLocations.u_fx_ringmod, params.fx_ringmod);
-  gl.uniform1f(uLocations.u_fx_comb, params.fx_comb);
-  gl.uniform1f(uLocations.u_fx_slew, params.fx_slew);
-  gl.uniform1f(uLocations.u_fx_bitop, params.fx_bitop);
   gl.uniform1f(uLocations.u_size, renderSize);
   gl.uniform1f(uLocations.u_pp_dither_bayer, ppDitherBayer ? 1.0 : 0.0);
   gl.uniform1f(uLocations.u_pp_dither_bayer_scale, [1, 2, 4, 8][ppDitherBayerScale]);
@@ -2507,46 +2381,6 @@ function setupUI() {
     targetParams.fx_crush = params.fx_crush;
   }, v => expMap(v / 1000, 0, 1).toFixed(3));
 
-  // Rectify buttons
-  document.querySelectorAll('.shape-btn[data-rectify]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      params.fx_rectify = parseInt(btn.dataset.rectify);
-      targetParams.fx_rectify = params.fx_rectify;
-      updateRectifyButtons();
-      needsRender = true;
-    });
-  });
-
-  setupSlider('clip', 0, 1000, v => {
-    params.fx_clip = v / 1000;
-    targetParams.fx_clip = params.fx_clip;
-  }, v => (v / 1000).toFixed(3));
-
-  setupSlider('asym', 0, 1000, v => {
-    params.fx_asym = map(v, 0, 1000, -1, 1);
-    targetParams.fx_asym = params.fx_asym;
-  }, v => map(v, 0, 1000, -1, 1).toFixed(3));
-
-  setupSlider('ringmod', 0, 1000, v => {
-    params.fx_ringmod = v / 1000 * 20;
-    targetParams.fx_ringmod = params.fx_ringmod;
-  }, v => (v / 1000 * 20).toFixed(2));
-
-  setupSlider('comb', 0, 1000, v => {
-    params.fx_comb = v / 1000 * 0.5;
-    targetParams.fx_comb = params.fx_comb;
-  }, v => (v / 1000 * 0.5).toFixed(3));
-
-  setupSlider('slew', 0, 1000, v => {
-    params.fx_slew = v / 1000;
-    targetParams.fx_slew = params.fx_slew;
-  }, v => (v / 1000).toFixed(3));
-
-  setupSlider('bitop', 0, 1000, v => {
-    params.fx_bitop = v / 1000;
-    targetParams.fx_bitop = params.fx_bitop;
-  }, v => (v / 1000).toFixed(3));
-
   setupSlider('speed', 1, 100, v => {
     animSpeed = v / 100;
   }, v => (v / 100).toFixed(2));
@@ -2595,19 +2429,6 @@ function updateFoldButtons() {
     btn.classList.toggle('active', parseInt(btn.dataset.foldmode) === params.fold_mode);
   });
 }
-
-function updateRectifyButtons() {
-  document.querySelectorAll('.shape-btn[data-rectify]').forEach(btn => {
-    btn.classList.toggle('active', parseInt(btn.dataset.rectify) === params.fx_rectify);
-  });
-}
-
-window.setRectify = function(val) {
-  params.fx_rectify = val;
-  targetParams.fx_rectify = val;
-  updateRectifyButtons();
-  needsRender = true;
-};
 
 window.toggleWaveMirror = function() {
   params.wave_mirror = params.wave_mirror ? 0 : 1;
@@ -2663,27 +2484,6 @@ function updateUIValues() {
   document.getElementById('param-crush').value = crushVal;
   document.getElementById('val-crush').textContent = params.fx_crush.toFixed(3);
 
-  updateRectifyButtons();
-
-  document.getElementById('param-clip').value = params.fx_clip * 1000;
-  document.getElementById('val-clip').textContent = params.fx_clip.toFixed(3);
-
-  let asymVal = map(params.fx_asym, -1, 1, 0, 1000);
-  document.getElementById('param-asym').value = asymVal;
-  document.getElementById('val-asym').textContent = params.fx_asym.toFixed(3);
-
-  document.getElementById('param-ringmod').value = (params.fx_ringmod / 20) * 1000;
-  document.getElementById('val-ringmod').textContent = params.fx_ringmod.toFixed(2);
-
-  document.getElementById('param-comb').value = (params.fx_comb / 0.5) * 1000;
-  document.getElementById('val-comb').textContent = params.fx_comb.toFixed(3);
-
-  document.getElementById('param-slew').value = params.fx_slew * 1000;
-  document.getElementById('val-slew').textContent = params.fx_slew.toFixed(3);
-
-  document.getElementById('param-bitop').value = params.fx_bitop * 1000;
-  document.getElementById('val-bitop').textContent = params.fx_bitop.toFixed(3);
-
 }
 
 function updateColorPreview() {
@@ -2730,23 +2530,6 @@ function generateFeatures() {
   // fx_crush: 35% zero, rest exp-biased
   params.fx_crush = rndBool(0.35) ? 0 : expMap(Math.pow(R(), 1.5), 0, 1);
 
-  // New DSP FX
-  // Rectify: 70% off, 15% full, 15% half
-  let rectRoll = R();
-  params.fx_rectify = rectRoll < 0.7 ? 0 : (rectRoll < 0.85 ? 1 : 2);
-  // Hard clip: 60% zero, rest power-biased
-  params.fx_clip = rndBool(0.6) ? 0 : Math.pow(R(), 2) * 0.8;
-  // Asymmetric drive: 60% zero, rest centered biased
-  params.fx_asym = rndBool(0.6) ? 0 : (R() - 0.5) * 1.6;
-  // Ring mod Y: 70% zero, rest 1-20
-  params.fx_ringmod = rndBool(0.7) ? 0 : 1 + R() * 19;
-  // Comb: 70% zero, rest 0.01-0.3
-  params.fx_comb = rndBool(0.7) ? 0 : 0.01 + R() * 0.29;
-  // Slew: 80% zero, rest 0-0.5
-  params.fx_slew = rndBool(0.8) ? 0 : R() * 0.5;
-  // Bit ops: 80% zero, rest power-biased
-  params.fx_bitop = rndBool(0.8) ? 0 : Math.pow(R(), 2);
-
   // Wave mirror/invert
   params.wave_mirror = rndBool() ? 1 : 0;
   params.wave_invert = rndBool() ? 1 : 0;
@@ -2767,8 +2550,7 @@ function generateFeatures() {
   applyRandomLocks();
 
   // Bounce phases (deterministic from hash)
-  let bKeys = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush',
-               'fx_clip','fx_asym','fx_ringmod','fx_comb','fx_slew','fx_bitop'];
+  let bKeys = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush'];
   for (let k of bKeys) bouncePhases[k] = R() * Math.PI * 2;
 
   // Guarantee visible animation
@@ -2910,13 +2692,6 @@ window.resetParams = function() {
     fx_fold: 100.0,
     fold_mode: 0,
     fx_crush: 0.0,
-    fx_rectify: 0,
-    fx_clip: 0.0,
-    fx_asym: 0.0,
-    fx_ringmod: 0.0,
-    fx_comb: 0.0,
-    fx_slew: 0.0,
-    fx_bitop: 0.0,
     wave_mirror: 0,
     wave_invert: 0
   };

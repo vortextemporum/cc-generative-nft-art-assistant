@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.4] - 2026-02-13
+
+### Added
+- 7 new DSP signal-chain effects (post-oscillator processing):
+  - **Rectify**: Full-wave (abs) or half-wave (positive only) rectification — cycling button (Off/Full/Half)
+  - **Hard Clip**: Flat amplitude ceiling with adjustable drive (0-1) — harsh digital distortion
+  - **Asymmetric Drive**: Different tanh saturation for positive/negative halves (-1 to 1) — even harmonics, tube-like warmth
+  - **Ring Mod Y**: Amplitude modulation along scan axis, frequency 0-20 — interference patterns along morph dimension
+  - **Comb Filter**: Mix with phase-offset copy (delay 0-0.5) — creates notch/peak resonances in spectrum
+  - **Slew Limit**: Horizontal smoothing via neighbor averaging (0-1) — bandwidth limiting, soft edges
+  - **Bit Ops**: XOR-based digital scrambling (0-1) — glitchy digital textures via manual 8-bit decomposition
+- Bounce animation support for all 6 new animatable DSP params
+- UI sliders for Clip, Asymmetry, Ring Mod, Comb, Slew, Bit Ops
+- Rectify mode selector (Off/Full/Half buttons)
+- All new params included in animation system (ANIM_PARAMS, paramLocks, paramRanges)
+- Hash-based randomization distributions for all new effects (biased toward clean outputs)
+
+### Changed
+- ANIM_PARAMS expanded from 9 to 15 parameters
+- LOCK_CATEGORIES ranges updated for 15 params: Couple(2-4), Multiple(5-8), Most(10-13), All(15)
+
 ## [3.3] - 2026-02-13
 
 ### Added

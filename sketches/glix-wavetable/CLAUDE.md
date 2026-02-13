@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 3.3
+**Version:** 3.4
 **Framework:** p5.js + WebGL 1.0 GLSL (WebGL required, no CPU fallback)
 
 A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
@@ -11,9 +11,9 @@ A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D 
 
 ```
 glix-wavetable/
-├── index.html          # Viewer with controls panel (~600 lines)
+├── index.html          # Viewer with controls panel (~700 lines)
 ├── random.html         # Standalone full-screen random viewer (headless mode)
-├── sketch.js           # Main p5.js sketch + GLSL shader (~2950 lines)
+├── sketch.js           # Main p5.js sketch + GLSL shader (~3170 lines)
 ├── CLAUDE.md           # This file
 └── CHANGELOG.md        # Version history
 ```
@@ -72,6 +72,17 @@ Based on "GLIX WAVETABLE GENERATOR v2.2 (Extreme)" - a GenDSP patch for Max/Jitt
 | fold_mode | 0-10 | Sine: 0=Shred (×0.08), 1=Drive (×0.03), 2=Warm (×0.01), 3=Soft (×0.004), 4=Whisper (×0.0015), 6=Harsh (×0.25), 7=Mangle (×1.0), 8=Destroy (×8.0). Triangle: 5=Crease (×0.02), 9=Fracture (×0.05), 10=Ripple (×0.005) |
 | fx_crush | 0-1 | Bitcrush intensity, logarithmic slider |
 
+### DSP Effects (signal chain, 7 effects)
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| fx_rectify | 0/1/2 | 0=off, 1=full-wave (abs), 2=half-wave (positive only) |
+| fx_clip | 0-1 | Hard clip drive — flat ceiling/floor distortion |
+| fx_asym | -1 to 1 | Asymmetric tanh saturation — different drive for +/- halves |
+| fx_ringmod | 0-20 | Y-axis ring modulation frequency — interference patterns along morph |
+| fx_comb | 0-0.5 | Comb filter phase delay — notch/peak resonances |
+| fx_slew | 0-1 | Horizontal smoothing via neighbor averaging — bandwidth limiting |
+| fx_bitop | 0-1 | XOR-based digital scrambling — glitchy textures via 8-bit decomposition |
+
 ### Post-Processing (GPU shader, 10 effects)
 | Effect | Type | Description |
 |--------|------|-------------|
@@ -113,12 +124,19 @@ Randomization (R press) gives each PP effect <10% chance to trigger.
 2. Phase noise (hash-based static)
 3. Phase quantize (stepped/pixelated)
 4. Phase bend (S-curve stretch)
-5. Waveform generation (12 oscillator types)
+5. Waveform generation (20 oscillator types)
 6. Morph/shift application
-7. Soft saturation (tanh)
-8. Bitcrush (amplitude quantize)
-9. Wavefolder (9 modes: 6 sine drive intensities + 3 triangle)
-10. Post-processing (sharpen, dither, posterize, grain, halftone)
+7. Rectify (full-wave or half-wave)
+8. Ring Mod Y (amplitude modulation along scan axis)
+9. Soft saturation (tanh)
+10. Asymmetric drive (different +/- saturation)
+11. Hard clip (flat ceiling/floor)
+12. Bitcrush (amplitude quantize)
+13. Bit Ops (XOR digital scrambling)
+14. Wavefolder (11 modes: 8 sine drive intensities + 3 triangle)
+15. Comb filter (in computeColor, phase-offset mixing)
+16. Slew limit (in computeColor, neighbor averaging)
+17. Post-processing (sharpen, dither, posterize, grain, halftone, edge detect, ripple)
 
 ## Animation System
 
