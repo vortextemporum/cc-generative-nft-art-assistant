@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v3.1 - WebGL-only, Hash Display
+//   Based on GenDSP v3.0 - Extended Post-FX Pipeline
 // ==========================================
 
 // ============================================================
@@ -717,6 +717,7 @@ const palettes = {
 let currentPalette = 'thermal';
 let paletteNames = Object.keys(palettes);
 let hueShift = 0; // 0-360 degrees
+let pixelBuffer;
 
 // Hue shift via Rodrigues rotation (CPU-side)
 function hueShiftRGB(r, g, b, deg) {
@@ -1300,17 +1301,17 @@ function resizeGLCanvas() {
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 }
 
+let useWebGL = false;
+
 function setup() {
   canvas = createCanvas(DISPLAY_SIZE, DISPLAY_SIZE);
   canvas.parent('sketch-holder');
   pixelDensity(1);
   noSmooth();
 
-  if (!initWebGL()) {
-    console.error('WebGL required but not available');
-    return;
-  }
-  initIsoWebGL();
+  useWebGL = initWebGL();
+  if (useWebGL) initIsoWebGL();
+  if (!useWebGL) createPixelBuffer();
 
   // Generate deterministic initial state from hash
   generateFeatures();
@@ -1323,7 +1324,6 @@ function setup() {
     updateWaveModButtons = function() {};
     updateColorPreview = function() {};
     updateResolutionDisplay = function() {};
-    updateHashDisplay = function() {};
   } else {
     setupUI();
     // Sync UI to generated state
@@ -1336,19 +1336,16 @@ function setup() {
     document.getElementById('val-hueshift').textContent = hueShift + '°';
     updateColorPreview();
     updateResolutionDisplay();
-    updateHashDisplay();
+    // Show renderer info
+    let ri = document.getElementById('renderer-indicator');
+    if (ri) ri.textContent = useWebGL ? 'GPU (WebGL)' : 'CPU (fallback)';
   }
 }
 
-function updateHashDisplay() {
-  let el = document.getElementById('hash-display');
-  if (el) el.textContent = hash.slice(0, 18) + '...';
-  let elFull = document.getElementById('hash-display-full');
-  if (elFull) elFull.textContent = hash;
-}
-
-function resizeRenderer() {
-  resizeGLCanvas();
+function createPixelBuffer() {
+  pixelBuffer = createGraphics(renderSize, renderSize);
+  pixelBuffer.pixelDensity(1);
+  if (useWebGL) resizeGLCanvas();
   needsRender = true;
 }
 
@@ -1374,10 +1371,15 @@ function draw() {
     needsRender = false;
   }
 
-  // 2D: blit GL canvas to p5 canvas (iso blits directly in renderIsometric)
+  // 2D: always blit buffer to canvas (iso blits directly in renderIsometric)
   if (viewMode === '2d') {
-    drawingContext.imageSmoothingEnabled = smoothUpscale;
-    drawingContext.drawImage(glCanvas, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
+    if (useWebGL) {
+      drawingContext.imageSmoothingEnabled = smoothUpscale;
+      drawingContext.drawImage(glCanvas, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
+    } else {
+      drawingContext.imageSmoothingEnabled = !smoothUpscale ? false : true;
+      image(pixelBuffer, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
+    }
   }
 }
 
@@ -1742,6 +1744,14 @@ function generateSample(raw_phase, scan_pos) {
 
 // --- RENDERING ---
 function renderWavetable() {
+  if (useWebGL) {
+    renderWavetableGPU();
+  } else {
+    renderWavetableCPU();
+  }
+}
+
+function renderWavetableGPU() {
   let palette = palettes[currentPalette];
   // Ensure canvas is correct size for 2D
   if (glCanvas.width !== renderSize || glCanvas.height !== renderSize) {
@@ -1794,6 +1804,33 @@ function renderWavetable() {
   gl.uniform1f(uLocations.u_wave_invert, params.wave_invert);
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+function renderWavetableCPU() {
+  pixelBuffer.loadPixels();
+  let palette = palettes[currentPalette];
+  let size = renderSize;
+
+  for (let y = 0; y < size; y++) {
+    let scan_pos = (y + 1) / (size + 1);
+
+    for (let x = 0; x < size; x++) {
+      let raw_phase = (x + 1) / (size + 1);
+      let sample = generateSample(raw_phase, scan_pos);
+
+      let colorVal = (sample + 1) * 0.5;
+      let col = getColorFromPalette(colorVal, palette);
+      if (Math.abs(hueShift) > 0.5) col = hueShiftRGB(col[0], col[1], col[2], hueShift);
+
+      let idx = (y * size + x) * 4;
+      pixelBuffer.pixels[idx] = col[0];
+      pixelBuffer.pixels[idx + 1] = col[1];
+      pixelBuffer.pixels[idx + 2] = col[2];
+      pixelBuffer.pixels[idx + 3] = 255;
+    }
+  }
+
+  pixelBuffer.updatePixels();
 }
 
 function getColorFromPalette(t, palette) {
@@ -2473,7 +2510,6 @@ window.randomizeAll = function() {
   updateFoldButtons();
   updateWaveModButtons();
   updateUIValues();
-  updateHashDisplay();
 
   document.getElementById('palette-select').value = currentPalette;
   document.getElementById('param-hueshift').value = hueShift;
@@ -2699,7 +2735,7 @@ function nextPalette() {
 function setResolution(idx) {
   resolutionIndex = constrain(idx, 0, RESOLUTIONS.length - 1);
   renderSize = RESOLUTIONS[resolutionIndex];
-  resizeRenderer();
+  createPixelBuffer();
   updateResolutionDisplay();
 }
 

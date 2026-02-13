@@ -2,8 +2,8 @@
 
 ## Project Overview
 
-**Version:** 3.0
-**Framework:** p5.js + WebGL 1.0 GLSL
+**Version:** 3.1
+**Framework:** p5.js + WebGL 1.0 GLSL (WebGL required, no CPU fallback)
 
 A visual wavetable synthesizer based on a GenDSP/Max/Jitter patch. Renders a 2D wavetable where X-axis is phase (0-1) and Y-axis is morph position (scan position). Full DSP signal chain runs on GPU via GLSL fragment shader.
 
@@ -95,9 +95,9 @@ Randomization (R press) gives each PP effect <10% chance to trigger.
 
 ## Rendering Architecture
 
-- **Primary renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU)
-- **Fallback**: CPU pixel-by-pixel via p5.js pixels[] array
+- **Renderer**: WebGL 1.0 GLSL fragment shader (full DSP chain on GPU, no CPU fallback)
 - **Display**: 2048×2048 canvas (CSS-constrained to 700px in index.html), internal render at 128-2048px (default 2048)
+- **Hash display**: Full 256-bit hash shown in footer, click to copy
 - **Headless mode**: `window._GLIX_RANDOM = true` skips UI, `generateFeatures()` runs with hash
 - **Isometric 3D**: WebGL mesh rendering (VBO/IBO), grid capped at 256, GPU depth testing, 30fps throttle
 

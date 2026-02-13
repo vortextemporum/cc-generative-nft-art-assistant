@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.1] - 2026-02-13
+
+### Changed
+- **Removed CPU fallback renderer** — WebGL is now required
+  - Removed `renderWavetableCPU()` pixel-by-pixel path
+  - Removed `pixelBuffer` graphics buffer and `useWebGL` conditional
+  - `setup()` now shows error if WebGL unavailable instead of falling back
+  - CPU `generateSample()` retained for isometric 3D heightmap computation
+
+### Added
+- **Hash display** in UI footer — shows current 256-bit hash
+  - Clickable to copy full hash to clipboard
+  - Updates on randomize (R key)
+
 ## [3.0] - 2026-02-12
 
 ### Added
