@@ -1571,6 +1571,12 @@ function animDrift() {
   setTarget('fx_noise', map(noise(animTime * speed * 0.25 + 500), 0, 1, 0, 0.3) * drift);
   setTarget('fx_quantize', map(noise(animTime * speed * 0.2 + 600), 0, 1, 0, 0.5) * drift);
   setTarget('soften', map(noise(animTime * speed * 0.35 + 700), 0, 1, 1, 20));
+  setTarget('fx_clip', map(noise(animTime * speed * 0.22 + 800), 0, 1, 0, 0.6) * drift);
+  setTarget('fx_asym', map(noise(animTime * speed * 0.18 + 900), 0, 1, -0.8, 0.8) * drift);
+  setTarget('fx_ringmod', map(noise(animTime * speed * 0.12 + 1000), 0, 1, 0, 15) * drift);
+  setTarget('fx_comb', map(noise(animTime * speed * 0.28 + 1100), 0, 1, 0, 0.3) * drift);
+  setTarget('fx_slew', map(noise(animTime * speed * 0.16 + 1200), 0, 1, 0, 0.4) * drift);
+  setTarget('fx_bitop', map(noise(animTime * speed * 0.14 + 1300), 0, 1, 0, 0.5) * drift);
 }
 
 // MODE: Synced LFO oscillation (rhythmic, musical)
@@ -1586,6 +1592,12 @@ function animLFO() {
   setTarget('fx_noise', (Math.sin(t * 0.6) * 0.5 + 0.5) * 0.3 * d);
   setTarget('fx_quantize', (Math.sin(t * 0.25) * 0.5 + 0.5) * 0.4 * d);
   setTarget('fx_crush', expMap(Math.sin(t * 0.08) * 0.5 + 0.5, 0, 1) * d);
+  setTarget('fx_clip', Math.abs(Math.sin(t * 0.22)) * 0.5 * d);
+  setTarget('fx_asym', Math.sin(t * 0.18) * 0.7 * d);
+  setTarget('fx_ringmod', Math.abs(Math.sin(t * 0.12)) * 12 * d);
+  setTarget('fx_comb', Math.abs(Math.sin(t * 0.28)) * 0.25 * d);
+  setTarget('fx_slew', Math.abs(Math.sin(t * 0.16)) * 0.4 * d);
+  setTarget('fx_bitop', Math.abs(Math.sin(t * 0.14)) * 0.4 * d);
 }
 
 // MODE: Lorenz attractor (chaotic, unpredictable but structured)
@@ -1607,6 +1619,12 @@ function animChaos() {
   setTarget('fx_noise', Math.abs(nx) * 0.3 * d);
   setTarget('fx_quantize', Math.abs(ny) * 0.4 * d);
   setTarget('fx_crush', expMap(Math.abs(nz), 0, 1) * d);
+  setTarget('fx_clip', Math.abs(nx) * 0.5 * d);
+  setTarget('fx_asym', ny * 0.7 * d);
+  setTarget('fx_ringmod', Math.abs(nz) * 12 * d);
+  setTarget('fx_comb', Math.abs(nx) * 0.25 * d);
+  setTarget('fx_slew', Math.abs(ny) * 0.4 * d);
+  setTarget('fx_bitop', Math.abs(nz) * 0.4 * d);
 }
 
 // MODE: Step sequencer (morph between presets)
@@ -1636,6 +1654,14 @@ function animSequencer() {
   setTarget('pw_morph', lerp(preset.pw_morph, nextPreset.pw_morph, t * d));
   setTarget('fx_fold', lerp(preset.fx_fold, nextPreset.fx_fold, t * d));
   setTarget('fx_crush', lerp(preset.fx_crush, nextPreset.fx_crush, t * d));
+  // New DSP params: smoothstep between step boundaries
+  let st = animTime * animSpeed * 0.3;
+  setTarget('fx_clip', Math.abs(Math.sin(st * 0.23)) * 0.5 * d);
+  setTarget('fx_asym', Math.sin(st * 0.19) * 0.7 * d);
+  setTarget('fx_ringmod', Math.abs(Math.sin(st * 0.11)) * 12 * d);
+  setTarget('fx_comb', Math.abs(Math.sin(st * 0.29)) * 0.25 * d);
+  setTarget('fx_slew', Math.abs(Math.sin(st * 0.37)) * 0.4 * d);
+  setTarget('fx_bitop', Math.abs(Math.sin(st * 0.31)) * 0.4 * d);
 }
 
 // MODE: Bounce (params ping-pong at different prime-ratio rates)
