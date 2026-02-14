@@ -1,5 +1,13 @@
 # GLIX Wavetable (fxhash Edition) - Changelog
 
+## v1.1.0 (2026-02-14)
+
+### Changed
+- fx_fold extreme rarity: 1% → 3% (moderate 69% → 67%)
+- wave_mirror/invert: 50% → 25% each
+- Ripple post-FX: 4% → 2.5%
+- Isometric tilt range: 0-86° → 0-180° (full flip)
+
 ## v1.0.0 (2026-02-14)
 
 ### Initial Release

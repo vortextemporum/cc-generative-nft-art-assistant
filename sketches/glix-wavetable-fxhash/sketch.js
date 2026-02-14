@@ -1691,7 +1691,7 @@ function mouseDragged() {
     isoPanY += dy;
   } else if (isoDragging) {
     isoRotation += dx * 0.008;
-    isoTilt = constrain(isoTilt + dy * 0.006, 0.1, PI * 0.48);
+    isoTilt = constrain(isoTilt + dy * 0.006, 0.0, PI);
   }
   needsRender = true;
 }
@@ -1742,9 +1742,10 @@ function generateFeatures() {
   params.fx_quantize = rndBool(0.4) ? 0 : Math.pow(R(), 3) * 0.7;
   params.pw_morph = Math.pow(R(), 1.5) * 50 * (rndBool() ? -1 : 1);
 
+  // fx_fold: 30% zero/low, 67% moderate, 3% extreme
   let foldRoll = R();
   if (foldRoll < 0.3) params.fx_fold = rnd(0, 50);
-  else if (foldRoll < 0.99) params.fx_fold = expMap(Math.pow(R(), 1.5), 0, 2000);
+  else if (foldRoll < 0.97) params.fx_fold = expMap(Math.pow(R(), 1.5), 0, 2000);
   else params.fx_fold = expMap(R(), 5000, 10000);
   params.fold_mode = rndInt(0, 10);
 
@@ -1759,8 +1760,9 @@ function generateFeatures() {
   params.fx_slew = rndBool(0.8) ? 0 : R() * 0.5;
   params.fx_bitop = rndBool(0.8) ? 0 : Math.pow(R(), 2);
 
-  params.wave_mirror = rndBool() ? 1 : 0;
-  params.wave_invert = rndBool() ? 1 : 0;
+  // Wave mirror/invert (25% each)
+  params.wave_mirror = rndBool(0.25) ? 1 : 0;
+  params.wave_invert = rndBool(0.25) ? 1 : 0;
 
   // --- Palette + hue shift ---
   currentPalette = rndChoice(paletteNames);
@@ -1804,7 +1806,7 @@ function generateFeatures() {
   ppHalftone = rndBool(0.05);
   ppHalftoneScale = rndInt(0, 3);
   ppEdgeDetect = rndBool(0.04);
-  ppRipple = rndBool(0.04);
+  ppRipple = rndBool(0.025);
 
   // Oscillator names for features
   const OSC_NAMES = ['Sine','Triangle','Sawtooth','Pulse','HalfRect','Staircase',
