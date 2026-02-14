@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Platform:** fxhash (Tezos)
 **Framework:** p5.js + WebGL 1.0 GLSL
 **Editions:** 512

@@ -1,15 +1,15 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - fxhash Edition
 //   Based on GenDSP v3.4 - Full Port
-//   Version: 1.0.0
+//   Version: 1.2.0
 // ==========================================
 
 // ============================================================
 // RANDOMNESS (fxhash Compatible)
 // ============================================================
 
-// R is our deterministic PRNG — backed by fxrand()
-let R = fxrand;
+// R is our deterministic PRNG — backed by $fx.rand()
+let R = $fx.rand;
 
 function rnd(min = 0, max = 1) {
   return R() * (max - min) + min;
@@ -998,7 +998,7 @@ function draw() {
 
   // Trigger fxhash preview after first rendered frame
   if (frameCount === 1) {
-    fxpreview();
+    $fx.preview();
   }
 }
 

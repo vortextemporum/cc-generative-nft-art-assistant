@@ -1,5 +1,12 @@
 # GLIX Wavetable (fxhash Edition) - Changelog
 
+## v1.2.0 (2026-02-14)
+
+### Fixed
+- **p5.js bundled locally** — removed CDN link (fxhash requires no external network requests)
+- **Script load order** — fxhash.js now loads before p5.js per SDK requirements
+- **Modern SDK API** — `$fx.rand` replaces legacy `fxrand`, `$fx.preview()` replaces `fxpreview()`
+
 ## v1.1.0 (2026-02-14)
 
 ### Changed
