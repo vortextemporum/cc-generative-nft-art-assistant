@@ -1896,3 +1896,14 @@ function keyPressed() {
       break;
   }
 }
+
+// Expose p5.js lifecycle functions to global scope
+// (required when bundled by fxhash CLI webpack)
+window.setup = setup;
+window.draw = draw;
+window.windowResized = windowResized;
+window.mousePressed = mousePressed;
+window.mouseDragged = mouseDragged;
+window.mouseReleased = mouseReleased;
+window.mouseWheel = mouseWheel;
+window.keyPressed = keyPressed;
