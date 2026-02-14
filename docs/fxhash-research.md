@@ -313,9 +313,9 @@ project/
 - **Dutch auction with rebates**: Early buyers refunded difference
 
 ### Platform Fees
-- **Tezos**: 2.5% primary split
-- **Ethereum/Base**: 10% primary split
-- **Royalties**: 0-25% on secondary (artist-determined)
+- **Ethereum**: 10% primary sales; 25% of artist royalties on secondary
+- **Tezos**: 5% primary sales; 2.5% secondary sales
+- **Royalties**: 10-25% on secondary (artist-determined, locked per token)
 
 ### Mint Tickets (fx(params) projects)
 - Collectors receive transferable tickets instead of immediate artwork

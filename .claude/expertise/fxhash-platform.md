@@ -501,19 +501,25 @@ function windowResized() {
 - [ ] No console errors
 - [ ] All resources bundled locally (no CDN links)
 - [ ] No network requests
-- [ ] ZIP under 15 MB
+- [ ] ZIP under 500 MB (contact support for larger)
 - [ ] All paths relative (`./path/to/file`)
 - [ ] Responsive to viewport resize events
 - [ ] Cross-browser testing (Chrome, Firefox, Safari)
 
-### Upload Process
-1. Build: `npx fxhash build` (creates `upload.zip`)
-2. Go to https://www.fxhash.xyz/mint-generative
-3. Upload zip file
-4. Configure: editions, pricing, royalties, tags, reserves
-5. Test in sandbox
-6. Verify features display correctly
-7. Mint/publish
+### Upload Process (11-Step Minting Interface)
+1. **Blockchain selection**: Ethereum, Base, or Tezos
+2. **Author selection**: Individual or collaboration contract
+3. **Storage selection**: IPFS or ONCHFS (on-chain)
+4. **Project upload**: Upload .zip file (or use `npx fxhash build`)
+5. **Determinism check**: Test with same/different hashes, set preview hash
+6. **Capture settings**: Trigger method (programmatic or delay), target (canvas or viewport), GPU toggle
+7. **Preview check**: Verify captured preview matches live artwork
+8. **Distribution**: Edition size, pricing, opening date, splits, royalties, reserves
+9. **Variation settings**: Control exploration (infinite or limited hash sets)
+10. **Project details**: Title, description, tags, content labels
+11. **Final preview**: Review and confirm publication transaction
+
+Progress is saved automatically - resume later with 'continue' button.
 
 ### Pricing Models
 - **Fixed price**: Constant throughout sale
@@ -521,9 +527,26 @@ function windowResized() {
 - **Dutch auction with rebates**: Early buyers refunded difference to final price
 
 ### Revenue Splits
-- **Tezos**: 2.5% platform fee
-- **Ethereum/Base**: 10% platform fee
-- **Royalties**: 0-25% on secondary sales (artist-determined)
+- **Ethereum**: 10% primary sales; 25% of artist royalties on secondary
+- **Tezos**: 5% primary sales; 2.5% secondary sales
+- **Royalties**: 10-25% on secondary (artist-determined, locked per token)
+
+### Supply Models
+- **Fixed limited edition**: Set number of editions, mintable indefinitely until sold out or disabled
+- **Open edition**: No upper limit; optional closing time (cannot change after publish)
+- **Note**: Open editions cannot have reserves
+
+### Reserves & Allow Lists
+- **Access/allow lists**: Wallet addresses with exclusive access (max 1000 addresses per list)
+- **Mint passes (token gates)**: Holders of specific token get exclusive access
+- **Import methods**: From event, CSV file, or previous project holders
+- CSV format: `address;amount` (e.g., `tz1abc...;2`)
+
+### Collaboration Contracts
+- Built-in collaboration tools for multiple artists
+- Automatic profit distribution via collaboration factory contract
+- All members must approve operations unanimously before execution
+- Primary and secondary market splits configured separately from contract shares
 
 ---
 
@@ -580,6 +603,73 @@ function rollRarity(...options) {
 ## ONCHFS (On-Chain File System)
 
 ONCHFS is a permissionless content-addressable file system fully stored on-chain. It provides an alternative to IPFS for projects that want true on-chain storage. Files are chunked and stored in smart contract storage.
+
+---
+
+## User Input & Media Exports
+
+### Canvas Export (vanilla JS)
+```javascript
+document.addEventListener('keydown', (e) => {
+  if (e.key === 's') {
+    const link = document.createElement('a');
+    link.download = `${$fx.hash.slice(0, 12)}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+});
+```
+
+### Canvas Export (p5.js)
+```javascript
+function keyPressed() {
+  if (keyCode === 83) { // 's' key
+    saveCanvas(`${$fx.hash.slice(0, 12)}`, 'png');
+  }
+}
+```
+
+### High-Resolution Export
+```javascript
+function exportHighRes(scale = 4) {
+  const w = canvas.width * scale;
+  const h = canvas.height * scale;
+  const offscreen = document.createElement('canvas');
+  offscreen.width = w;
+  offscreen.height = h;
+  const ctx = offscreen.getContext('2d');
+  ctx.scale(scale, scale);
+  // Redraw artwork at higher resolution...
+  const link = document.createElement('a');
+  link.download = `${$fx.hash.slice(0, 12)}_${scale}x.png`;
+  link.href = offscreen.toDataURL('image/png');
+  link.click();
+}
+```
+
+### URL Parameters
+```javascript
+// Pass config via URL: ?scale=2&debug=true
+const params = new URLSearchParams(window.location.search);
+const scale = parseInt(params.get('scale')) || 1;
+const debug = params.get('debug') === 'true';
+```
+
+---
+
+## Licensing
+
+Projects should include a license since code becomes public on IPFS/ONCHFS.
+
+### Common Choices
+- **CC BY**: Attribution required, most permissive
+- **CC BY-SA**: Attribution + share-alike
+- **CC BY-NC**: Attribution + non-commercial only
+- **CC0**: Public domain (no restrictions)
+- **MIT**: Permissive software license
+- **GPL**: Copyleft (derivatives must also be GPL)
+
+Do NOT modify standard licenses - supplement with additional terms in separate docs instead.
 
 ---
 
