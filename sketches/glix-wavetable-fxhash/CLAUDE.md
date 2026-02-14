@@ -1,0 +1,94 @@
+# GLIX Wavetable (fxhash Edition) - Claude Guide
+
+## Project Overview
+
+**Version:** 1.0.0
+**Platform:** fxhash (Tezos)
+**Framework:** p5.js + WebGL 1.0 GLSL
+**Editions:** 512
+
+Full port of GLIX Wavetable Generator v3.4 for fxhash. Visual wavetable synthesizer where X=phase, Y=morph, color=amplitude. Full DSP signal chain runs on GPU via GLSL fragment shader.
+
+## File Structure
+
+```
+glix-wavetable-fxhash/
+├── index.html          # Clean full-screen viewer
+├── sketch.js           # Main engine (~2400 lines)
+├── fxhash.js           # fxhash boilerplate (fxrand, $fx, fxpreview)
+├── style.css           # Full-screen dark canvas
+├── .fxhash.json        # fxhash project config
+├── CLAUDE.md           # This file
+├── CHANGELOG.md        # Version history
+└── versions/           # Historical snapshots
+```
+
+## Key Differences from Art Blocks Version
+
+| Aspect | Art Blocks (original) | fxhash (this) |
+|--------|----------------------|---------------|
+| Randomness | sfc32 from tokenData.hash | fxrand() from fxhash |
+| Features | window.getFeatures() | $fx.features() + window.getFeatures() |
+| Preview | N/A | fxpreview() on frame 1 |
+| UI | Full sidebar controls | No UI, keyboard only |
+| Canvas | 700px CSS constrained | Full-screen responsive |
+| Randomize | R key generates new hash | N/A (pure generative) |
+
+## Randomness
+
+- **PRNG**: `fxrand()` provided by fxhash platform (via fxhash.js fallback for dev)
+- **Global**: `R = fxrand`, helpers: `rnd(min,max)`, `rndInt(min,max)`, `rndChoice(arr)`, `rndBool(p)`
+- **Init**: `generateFeatures()` called once in `setup()`, consumes R() sequentially
+- **Animation**: Uses `noise()` (Perlin) and math functions, does NOT consume R()
+
+## fxhash Features (9 traits)
+
+| Feature | Type | Values |
+|---------|------|--------|
+| Oscillator | String | Sine, Triangle, Sawtooth, Pulse, HalfRect, Staircase, Parabolic, SuperSaw, Schrodinger, Chebyshev, FM, Harmonic, Fractal, Chirp, Formant, Chaos, RingMod, PhaseDist, Shepard, Wavelet |
+| Palette | String | 55 palette names |
+| Hue Shift | String | "None" or "N°" (1-359) |
+| Fold Mode | String | Shred, Drive, Warm, Soft, Whisper, Crease, Harsh, Mangle, Destroy, Fracture, Ripple |
+| Animation | String | Drift, Lfo, Chaos, Sequencer, Bounce |
+| Has Fold | String | Yes/No |
+| Has Crush | String | Yes/No |
+| Mirror | String | Yes/No |
+| Invert | String | Yes/No |
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| S | Save image (PNG) |
+| V | Toggle 2D/Isometric view |
+| P or Space | Pause/resume animation |
+| +/- | Adjust animation speed |
+
+## Oscillators (20 total)
+
+Same as Art Blocks version: Sine, Triangle, Sawtooth, Pulse, HalfRect, Staircase, Parabolic, SuperSaw, Schrodinger, Chebyshev, FM, Harmonic, Fractal, Chirp, Formant, Chaos, RingMod, PhaseDist, Shepard, Wavelet.
+
+## Color Palettes (55 total)
+
+55 base palettes × continuous hue shift (0-360°) via Rodrigues rotation in RGB space.
+
+## Animation Modes (5)
+
+- **Drift**: Perlin noise
+- **LFO**: Sine oscillators
+- **Chaos**: Lorenz attractor
+- **Sequencer**: Step presets with smoothstep
+- **Bounce**: Prime-ratio sine ping-pong
+
+## DSP Signal Chain (GLSL)
+
+1. Y-warp → 2. Phase noise → 3. Phase quantize → 4. Phase bend → 5. Mirror → 6. Waveform → 7. Morph/shift → 8. Invert → 9. Rectify → 10. Ring Mod Y → 11. Soft saturation → 12. Asymmetric drive → 13. Hard clip → 14. Bitcrush → 15. Bit Ops → 16. Wavefolder → 17. Comb filter → 18. Slew limit → 19. Post-processing
+
+## Post-Processing (10 GPU effects)
+
+Smooth, Bayer Dither, Noise Dither, Lines Dither, Posterize, Grain, Sharpen, Halftone, Edge Detect, Ripple.
+
+<claude-mem-context>
+# Recent Activity
+*No recent activity*
+</claude-mem-context>
