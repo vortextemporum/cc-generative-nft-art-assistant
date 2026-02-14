@@ -14,8 +14,8 @@ Full port of GLIX Wavetable Generator v3.4 for fxhash. Visual wavetable synthesi
 ```
 glix-wavetable-fxhash/
 ├── index.html          # Clean full-screen viewer
-├── sketch.js           # Main engine (~2400 lines)
-├── fxhash.js           # fxhash boilerplate (fxrand, $fx, fxpreview)
+├── index.js            # Main engine (~1900 lines)
+├── fxhash.js           # fxhash SDK boilerplate ($fx API)
 ├── style.css           # Full-screen dark canvas
 ├── .fxhash.json        # fxhash project config
 ├── CLAUDE.md           # This file

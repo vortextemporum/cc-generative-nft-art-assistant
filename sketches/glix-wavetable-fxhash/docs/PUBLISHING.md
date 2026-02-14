@@ -17,10 +17,20 @@ Reload the page multiple times — each reload generates a new random hash, so y
 - Press **S** to save a screenshot
 - Press **Space** to pause/resume
 
-### Using a local HTTP server (recommended)
+### Using fxhash dev server (recommended)
 
-Opening `index.html` directly (`file://`) works but some browsers restrict WebGL.
-A local server avoids this:
+```bash
+cd sketches/glix-wavetable-fxhash
+npx fxhash dev
+```
+
+This opens fxlens — the fxhash development environment with:
+- Hash input field to test specific hashes
+- Iteration controls
+- Feature display showing all 9 registered traits
+- Preview capture testing
+
+### Alternative: simple HTTP server
 
 ```bash
 cd sketches/glix-wavetable-fxhash
@@ -32,7 +42,7 @@ npx serve .
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080` (or the port shown). Reload to cycle through random hashes.
+Then open the URL shown. Reload to cycle through random hashes.
 
 ### Testing checklist
 
@@ -48,17 +58,24 @@ Then open `http://localhost:8080` (or the port shown). Reload to cycle through r
 
 ## Building for Upload
 
-Create a ZIP containing only the runtime files:
+### Option 1: fxhash CLI
 
 ```bash
 cd sketches/glix-wavetable-fxhash
-zip -r glix-wavetable.zip index.html sketch.js fxhash.js style.css libraries/
+npx fxhash build
+```
+
+### Option 2: Manual ZIP
+
+```bash
+cd sketches/glix-wavetable-fxhash
+zip -r glix-wavetable.zip index.html index.js fxhash.js style.css libraries/
 ```
 
 This includes:
 ```
 index.html
-sketch.js
+index.js
 fxhash.js
 style.css
 libraries/p5.min.js

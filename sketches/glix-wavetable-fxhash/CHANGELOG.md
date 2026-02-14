@@ -1,5 +1,11 @@
 # GLIX Wavetable (fxhash Edition) - Changelog
 
+## v1.3.0 (2026-02-14)
+
+### Changed
+- **Renamed sketch.js → index.js** — matches fxhash simple template convention, enables `npx fxhash dev`
+- **Blockchain set to Ethereum** in .fxhash.json and docs
+
 ## v1.2.0 (2026-02-14)
 
 ### Fixed
