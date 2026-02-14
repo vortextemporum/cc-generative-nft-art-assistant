@@ -17,25 +17,22 @@ Reload the page multiple times — each reload generates a new random hash, so y
 - Press **S** to save a screenshot
 - Press **Space** to pause/resume
 
-### Using fxhash CLI (recommended)
+### Using a local HTTP server (recommended)
+
+Opening `index.html` directly (`file://`) works but some browsers restrict WebGL.
+A local server avoids this:
 
 ```bash
-# Install fxhash CLI globally
-npm install -g @fxhash/cli
-
-# From the project directory
 cd sketches/glix-wavetable-fxhash
 
-# Start local dev server with fxlens (hot reload + hash controls)
-npx fxhash dev
+# Option A: Node.js
+npx serve .
+
+# Option B: Python
+python3 -m http.server 8080
 ```
 
-fxlens gives you:
-- Hash input field to test specific hashes
-- Iteration controls
-- Feature display panel showing registered traits
-- Preview capture testing
-- Responsive viewport testing
+Then open `http://localhost:8080` (or the port shown). Reload to cycle through random hashes.
 
 ### Testing checklist
 
@@ -51,17 +48,14 @@ fxlens gives you:
 
 ## Building for Upload
 
-### Option 1: fxhash CLI (recommended)
+Create a ZIP containing only the runtime files:
 
 ```bash
 cd sketches/glix-wavetable-fxhash
-npx fxhash build
-# Creates dist/upload.zip ready for fxhash
+zip -r glix-wavetable.zip index.html sketch.js fxhash.js style.css libraries/
 ```
 
-### Option 2: Manual ZIP
-
-ZIP these files (no extra folders):
+This includes:
 ```
 index.html
 sketch.js
@@ -70,9 +64,9 @@ style.css
 libraries/p5.min.js
 ```
 
-Exclude: `CLAUDE.md`, `CHANGELOG.md`, `docs/`, `versions/`, `.fxhash.json` (config is for CLI only).
+Excluded (not needed at runtime): `CLAUDE.md`, `CHANGELOG.md`, `docs/`, `versions/`, `.fxhash.json`.
 
-The ZIP should be under 15 MB (ours is ~1.1 MB mostly from p5.min.js).
+The ZIP should be ~1.1 MB (mostly p5.min.js). fxhash limit is 15 MB.
 
 ## Publishing on fxhash (Ethereum)
 
