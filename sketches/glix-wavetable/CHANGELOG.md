@@ -1,17 +1,5 @@
 # Changelog
 
-## [3.5] - 2026-02-14
-
-### Added
-- **Isometric Post-FX**: All 10 post-processing effects now work in isometric 3D view
-  - Two-pass FBO rendering: iso mesh renders to texture, then fullscreen post-FX pass
-  - Dedicated `PP_FRAG_SRC` shader for texture-based post-processing
-  - FBO with color texture + depth renderbuffer at DISPLAY_SIZE resolution
-  - Automatic FBO resize when display size changes
-  - Zero overhead when no effects active (FBO bypassed, renders direct)
-  - Effects supported: Bayer/Noise/Lines dithering, Posterize, Grain, Sharpen, Halftone, Edge Detect, Ripple
-  - `imageSmoothingEnabled` now applies to isometric view blit (Smooth toggle works)
-
 ## [3.4] - 2026-02-13
 
 ### Added

@@ -1,6 +1,6 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - p5.js Visual
-//   Based on GenDSP v3.5 - Iso Post-FX
+//   Based on GenDSP v3.4 - 7 New DSP Effects
 // ==========================================
 
 // ============================================================
@@ -1328,129 +1328,6 @@ void main() {
   gl_FragColor = vec4(v_color, 1.0);
 }`;
 
-// --- POST-FX SHADER (for FBO second pass on isometric view) ---
-const PP_FRAG_SRC = `
-precision highp float;
-varying vec2 v_uv;
-
-uniform sampler2D u_texture;
-uniform float u_pp_dither_bayer;
-uniform float u_pp_dither_bayer_scale;
-uniform float u_pp_dither_noise;
-uniform float u_pp_dither_noise_scale;
-uniform float u_pp_dither_lines;
-uniform float u_pp_dither_lines_scale;
-uniform float u_pp_posterize;
-uniform float u_pp_grain;
-uniform float u_pp_sharpen;
-uniform float u_pp_halftone;
-uniform float u_pp_halftone_scale;
-uniform float u_pp_edge_detect;
-uniform float u_pp_ripple;
-uniform float u_time;
-uniform float u_canvas_size;
-
-float pp_fract2(float x) { return x - floor(x); }
-
-float pp_bayerMatrix(vec2 pos) {
-  int x = int(mod(pos.x, 4.0));
-  int y = int(mod(pos.y, 4.0));
-  int idx = x + y * 4;
-  if (idx == 0) return 0.0/16.0;    if (idx == 1) return 8.0/16.0;
-  if (idx == 2) return 2.0/16.0;    if (idx == 3) return 10.0/16.0;
-  if (idx == 4) return 12.0/16.0;   if (idx == 5) return 4.0/16.0;
-  if (idx == 6) return 14.0/16.0;   if (idx == 7) return 6.0/16.0;
-  if (idx == 8) return 3.0/16.0;    if (idx == 9) return 11.0/16.0;
-  if (idx == 10) return 1.0/16.0;   if (idx == 11) return 9.0/16.0;
-  if (idx == 12) return 15.0/16.0;  if (idx == 13) return 7.0/16.0;
-  if (idx == 14) return 13.0/16.0;
-  return 5.0/16.0;
-}
-
-void main() {
-  vec2 uv = v_uv;
-
-  // Ripple (slow sinusoidal UV warp)
-  if (u_pp_ripple > 0.5) {
-    uv.x += sin(uv.y * 20.0 + u_time * 0.04) * 0.02;
-    uv.y += cos(uv.x * 20.0 + u_time * 0.04) * 0.02;
-    uv = clamp(uv, 0.0, 1.0);
-  }
-
-  vec3 col = texture2D(u_texture, uv).rgb;
-
-  // Sharpen (unsharp mask via 4-neighbor texture sampling)
-  if (u_pp_sharpen > 0.5) {
-    vec2 texel = vec2(1.0 / u_canvas_size);
-    vec3 cN = texture2D(u_texture, uv + vec2(0.0, texel.y)).rgb;
-    vec3 cS = texture2D(u_texture, uv - vec2(0.0, texel.y)).rgb;
-    vec3 cE = texture2D(u_texture, uv + vec2(texel.x, 0.0)).rgb;
-    vec3 cW = texture2D(u_texture, uv - vec2(texel.x, 0.0)).rgb;
-    vec3 blur = (cN + cS + cE + cW) * 0.25;
-    col = col + (col - blur) * 1.2;
-  }
-
-  // Edge detect (gradient magnitude from neighbors)
-  if (u_pp_edge_detect > 0.5) {
-    vec2 texel = vec2(1.0 / u_canvas_size);
-    vec3 cN = texture2D(u_texture, uv + vec2(0.0, texel.y)).rgb;
-    vec3 cS = texture2D(u_texture, uv - vec2(0.0, texel.y)).rgb;
-    vec3 cE = texture2D(u_texture, uv + vec2(texel.x, 0.0)).rgb;
-    vec3 cW = texture2D(u_texture, uv - vec2(texel.x, 0.0)).rgb;
-    vec3 edgeH = abs(cE - cW);
-    vec3 edgeV = abs(cN - cS);
-    col = sqrt(edgeH * edgeH + edgeV * edgeV) * 3.0;
-  }
-
-  vec2 pixCoord = uv * u_canvas_size;
-
-  // Bayer ordered dithering
-  if (u_pp_dither_bayer > 0.5) {
-    vec2 ditherCoord = floor(pixCoord / u_pp_dither_bayer_scale);
-    float dith = pp_bayerMatrix(ditherCoord) - 0.5;
-    col += dith * (0.06 + u_pp_dither_bayer_scale * 0.015);
-  }
-
-  // Noise dithering (random threshold per cell)
-  if (u_pp_dither_noise > 0.5) {
-    vec2 cell = floor(pixCoord / u_pp_dither_noise_scale);
-    float noise = pp_fract2(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
-    col += noise * (0.08 + u_pp_dither_noise_scale * 0.012);
-  }
-
-  // Line dithering (horizontal scanline pattern)
-  if (u_pp_dither_lines > 0.5) {
-    float row = floor(pixCoord.y / u_pp_dither_lines_scale);
-    float lum = dot(col, vec3(0.299, 0.587, 0.114));
-    float pattern = mod(row, 2.0);
-    float strength = 0.06 + u_pp_dither_lines_scale * 0.02;
-    col += (pattern - 0.5) * strength * (1.0 - lum * 0.5);
-  }
-
-  // Posterize (reduce to N color levels)
-  if (u_pp_posterize > 0.5) {
-    float levels = 6.0;
-    col = floor(col * levels + 0.5) / levels;
-  }
-
-  // Film grain
-  if (u_pp_grain > 0.5) {
-    float grain = pp_fract2(sin(dot(pixCoord + u_time, vec2(12.9898, 78.233))) * 43758.5453);
-    col += (grain - 0.5) * 0.12;
-  }
-
-  // Halftone (dot pattern based on luminance)
-  if (u_pp_halftone > 0.5) {
-    float dotSize = u_pp_halftone_scale;
-    vec2 cell = floor(pixCoord / dotSize) * dotSize + dotSize * 0.5;
-    float dist = length(pixCoord - cell) / (dotSize * 0.5);
-    float lum = dot(col, vec3(0.299, 0.587, 0.114));
-    col = mix(vec3(0.0), col, step(dist, lum));
-  }
-
-  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-}`;
-
 // Isometric WebGL resources
 let isoShaderProgram = null;
 let isoVBO = null, isoIBO = null;
@@ -1458,97 +1335,6 @@ let isoAttrLocs = {};
 const ISO_MAX_GRID = 256;
 const ISO_STRIDE = 6; // floats per vertex: x, y, depth, r, g, b
 let isoUintExt = null;
-
-// FBO resources for isometric post-FX
-let isoFBO = null, isoFBOTexture = null, isoDepthRB = null;
-let isoFBOSize = 0; // tracks allocated size for resize detection
-let ppShaderProgram = null, ppULocations = {};
-
-function initIsoFBO() {
-  if (!gl) return false;
-
-  isoFBOTexture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, isoFBOTexture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, DISPLAY_SIZE, DISPLAY_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-
-  isoDepthRB = gl.createRenderbuffer();
-  gl.bindRenderbuffer(gl.RENDERBUFFER, isoDepthRB);
-  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, DISPLAY_SIZE, DISPLAY_SIZE);
-
-  isoFBO = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, isoFBO);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, isoFBOTexture, 0);
-  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, isoDepthRB);
-
-  let status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-  if (status !== gl.FRAMEBUFFER_COMPLETE) {
-    console.error('FBO incomplete:', status);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    return false;
-  }
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-  isoFBOSize = DISPLAY_SIZE;
-  return true;
-}
-
-function resizeIsoFBO(size) {
-  if (!isoFBOTexture || !isoDepthRB) return;
-  gl.bindTexture(gl.TEXTURE_2D, isoFBOTexture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-  gl.bindRenderbuffer(gl.RENDERBUFFER, isoDepthRB);
-  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, size, size);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-  isoFBOSize = size;
-}
-
-function initPostFXShader() {
-  if (!gl) return false;
-
-  let vs = gl.createShader(gl.VERTEX_SHADER);
-  gl.shaderSource(vs, VERT_SRC);
-  gl.compileShader(vs);
-  if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-    console.error('PP Vertex:', gl.getShaderInfoLog(vs));
-    return false;
-  }
-
-  let fs = gl.createShader(gl.FRAGMENT_SHADER);
-  gl.shaderSource(fs, PP_FRAG_SRC);
-  gl.compileShader(fs);
-  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-    console.error('PP Fragment:', gl.getShaderInfoLog(fs));
-    return false;
-  }
-
-  ppShaderProgram = gl.createProgram();
-  gl.attachShader(ppShaderProgram, vs);
-  gl.attachShader(ppShaderProgram, fs);
-  gl.linkProgram(ppShaderProgram);
-  if (!gl.getProgramParameter(ppShaderProgram, gl.LINK_STATUS)) {
-    console.error('PP Link:', gl.getProgramInfoLog(ppShaderProgram));
-    return false;
-  }
-
-  let ppNames = ['u_texture',
-    'u_pp_dither_bayer','u_pp_dither_bayer_scale',
-    'u_pp_dither_noise','u_pp_dither_noise_scale',
-    'u_pp_dither_lines','u_pp_dither_lines_scale',
-    'u_pp_posterize','u_pp_grain',
-    'u_pp_sharpen','u_pp_halftone','u_pp_halftone_scale',
-    'u_pp_edge_detect','u_pp_ripple',
-    'u_time','u_canvas_size'];
-  for (let n of ppNames) ppULocations[n] = gl.getUniformLocation(ppShaderProgram, n);
-
-  return true;
-}
 
 function initIsoWebGL() {
   if (!gl) return false;
@@ -1691,8 +1477,6 @@ function setup() {
     return;
   }
   initIsoWebGL();
-  initIsoFBO();
-  initPostFXShader();
 
   // Generate deterministic initial state from hash
   generateFeatures();
@@ -2561,23 +2345,6 @@ function renderIsometricWebGL(palette, gridRes, heightAmt) {
     glCanvas.width = DISPLAY_SIZE;
     glCanvas.height = DISPLAY_SIZE;
   }
-
-  // Check if any post-FX is active
-  let useFBO = ppShaderProgram && isoFBO && (
-    ppDitherBayer || ppDitherNoise || ppDitherLines ||
-    ppPosterize || ppGrain || ppSharpen || ppHalftone ||
-    ppEdgeDetect || ppRipple
-  );
-
-  // Resize FBO if needed
-  if (useFBO && isoFBOSize !== DISPLAY_SIZE) {
-    resizeIsoFBO(DISPLAY_SIZE);
-  }
-
-  // Pass 1: Render iso mesh (to FBO if post-FX active, else direct)
-  if (useFBO) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, isoFBO);
-  }
   gl.viewport(0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
 
   // Clear with contrasting background
@@ -2610,53 +2377,15 @@ function renderIsometricWebGL(palette, gridRes, heightAmt) {
   let indexType = isoUintExt ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
   gl.drawElements(gl.TRIANGLES, numCells * 6, indexType, 0);
 
-  // Disable depth test and iso attributes
+  // Disable depth test (not needed for 2D view)
   gl.disable(gl.DEPTH_TEST);
+
+  // Disable iso attributes so they don't interfere with 2D shader
   gl.disableVertexAttribArray(isoAttrLocs.a_pos);
   gl.disableVertexAttribArray(isoAttrLocs.a_depth);
   gl.disableVertexAttribArray(isoAttrLocs.a_color);
 
-  // Pass 2: Apply post-FX from FBO texture to screen
-  if (useFBO) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
-    gl.useProgram(ppShaderProgram);
-
-    // Bind FBO texture
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, isoFBOTexture);
-    gl.uniform1i(ppULocations.u_texture, 0);
-
-    // Bind fullscreen quad
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    let ppAPos = gl.getAttribLocation(ppShaderProgram, 'a_pos');
-    gl.enableVertexAttribArray(ppAPos);
-    gl.vertexAttribPointer(ppAPos, 2, gl.FLOAT, false, 0, 0);
-
-    // Upload post-FX uniforms
-    gl.uniform1f(ppULocations.u_pp_dither_bayer, ppDitherBayer ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_dither_bayer_scale, [1, 2, 4, 8][ppDitherBayerScale]);
-    gl.uniform1f(ppULocations.u_pp_dither_noise, ppDitherNoise ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_dither_noise_scale, [1, 2, 4, 8][ppDitherNoiseScale]);
-    gl.uniform1f(ppULocations.u_pp_dither_lines, ppDitherLines ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_dither_lines_scale, [1, 2, 4, 8][ppDitherLinesScale]);
-    gl.uniform1f(ppULocations.u_pp_posterize, ppPosterize ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_grain, ppGrain ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_sharpen, ppSharpen ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_halftone, ppHalftone ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_halftone_scale, [4, 6, 10, 16][ppHalftoneScale]);
-    gl.uniform1f(ppULocations.u_pp_edge_detect, ppEdgeDetect ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_pp_ripple, ppRipple ? 1.0 : 0.0);
-    gl.uniform1f(ppULocations.u_time, animTime * 100.0);
-    gl.uniform1f(ppULocations.u_canvas_size, DISPLAY_SIZE);
-
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.disableVertexAttribArray(ppAPos);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-  }
-
   // Copy glCanvas to p5.js canvas
-  drawingContext.imageSmoothingEnabled = smoothUpscale;
   drawingContext.drawImage(glCanvas, 0, 0, DISPLAY_SIZE, DISPLAY_SIZE);
 }
 
