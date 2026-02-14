@@ -14,7 +14,8 @@ Your job: Analyze code to extract actionable technical insights about how genera
 <knowledge_reference>
 Reference these expertise files:
 - `.claude/expertise/generative-art-knowledge.md` - Known techniques and patterns
-- `.claude/expertise/hash-randomness.md` - PRNG implementations
+- `.claude/expertise/hash-randomness.md` - PRNG implementations (sfc32, Base58 seeding)
+- `.claude/expertise/fxhash-platform.md` - fxhash API, SDK, params, capture contexts
 </knowledge_reference>
 
 <analysis_dimensions>

@@ -95,10 +95,10 @@ p5.js projects typically have setup() for initialization and draw() for renderin
 Three.js projects create a Scene, Camera, Renderer, and add Meshes with Geometries and Materials. Use requestAnimationFrame for animation.
 
 ### Feature Declaration
-Art Blocks: tokenData.features object. fxhash: $fx.features({ name: value }) call. Features determine rarity and visual properties.
+Art Blocks: tokenData.features object. fxhash: $fx.features({ name: value }) call (once, after page load). Features determine rarity and visual properties.
 
 ### fxhash Specifics
-fxhash projects are stored on IPFS. Scripts may include HTML wrapper. Call fxpreview() when ready for thumbnail capture.
+fxhash is multichain (Tezos + Ethereum + Base). Projects stored on IPFS or ONCHFS (on-chain file system). Use `$fx.rand()` for randomness (SFC32 seeded from Base58 hash). Call `$fx.preview()` when ready for thumbnail capture. `$fx.params([])` enables collector customization. SDK: `@fxhash/project-sdk`. CLI: `npx fxhash create/dev/build`. See `.claude/expertise/fxhash-platform.md` for complete reference.
 
 ### Spectral Color Mixing
 Physically-based color mixing using spectral reflectance curves instead of RGB blending. Produces realistic pigment behavior (blue + yellow = green, not gray). Implemented via WebGL shaders. Used in projects like Hatches for watercolor blending effects.

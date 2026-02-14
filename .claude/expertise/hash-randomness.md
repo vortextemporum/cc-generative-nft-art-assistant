@@ -67,24 +67,82 @@ function mulberry32(a) {
 
 ## fxhash Implementation
 
-fxhash provides `fxrand()` as a built-in deterministic random function seeded from the `fxhash` string.
+fxhash provides `$fx.rand()` (and legacy `fxrand()`) as a built-in SFC32 PRNG seeded from the Base58 `fxhash` string.
+
+### How the SDK Seeds SFC32
+
+The `@fxhash/project-sdk` (`fxhash.min.js`) performs these steps:
+1. Decode the Base58 hash string to a BigInt
+2. Extract 4 x 32-bit integer seeds from the BigInt
+3. Initialize SFC32 with those 4 seeds
+
+```javascript
+// Internal implementation of fxhash SDK PRNG seeding
+const alphabet = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
+const b58dec = (str) => [...str].reduce((acc, c) =>
+    acc * 58n + BigInt(alphabet.indexOf(c)), 0n);
+const fxhashDec = b58dec(fxhash); // fxhash is the 51-char Base58 string
+
+const sfc32 = (a, b, c, d) => {
+  return () => {
+    a |= 0; b |= 0; c |= 0; d |= 0;
+    let t = (a + b | 0) + d | 0;
+    d = d + 1 | 0;
+    a = b ^ b >>> 9;
+    b = c + (c << 3) | 0;
+    c = c << 21 | c >>> 11;
+    c = c + t | 0;
+    return (t >>> 0) / 4294967296;
+  };
+};
+
+const fxrand = sfc32(
+  Number(fxhashDec & 0xFFFFFFFFn),
+  Number((fxhashDec >> 32n) & 0xFFFFFFFFn),
+  Number((fxhashDec >> 64n) & 0xFFFFFFFFn),
+  Number((fxhashDec >> 96n) & 0xFFFFFFFFn)
+);
+```
 
 ### Basic Usage
 ```javascript
-// fxrand() returns 0-1, already seeded from fxhash
-let value = fxrand();
+// Modern API (recommended)
+const R = $fx.rand;
+let value = R();           // Returns [0, 1)
+R.reset();                 // Reset PRNG to initial state
 
-// Helper functions
-function randInt(min, max) {
-    return Math.floor(fxrand() * (max - min + 1)) + min;
+// Legacy API (still works)
+let value2 = fxrand();     // Same PRNG
+
+// Minter-seeded PRNG (for minter-dependent features)
+let minterValue = $fx.randminter();  // Seeded from collector wallet address
+$fx.randminter.reset();              // Reset minter PRNG
+```
+
+### Helper Functions
+```javascript
+const R = $fx.rand;
+
+function rnd(min = 0, max = 1) {
+    return min + R() * (max - min);
 }
-
-function randChoice(arr) {
-    return arr[Math.floor(fxrand() * arr.length)];
+function rndInt(min, max) {
+    return Math.floor(rnd(min, max + 1));
 }
-
-function randBool(probability = 0.5) {
-    return fxrand() < probability;
+function rndChoice(arr) {
+    return arr[Math.floor(R() * arr.length)];
+}
+function rndBool(probability = 0.5) {
+    return R() < probability;
+}
+function rollRarity(...options) {
+    const roll = R();
+    let cumulative = 0;
+    for (const opt of options) {
+        cumulative += opt.prob;
+        if (roll < cumulative) return opt.value;
+    }
+    return options[options.length - 1].value;
 }
 ```
 
@@ -92,13 +150,24 @@ function randBool(probability = 0.5) {
 ```javascript
 // Declare features for fxhash gallery
 $fx.features({
-    "Background": randChoice(["Light", "Dark", "Gradient"]),
-    "Complexity": randInt(1, 5),
-    "Has Particles": randBool(0.3)
+    "Background": rndChoice(["Light", "Dark", "Gradient"]),
+    "Complexity": rndInt(1, 5),
+    "Has Particles": rndBool(0.3)
 });
 
 // Call when render is complete for thumbnail capture
 $fx.preview();
+```
+
+### Open-Form Randomness (Lineage)
+```javascript
+// For open-form projects with evolution lineage
+$fx.lineage     // string[] - array of parent hashes + current hash
+$fx.depth       // number - count of parents
+$fx.randAt(n)   // PRNG seeded by lineage hash at depth n
+
+// Custom PRNG from any hash
+$fx.createFxRandom(hash)  // Returns independent PRNG function
 ```
 
 ### Custom PRNG (if needed)
@@ -113,22 +182,26 @@ function createPRNG(seed) {
     return mulberry32(h);
 }
 
-let rand1 = createPRNG(fxhash + "colors");
-let rand2 = createPRNG(fxhash + "shapes");
+let rand1 = createPRNG($fx.hash + "colors");
+let rand2 = createPRNG($fx.hash + "shapes");
 ```
 
 ## Best Practices
 
 ### Do
 - Always use deterministic PRNG, never `Math.random()`
-- Create helper functions (randInt, randChoice, etc.)
+- Use `$fx.rand()` (fxhash) or sfc32 from `tokenData.hash` (Art Blocks)
+- Create helper functions (rndInt, rndChoice, etc.)
 - Test with multiple hashes to ensure variety
 - Document which random calls affect which features
+- Call `$fx.features()` once after all features are determined
+- Animation can use `noise()` (Perlin) or math functions that don't consume the PRNG
 
 ### Don't
-- Call random functions in draw() for static art (call all in setup())
+- Call random functions in `draw()` for static art (call all in `setup()`)
 - Mix PRNG implementations inconsistently
-- Assume hash distribution is uniform (it is, but verify your mapping)
+- Use `Math.random()` for any deterministic output
+- Modify the fxhash SDK (`fxhash.min.js`)
 
 ## Testing Determinism
 
@@ -147,15 +220,48 @@ function testDeterminism(hash) {
     console.log("Determinism verified");
     return true;
 }
+
+// fxhash: use $fx.rand.reset() to verify
+function testFxhashDeterminism() {
+    const values1 = [];
+    for (let i = 0; i < 100; i++) values1.push($fx.rand());
+    $fx.rand.reset();
+    for (let i = 0; i < 100; i++) {
+        if ($fx.rand() !== values1[i]) {
+            console.error("Non-deterministic at iteration", i);
+            return false;
+        }
+    }
+    console.log("Determinism verified");
+    return true;
+}
 ```
 
 ## Common Hash Values for Testing
 
 ```javascript
-const TEST_HASHES = [
-    "0x0000000000000000000000000000000000000000000000000000000000000000", // All zeros
-    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", // All ones
-    "0x8b7df143d91a8d3f8f8a9c0a6a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b", // Random
-    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef", // Sequential
+// Art Blocks test hashes
+const AB_TEST_HASHES = [
+    "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "0x8b7df143d91a8d3f8f8a9c0a6a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b",
+    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 ];
+
+// fxhash test hashes (Base58, starts with "oo")
+const FX_TEST_HASHES = [
+    "ooXnGtQiUMfyKL2AHq6c13E3tg7fxUKx1eTD4UoxFdVWBR1YuE8",
+    "oo111111111111111111111111111111111111111111111111111",
+    "oozzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+];
+
+// Generate random fxhash for testing
+function generateFxhash() {
+    const base58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    let hash = 'oo';
+    for (let i = 0; i < 49; i++) {
+        hash += base58chars[Math.floor(Math.random() * base58chars.length)];
+    }
+    return hash;
+}
 ```

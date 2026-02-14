@@ -15,6 +15,7 @@ Your job: Implement platform components following established patterns from Art 
 Reference these expertise files:
 - `.claude/expertise/generative-art-knowledge.md` - Platform patterns, notable projects
 - `.claude/expertise/hash-randomness.md` - Hash derivation for contracts
+- `.claude/expertise/fxhash-platform.md` - Complete fxhash API, SDK, params, multichain architecture
 - `platform/CLAUDE.md` - Platform builder specifics
 </knowledge_reference>
 
@@ -27,7 +28,7 @@ Reference these expertise files:
 
 **Reference Platforms:**
 - Art Blocks: Curated, high-value, Ethereum mainnet
-- fxhash: Open, Tezos-based, IPFS storage
+- fxhash: Open, multichain (Tezos + Ethereum + Base), IPFS/ONCHFS storage, `@fxhash/project-sdk`, fx(params) collector customization
 - Prohibition: L2-based, lower gas costs
 
 **Tech Stack:**

@@ -2,18 +2,28 @@
 
 ## Overview
 
-**fx(hash)** is an open generative art platform originally built on **Tezos**, now multichain supporting **Ethereum** (as of fxhash 2.0). Unlike Art Blocks which stores scripts on-chain, fxhash stores complete project files on **IPFS**.
+**fx(hash)** is an open generative art platform supporting **Ethereum**, **Tezos**, and **Base** blockchains. Unlike Art Blocks which stores scripts on-chain, fxhash stores complete project files on **IPFS** or **ONCHFS** (on-chain file system).
+
+### Platform Evolution
+- **fxhash 1.0**: Tezos-only, basic PRNG snippet
+- **fxhash 2.0** (late 2023): Added Ethereum support, fx(params), mint tickets
+- **Current**: Multichain (Tezos + Ethereum + Base), `@fxhash/project-sdk`, ONCHFS, open-form genart, Art Coins
 
 ## Key Differences from Art Blocks
 
 | Aspect | Art Blocks | fx(hash) |
 |--------|------------|----------|
-| **Blockchain** | Ethereum | Tezos + Ethereum (multichain) |
-| **Script Storage** | On-chain (contract) | IPFS (complete HTML/JS) |
+| **Blockchain** | Ethereum | Tezos + Ethereum + Base |
+| **Script Storage** | On-chain (contract) | IPFS or ONCHFS |
 | **Hash Format** | 0x + 64 hex chars | Base58 (starts with "oo", ~51 chars) |
-| **PRNG** | Custom per project | SFC32 via fxrand() |
-| **Curation** | Curated/Playground/Factory | Open platform (anyone can mint) |
-| **Gas Costs** | Higher (Ethereum) | Lower (Tezos) |
+| **PRNG** | Custom per project | SFC32 via `$fx.rand()` (provided by SDK) |
+| **Features** | `tokenData.features = {}` | `$fx.features({})` |
+| **Preview** | Automatic | `$fx.preview()` call required |
+| **Params** | N/A | `$fx.params([])` for collector customization |
+| **Curation** | Curated/Playground/Factory | Open platform |
+| **Platform Fee** | 10% | 2.5% (Tezos), 10% (Ethereum/Base) |
+| **SDK** | N/A | `@fxhash/project-sdk` npm package |
+| **CLI** | N/A | `@fxhash/cli` (`npx fxhash create/dev/build`) |
 
 ---
 
@@ -30,7 +40,7 @@ https://api.fxhash.xyz/graphql
 ### IPFS Gateways
 ```
 https://gateway.fxhash.xyz/ipfs/{CID}
-https://gateway.fxhash2.xyz/ipfs/{CID}  (safe/alternate)
+https://gateway.fxhash2.xyz/ipfs/{CID}
 ```
 
 ### Media & File APIs
@@ -121,50 +131,158 @@ query GetArtistProjects($userId: String!) {
 }
 ```
 
-### Get Minted Iterations (objkts)
+---
 
-```graphql
-query GetObjkts($tokenId: Float!, $take: Int) {
-  generativeToken(id: $tokenId) {
-    objkts(take: $take) {
-      id
-      iteration
-      generationHash
-      owner {
-        id
-        name
-      }
-      createdAt
-    }
-  }
-}
+## The $fx API (Complete Reference)
+
+### Core Properties & Methods
+
+| API | Type | Description |
+|-----|------|-------------|
+| `$fx.hash` | string | 51-char Base58 hash (starts with "oo") |
+| `$fx.rand()` | () => number | SFC32 PRNG seeded from hash, returns [0, 1) |
+| `$fx.rand.reset()` | () => void | Reset PRNG to initial state |
+| `$fx.minter` | string | Collector's wallet address |
+| `$fx.randminter()` | () => number | PRNG seeded from minter address |
+| `$fx.randminter.reset()` | () => void | Reset minter PRNG |
+| `$fx.context` | string | `"standalone"`, `"capture"`, `"fast-capture"`, `"minting"` |
+| `$fx.iteration` | number | Iteration number of collected token |
+| `$fx.isPreview` | boolean | True during capture execution |
+| `$fx.preview()` | () => void | Trigger preview/thumbnail capture |
+| `$fx.features(obj)` | (obj) => void | Register features (call once) |
+| `$fx.getFeature(name)` | (string) => any | Get single feature value |
+| `$fx.getFeatures()` | () => object | Get all features |
+| `$fx.params(defs)` | (array) => void | Define collector parameters |
+| `$fx.getParam(id)` | (string) => any | Get parameter value |
+| `$fx.getParams()` | () => object | Get all parameter values |
+| `$fx.getRawParam(id)` | (string) => string | Get raw parameter bytes |
+| `$fx.getRawParams()` | () => object | Get all raw values |
+| `$fx.getDefinitions()` | () => array | Get parameter definitions |
+| `$fx.on(event, handler)` | (string, fn) => fn | Register event listener (returns unsubscribe) |
+| `$fx.emit(event, data)` | (string, any) => void | Emit event |
+| `$fx.stringifyParams(defs)` | (defs) => string | JSON.stringify with bigint support |
+
+### Open-Form API
+
+| API | Type | Description |
+|-----|------|-------------|
+| `$fx.lineage` | string[] | Parent hashes + current hash |
+| `$fx.depth` | number | Number of parents |
+| `$fx.randAt(depth)` | (number) => number | PRNG at specific lineage depth |
+| `$fx.createFxRandom(hash)` | (string) => fn | Create custom PRNG from hash |
+
+### fx(params) Parameter Types
+
+| Type | JS Type | Options | Controller |
+|------|---------|---------|------------|
+| `number` | float64 | `min`, `max`, `step` | Slider + text |
+| `bigint` | BigInt | `min`, `max` | Slider + text |
+| `boolean` | boolean | none | Checkbox |
+| `color` | object | none | Color picker |
+| `string` | string | `minLength`, `maxLength` (max 64) | Text input |
+| `select` | string | `options: string[]` (max 256) | Dropdown |
+| `bytes` | Uint8Array | `length` (required) | Code-driven only |
+
+### Parameter Update Modes
+
+| Mode | Source | Behavior |
+|------|--------|----------|
+| `page-reload` | fxhash UI | Full page refresh |
+| `sync` | fxhash UI | Sends event, no refresh |
+| `code-driven` | Code only | Via `$fx.emit()` |
+
+---
+
+## SFC32 PRNG Implementation
+
+```javascript
+// How fxhash seeds SFC32 from Base58 hash
+const alphabet = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
+const b58dec = (str) => [...str].reduce((acc, c) =>
+    acc * 58n + BigInt(alphabet.indexOf(c)), 0n);
+const fxhashDec = b58dec(fxhash);
+
+const sfc32 = (a, b, c, d) => {
+  return () => {
+    a |= 0; b |= 0; c |= 0; d |= 0;
+    let t = (a + b | 0) + d | 0;
+    d = d + 1 | 0;
+    a = b ^ b >>> 9;
+    b = c + (c << 3) | 0;
+    c = c << 21 | c >>> 11;
+    c = c + t | 0;
+    return (t >>> 0) / 4294967296;
+  };
+};
+
+const fxrand = sfc32(
+  Number(fxhashDec & 0xFFFFFFFFn),
+  Number((fxhashDec >> 32n) & 0xFFFFFFFFn),
+  Number((fxhashDec >> 64n) & 0xFFFFFFFFn),
+  Number((fxhashDec >> 96n) & 0xFFFFFFFFn)
+);
 ```
 
 ---
 
-## Understanding fxhash Architecture
+## Project Setup
 
-### How It Works
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        fx(hash) Flow                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  1. Artist uploads project (ZIP) → Stored on IPFS                   │
-│                     ↓                                                │
-│  2. Project published as Generative Token on Tezos                  │
-│                     ↓                                                │
-│  3. Collector mints → Transaction hash generated                    │
-│                     ↓                                                │
-│  4. Hash passed to generator as URL parameter: ?fxhash=oo...        │
-│                     ↓                                                │
-│  5. fxhash snippet seeds PRNG → Deterministic output                │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+### CLI Workflow
+```bash
+npm i -g fxhash          # Install CLI globally
+npx fxhash create        # Create new project (prompts for template)
+npx fxhash dev           # Start fxlens dev environment
+npx fxhash build         # Build upload.zip for publishing
+npx fxhash eject         # Convert to webpack project (irreversible)
 ```
 
-### Metadata Structure
+### Project Structure
+```
+project/
+├── index.html          # Entry point (REQUIRED)
+├── index.js            # Artwork script
+├── fxhash.min.js       # @fxhash/project-sdk (DO NOT MODIFY)
+├── style.css           # Optional styling
+└── libraries/          # Local libraries (p5.js, Three.js, etc.)
+```
+
+### Critical Rules
+- ZIP file must be under **15 MB**
+- All resource paths must be **relative** (`./path/to/file`)
+- **No CDN links** or external network requests
+- Must be **responsive** to viewport resize
+- Must be **deterministic**: same hash = same output always
+- **Do not modify** `fxhash.min.js`
+
+---
+
+## Capture & Preview
+
+### Capture Modes
+- **CANVAS**: Capture specific `<canvas>` element (via CSS selector)
+- **VIEWPORT**: Capture entire browser window
+
+### Trigger Methods
+- **FX_PREVIEW**: Wait for `$fx.preview()` call (programmatic)
+- **DELAY**: Auto-capture after specified duration (max 300 seconds)
+
+### Execution Contexts
+```javascript
+// $fx.context values:
+"standalone"   // Normal browser viewing
+"capture"      // Backend generating preview image/GIF
+"fast-capture" // Quick preliminary preview (max 1 sec, no GPU/GIF)
+"minting"      // Running inside fxparams minting interface
+```
+
+### Advanced
+- **GPU acceleration**: For GPU-intensive projects (slow startup)
+- **GIF captures**: Multi-frame recording at specified intervals
+- **Fast-capture**: Quick placeholder before full capture
+
+---
+
+## Metadata Structure
 
 **Generative Token Metadata:**
 ```json
@@ -185,197 +303,46 @@ query GetObjkts($tokenId: Float!, $take: Int) {
 }
 ```
 
-**Iteration (objkt) Metadata:**
-```json
-{
-  "name": "Project Name #123",
-  "iterationHash": "ooUniqueHash...",
-  "description": "...",
-  "generatorUri": "ipfs://Qm.../",
-  "artifactUri": "ipfs://Qm.../?fxhash=ooUniqueHash",
-  "displayUri": "ipfs://Qm.../preview.png",
-  "thumbnailUri": "ipfs://Qm.../thumb.png",
-  "attributes": [
-    { "name": "Feature1", "value": "ValueA" }
-  ]
-}
-```
+---
+
+## Marketplace & Economics
+
+### Primary Market
+- **Fixed price**: Constant throughout sale
+- **Dutch auction**: Decreasing price to minimum
+- **Dutch auction with rebates**: Early buyers refunded difference
+
+### Platform Fees
+- **Tezos**: 2.5% primary split
+- **Ethereum/Base**: 10% primary split
+- **Royalties**: 0-25% on secondary (artist-determined)
+
+### Mint Tickets (fx(params) projects)
+- Collectors receive transferable tickets instead of immediate artwork
+- Grace period for exploration before Harberger tax applies
+- Yearly tax ~51% of ticket price
+- Unpaid taxes lead to foreclosure auction
+
+### Payment Methods
+- Wallet minting (primary method)
+- Credit card via Wert (5% processing fee + gas)
 
 ---
 
-## The fxhash Code Snippet
+## ONCHFS (On-Chain File System)
 
-Every fxhash project must include the fxhash snippet which provides:
-
-### Core Variables
-
-```javascript
-// Injected by fxhash at mint time
-let fxhash = "ooXnGtQiUMfyKL2AHq6c13E3tg7fxUKx1eTD4UoxFdVWBR1YuE8";
-let fxhashTrunc = fxhash.slice(0, 12);  // Short version
-```
-
-### PRNG Function (SFC32)
-
-```javascript
-// fxrand() - Seeded PRNG returning [0, 1)
-let fxrand = (() => {
-  let alphabet = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
-  let b58dec = (str) => [...str].reduce((acc, c) => acc * 58n + BigInt(alphabet.indexOf(c)), 0n);
-  let fxhashDec = b58dec(fxhash);
-  
-  let sfc32 = (a, b, c, d) => {
-    return () => {
-      a |= 0; b |= 0; c |= 0; d |= 0;
-      let t = (a + b | 0) + d | 0;
-      d = d + 1 | 0;
-      a = b ^ b >>> 9;
-      b = c + (c << 3) | 0;
-      c = c << 21 | c >>> 11;
-      c = c + t | 0;
-      return (t >>> 0) / 4294967296;
-    }
-  };
-  
-  return sfc32(
-    Number(fxhashDec & 0xFFFFFFFFn),
-    Number((fxhashDec >> 32n) & 0xFFFFFFFFn),
-    Number((fxhashDec >> 64n) & 0xFFFFFFFFn),
-    Number((fxhashDec >> 96n) & 0xFFFFFFFFn)
-  );
-})();
-```
-
-### Modern $fx API
-
-```javascript
-$fx.hash        // The full hash string
-$fx.rand()      // PRNG function [0, 1)
-$fx.minter      // Minter's wallet address
-$fx.context     // "standalone" | "capture" | "minting"
-$fx.isPreview   // true during capture
-
-// Feature declaration
-$fx.features({
-  "Palette": "Warm",
-  "Density": 0.75,
-  "Mode": "Flow"
-});
-
-// fx(params) - collector-modifiable parameters
-$fx.params([
-  { id: "color", name: "Color", type: "color", default: "#ff0000" },
-  { id: "count", name: "Count", type: "number", default: 50, options: { min: 1, max: 100 } }
-]);
-
-// Capture trigger
-$fx.preview();  // Call when ready for capture
-```
+ONCHFS is a permissionless content-addressable file system fully stored on-chain:
+- Alternative to IPFS for true on-chain permanence
+- Files chunked and stored in smart contract storage
+- Higher cost but fully decentralized
 
 ---
 
-## Running fxhash Projects Locally
+## Key Tezos Contracts
 
-### Method 1: Direct IPFS Loading
-
-```javascript
-// Get the generator URI from API
-const project = await fetchProject(tokenId);
-const generatorUrl = `https://gateway.fxhash.xyz/ipfs/${project.generativeUri.slice(7)}`;
-
-// Load with hash parameter
-const hash = generateRandomFxhash();
-const liveUrl = `${generatorUrl}?fxhash=${hash}`;
-
-// Display in iframe
-iframe.src = liveUrl;
-```
-
-### Method 2: Local Emulation
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <script>
-    // Simulate fxhash environment
-    let fxhash = "ooRandomHash123456789...";
-    
-    // SFC32 PRNG implementation
-    let alphabet = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
-    let b58dec = (str) => [...str].reduce((acc, c) => acc * 58n + BigInt(alphabet.indexOf(c)), 0n);
-    let fxhashDec = b58dec(fxhash);
-    
-    let sfc32 = (a, b, c, d) => () => {
-      a |= 0; b |= 0; c |= 0; d |= 0;
-      let t = (a + b | 0) + d | 0;
-      d = d + 1 | 0;
-      a = b ^ b >>> 9;
-      b = c + (c << 3) | 0;
-      c = c << 21 | c >>> 11;
-      c = c + t | 0;
-      return (t >>> 0) / 4294967296;
-    };
-    
-    let fxrand = sfc32(
-      Number(fxhashDec & 0xFFFFFFFFn),
-      Number((fxhashDec >> 32n) & 0xFFFFFFFFn),
-      Number((fxhashDec >> 64n) & 0xFFFFFFFFn),
-      Number((fxhashDec >> 96n) & 0xFFFFFFFFn)
-    );
-    
-    // $fx object
-    let $fx = {
-      hash: fxhash,
-      rand: fxrand,
-      minter: "tz1simulated...",
-      isPreview: false,
-      preview: () => {},
-      features: (f) => { $fx._features = f; },
-      getFeature: (n) => $fx._features?.[n],
-      getFeatures: () => $fx._features
-    };
-  </script>
-  
-  <!-- Load p5.js or other dependencies -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
-  
-  <script>
-    // Artist's code goes here
-    function setup() {
-      createCanvas(800, 800);
-      background(255);
-      
-      // Use fxrand() for randomness
-      for (let i = 0; i < 100; i++) {
-        fill(fxrand() * 255, fxrand() * 255, fxrand() * 255);
-        ellipse(fxrand() * width, fxrand() * height, 20, 20);
-      }
-      
-      // Declare features
-      $fx.features({
-        "Circle Count": 100
-      });
-    }
-  </script>
-</head>
-<body></body>
-</html>
-```
-
-### Generate Random fxhash
-
-```javascript
-function generateFxhash() {
-  const base58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  let hash = 'oo';
-  for (let i = 0; i < 49; i++) {
-    hash += base58chars[Math.floor(Math.random() * base58chars.length)];
-  }
-  return hash;
-}
-```
+| Contract | Address | Purpose |
+|----------|---------|---------|
+| Issuer V2 | `KT1BJC12dG17CVvPKJ1VYaNnaT5mzfnUTwXv` | Current issuer |
 
 ---
 
@@ -393,43 +360,6 @@ async function queryFxhash(query, variables = {}) {
   return (await response.json()).data;
 }
 
-// Get recent projects
-async function getProjects(take = 50) {
-  const query = `
-    query($take: Int) {
-      generativeTokens(take: $take, sort: { createdAt: DESC }) {
-        id
-        name
-        supply
-        price
-        generativeUri
-        author { name }
-      }
-    }
-  `;
-  return queryFxhash(query, { take });
-}
-
-// Get specific token
-async function getToken(id) {
-  const query = `
-    query($id: Float!) {
-      generativeToken(id: $id) {
-        id
-        name
-        generativeUri
-        metadata
-        objkts(take: 10) {
-          generationHash
-          iteration
-        }
-      }
-    }
-  `;
-  return queryFxhash(query, { id: parseFloat(id) });
-}
-
-// Convert IPFS URI to HTTP
 function ipfsToHttp(uri) {
   if (uri?.startsWith('ipfs://')) {
     return `https://gateway.fxhash.xyz/ipfs/${uri.slice(7)}`;
@@ -437,49 +367,27 @@ function ipfsToHttp(uri) {
   return uri;
 }
 
-module.exports = { queryFxhash, getProjects, getToken, ipfsToHttp };
+function generateFxhash() {
+  const base58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  let hash = 'oo';
+  for (let i = 0; i < 49; i++) {
+    hash += base58chars[Math.floor(Math.random() * base58chars.length)];
+  }
+  return hash;
+}
+
+module.exports = { queryFxhash, ipfsToHttp, generateFxhash };
 ```
-
----
-
-## Key Tezos Contracts
-
-| Contract | Address | Purpose |
-|----------|---------|---------|
-| Issuer V1 | `KT1XCoGnfupWk7Sp8536EfrxcP73LmT68Nyr` | Original issuer (deprecated) |
-| Issuer V2 | `KT1BJC12dG17CVvPKJ1VYaNnaT5mzfnUTwXv` | Current issuer contract |
-| Gentk V1 | Multiple | Minted iterations |
-| Gentk V2 | Multiple | Newer iterations |
-
----
-
-## Multichain (fxhash 2.0)
-
-Since late 2023, fxhash supports both Tezos and Ethereum:
-
-- **Same tools** work across both chains
-- **fx(params)** available on both
-- **On-chain minting** supported on both
-- **Artists choose** which chain per project
 
 ---
 
 ## Resources
 
 - **Website**: https://www.fxhash.xyz
+- **Documentation**: https://docs.fxhash.xyz
 - **API Playground**: https://api.fxhash.xyz/graphql
-- **Documentation**: https://www.fxhash.xyz/doc
 - **GitHub**: https://github.com/fxhash
 - **Boilerplate**: https://github.com/fxhash/fxhash-boilerplate
+- **SDK (npm)**: `@fxhash/project-sdk`
+- **CLI (npm)**: `@fxhash/cli`
 - **Discord**: https://discord.gg/fxhash
-
----
-
-## Summary
-
-1. **API**: Free GraphQL at `https://api.fxhash.xyz/graphql`
-2. **Storage**: Complete generators on IPFS (not on-chain scripts)
-3. **Hash**: Base58 starting with "oo" (~51 chars)
-4. **PRNG**: SFC32 algorithm via `fxrand()` or `$fx.rand()`
-5. **Preview**: Load generator URL with `?fxhash=` parameter
-6. **Multichain**: Works on Tezos and Ethereum

@@ -15,7 +15,8 @@ Your job: Create production-ready generative art sketches with proper hash-based
 Reference these expertise files for domain knowledge:
 - `.claude/expertise/generative-art-knowledge.md` - Platform stats, techniques, 28k+ projects
 - `.claude/expertise/sketch-standards.md` - Structure and requirements
-- `.claude/expertise/hash-randomness.md` - PRNG implementations (sfc32, mulberry32)
+- `.claude/expertise/hash-randomness.md` - PRNG implementations (sfc32, Base58 seeding)
+- `.claude/expertise/fxhash-platform.md` - Complete fxhash API, SDK, params, capture, multichain
 - `.claude/expertise/p5-brush-techniques.md` - p5.brush library reference
 </knowledge_reference>
 
@@ -53,8 +54,10 @@ All sketches must follow this structure:
 
 **Randomness:**
 - Hash-based sfc32 PRNG
-- Support tokenData.hash (Art Blocks) and fxhash formats
+- Art Blocks: seed from `tokenData.hash` (0x + 64 hex chars)
+- fxhash: use `$fx.rand()` from `@fxhash/project-sdk` (SFC32 seeded from Base58 hash)
 - All randomness must be deterministic from hash
+- fxhash also provides `$fx.minter`, `$fx.randminter()`, `$fx.context`
 
 **Features:**
 - Define 3-8 visual features

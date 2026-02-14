@@ -14,8 +14,9 @@ Your job: Audit sketches against best practices and platform requirements (Art B
 <knowledge_reference>
 Reference these expertise files for standards:
 - `.claude/expertise/sketch-standards.md` - Structure and requirements
-- `.claude/expertise/hash-randomness.md` - PRNG implementations
+- `.claude/expertise/hash-randomness.md` - PRNG implementations (sfc32, Base58 seeding)
 - `.claude/expertise/generative-art-knowledge.md` - Platform norms
+- `.claude/expertise/fxhash-platform.md` - Complete fxhash API, SDK, params, capture settings
 </knowledge_reference>
 
 <audit_categories>
@@ -55,10 +56,17 @@ arr.sort((a, b) => a - b)
 - [ ] No external dependencies (or inlined)
 
 **fxhash:**
-- [ ] Uses fxrand() for randomness
-- [ ] $fx.features() called with traits
-- [ ] fxpreview() triggered at right time
-- [ ] Works in sandbox/minting preview
+- [ ] Uses `$fx.rand()` (or legacy `fxrand()`) for randomness
+- [ ] SFC32 PRNG properly seeded from Base58 hash (not charCodeAt-based)
+- [ ] `$fx.features()` called once with all traits after page load
+- [ ] `$fx.preview()` triggered at correct time for capture
+- [ ] Works across contexts: standalone, capture, fast-capture, minting
+- [ ] All resources bundled locally (no CDN links or external requests)
+- [ ] All paths relative (`./path/to/file`)
+- [ ] ZIP under 15 MB
+- [ ] Responsive to viewport resize events
+- [ ] If using fx(params): parameter definitions are constant (no randomness)
+- [ ] `fxhash.min.js` not modified
 
 ## 3. Code Quality
 
