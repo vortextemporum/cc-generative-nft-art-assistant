@@ -1,6 +1,6 @@
 {
   "name": "GLIX Wavetable",
-  "description": "A visual wavetable synthesizer with 20 oscillator types, 55 color palettes, full DSP signal chain, and 5 animation modes. Based on GenDSP v3.4.",
+  "description": "A visual dynamic wavetable generator with 20 oscillator types, 55 color palettes, full DSP signal chain, and 5 animation modes.",
   "tags": ["wavetable", "synthesizer", "dsp", "webgl", "glsl", "oscillator", "generative", "audio-visual", "shader", "abstract"],
   "capture": {
     "mode": "CANVAS",
@@ -14,5 +14,6 @@
       "postMint": { "enabled": false }
     }
   },
-  "editions": 512
+  "editions": 512,
+  "blockchain": "ethereum"
 }
