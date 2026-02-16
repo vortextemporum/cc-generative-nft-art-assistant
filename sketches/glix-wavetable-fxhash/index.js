@@ -1816,6 +1816,56 @@ function generateFeatures() {
   const FOLD_NAMES = ['Shred','Drive','Warm','Soft','Whisper','Crease',
     'Harsh','Mangle','Destroy','Fracture','Ripple'];
 
+  // Classify fold intensity
+  let foldIntensity = "None";
+  if (params.fx_fold > 5000) foldIntensity = "Extreme";
+  else if (params.fx_fold > 500) foldIntensity = "Heavy";
+  else if (params.fx_fold > 50) foldIntensity = "Moderate";
+  else if (params.fx_fold > 5) foldIntensity = "Light";
+
+  // Classify phase warp
+  let phaseWarp = "None";
+  if (params.fx_bend > 100) phaseWarp = "Heavy";
+  else if (params.fx_bend > 10) phaseWarp = "Moderate";
+  else if (params.fx_bend > 0) phaseWarp = "Light";
+
+  // Rectify mode name
+  let rectifyName = ["Off", "Full-Wave", "Half-Wave"][params.fx_rectify];
+
+  // Count active post-FX
+  let activePP = [ppDitherBayer, ppDitherNoise, ppDitherLines, ppPosterize,
+    ppGrain, ppSharpen, ppHalftone, ppEdgeDetect, ppRipple].filter(Boolean);
+  let ppCount = activePP.length;
+  let ppLabel = ppCount === 0 ? "Clean" : ppCount === 1 ? "Subtle" :
+    ppCount <= 3 ? "Layered" : "Heavy";
+
+  // Build active post-FX list
+  let ppNames = [];
+  if (ppDitherBayer) ppNames.push("Bayer");
+  if (ppDitherNoise) ppNames.push("Noise");
+  if (ppDitherLines) ppNames.push("Lines");
+  if (ppPosterize) ppNames.push("Posterize");
+  if (ppGrain) ppNames.push("Grain");
+  if (ppSharpen) ppNames.push("Sharpen");
+  if (ppHalftone) ppNames.push("Halftone");
+  if (ppEdgeDetect) ppNames.push("Edge Detect");
+  if (ppRipple) ppNames.push("Ripple");
+
+  // Count active DSP effects
+  let dspCount = 0;
+  if (params.fx_clip > 0) dspCount++;
+  if (params.fx_asym !== 0) dspCount++;
+  if (params.fx_ringmod > 0) dspCount++;
+  if (params.fx_comb > 0) dspCount++;
+  if (params.fx_slew > 0) dspCount++;
+  if (params.fx_bitop > 0) dspCount++;
+  if (params.fx_rectify > 0) dspCount++;
+  let dspLabel = dspCount === 0 ? "Clean" : dspCount <= 2 ? "Light" :
+    dspCount <= 4 ? "Processed" : "Saturated";
+
+  // Classify animation energy
+  let lockLabel = ['Couple', 'Multiple', 'Most', 'All'][lockCategory];
+
   // Store features
   features = {
     oscillator: OSC_NAMES[params.shape],
@@ -1831,15 +1881,40 @@ function generateFeatures() {
 
   // Register features with fxhash
   $fx.features({
-    "Oscillator": features.oscillator,
-    "Palette": features.palette.charAt(0).toUpperCase() + features.palette.slice(1),
+    // Core identity
+    "Oscillator": OSC_NAMES[params.shape],
+    "Palette": currentPalette.charAt(0).toUpperCase() + currentPalette.slice(1),
     "Hue Shift": hueShift > 0 ? hueShift + "°" : "None",
-    "Fold Mode": features.foldMode,
+
+    // Waveshaping
+    "Fold Mode": FOLD_NAMES[params.fold_mode],
+    "Fold Intensity": foldIntensity,
+    "Bitcrush": params.fx_crush > 0 ? "Yes" : "No",
+    "Phase Warp": phaseWarp,
+    "Phase Noise": params.fx_noise > 0 ? "Yes" : "No",
+    "Quantize": params.fx_quantize > 0 ? "Yes" : "No",
+
+    // DSP effects
+    "DSP Chain": dspLabel,
+    "Rectify": rectifyName,
+    "Hard Clip": params.fx_clip > 0 ? "Yes" : "No",
+    "Asymmetric Drive": params.fx_asym !== 0 ? "Yes" : "No",
+    "Ring Mod": params.fx_ringmod > 0 ? "Yes" : "No",
+    "Comb Filter": params.fx_comb > 0 ? "Yes" : "No",
+    "Slew Limit": params.fx_slew > 0 ? "Yes" : "No",
+    "Bit Ops": params.fx_bitop > 0 ? "Yes" : "No",
+
+    // Transforms
+    "Mirror": params.wave_mirror === 1 ? "Yes" : "No",
+    "Invert": params.wave_invert === 1 ? "Yes" : "No",
+
+    // Post-processing
+    "Post FX": ppLabel,
+    "Post FX Effects": ppNames.length > 0 ? ppNames.join(", ") : "None",
+
+    // Animation
     "Animation": animModeChoice.charAt(0).toUpperCase() + animModeChoice.slice(1),
-    "Has Fold": features.hasFold ? "Yes" : "No",
-    "Has Crush": features.hasCrush ? "Yes" : "No",
-    "Mirror": features.mirror ? "Yes" : "No",
-    "Invert": features.invert ? "Yes" : "No"
+    "Animation Lock": lockLabel,
   });
 
   // Apply to state
