@@ -946,7 +946,11 @@ function resizeGLCanvas() {
 // P5.JS SETUP & DRAW
 // ============================================================
 
+let _setupDone = false;
 function setup() {
+  if (_setupDone) return;
+  _setupDone = true;
+
   // Size canvas to fill viewport (square)
   DISPLAY_SIZE = Math.min(windowWidth, windowHeight);
   canvas = createCanvas(DISPLAY_SIZE, DISPLAY_SIZE);
