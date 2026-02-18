@@ -1,0 +1,19 @@
+{
+  "name": "Wavetables",
+  "description": "Each mint is a unique visual instrument. A complete DSP signal chain runs per-pixel on the GPU, transforming oscillator waveforms into living color fields. Evolve your edition to layer new effects, unlock deeper complexity, and build a lineage of related instruments. Press V for isometric 3D. S: save, P: pause, +/-: speed.",
+  "tags": ["wavetable", "synthesizer", "dsp", "webgl", "glsl", "oscillator", "generative", "audio-visual", "shader", "open-form"],
+  "capture": {
+    "mode": "CANVAS",
+    "triggerMode": "FN_TRIGGER",
+    "canvasSelector": "canvas",
+    "gpu": true,
+    "resolution": { "x": 1024, "y": 1024 }
+  },
+  "settings": {
+    "exploration": {
+      "preMint": { "enabled": true },
+      "postMint": { "enabled": true }
+    }
+  },
+  "blockchain": "base"
+}
