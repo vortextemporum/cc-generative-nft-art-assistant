@@ -1968,7 +1968,7 @@ function keyPressed() {
   switch (key) {
     case 's':
     case 'S':
-      saveCanvas(fxhash.slice(0, 12), 'png');
+      saveCanvas($fx.hash.slice(0, 12), 'png');
       break;
     case 'v':
     case 'V':
