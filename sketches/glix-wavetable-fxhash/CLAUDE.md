@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 1.2.0
+**Version:** 1.4.0
 **Platform:** fxhash (Ethereum)
 **Framework:** p5.js + WebGL 1.0 GLSL
 **Editions:** 512
@@ -41,19 +41,27 @@ glix-wavetable-fxhash/
 - **Init**: `generateFeatures()` called once in `setup()`, consumes R() sequentially
 - **Animation**: Uses `noise()` (Perlin) and math functions, does NOT consume R()
 
-## fxhash Features (9 traits)
+## fxhash Features (18 traits)
 
-| Feature | Type | Values |
-|---------|------|--------|
-| Oscillator | String | Sine, Triangle, Sawtooth, Pulse, HalfRect, Staircase, Parabolic, SuperSaw, Schrodinger, Chebyshev, FM, Harmonic, Fractal, Chirp, Formant, Chaos, RingMod, PhaseDist, Shepard, Wavelet |
-| Palette | String | 55 palette names |
-| Hue Shift | String | "None" or "N°" (1-359) |
-| Fold Mode | String | Shred, Drive, Warm, Soft, Whisper, Crease, Harsh, Mangle, Destroy, Fracture, Ripple |
-| Animation | String | Drift, Lfo, Chaos, Sequencer, Bounce |
-| Has Fold | String | Yes/No |
-| Has Crush | String | Yes/No |
-| Mirror | String | Yes/No |
-| Invert | String | Yes/No |
+| Feature | Category | Values |
+|---------|----------|--------|
+| Oscillator | Identity | Sine, Triangle, Sawtooth, Pulse, HalfRect, Staircase, Parabolic, SuperSaw, Schrodinger, Chebyshev, FM, Harmonic, Fractal, Chirp, Formant, Chaos, RingMod, PhaseDist, Shepard, Wavelet |
+| Oscillator Family | Identity | Classic, Waveform, Mathematical, Exotic, Synthesis |
+| Palette | Identity | 55 palette names (capitalized) |
+| Hue Shift | Identity | "None" or "N°" (1-359) |
+| Transform | Identity | Normal, Mirror, Invert, Mirror + Invert |
+| Fold Mode | Waveshaping | Shred, Drive, Warm, Soft, Whisper, Crease, Harsh, Mangle, Destroy, Fracture, Ripple |
+| Fold Intensity | Waveshaping | None, Light, Moderate, Heavy, Extreme |
+| Crush | Waveshaping | Yes/No |
+| Signal Chain | Signal | Pure, Light, Processed, Mangled |
+| DSP Effects | Signal | Combo list or "None" |
+| Phase | Signal | Combo label (Bend, Noise, Quantize, etc.) |
+| Texture | Texture | Combo list (Smooth, Bayer, Grain, etc.) or "None" |
+| Animation Mode | Animation | Drift, Lfo, Chaos, Sequencer, Bounce |
+| Animation Speed | Animation | Glacial, Moderate, Fast |
+| Animation Range | Animation | Subtle, Medium, Wild |
+| Motion | Animation | Frozen, Minimal, Flowing, Turbulent, Chaotic |
+| Resolution | Render | 256px, 384px, 512px, 768px, 1024px |
 
 ## Keyboard Shortcuts
 

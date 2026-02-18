@@ -1,7 +1,7 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - fxhash Edition
 //   Based on GenDSP v3.4 - Full Port
-//   Version: 1.3.0
+//   Version: 1.4.0
 // ==========================================
 
 // ============================================================
@@ -1931,6 +1931,9 @@ function generateFeatures() {
     "Animation Speed": speedTier,
     "Animation Range": rangeTier,
     "Motion": motionLabel,
+
+    // Render
+    "Resolution": RESOLUTIONS[resChoice] + "px",
   });
 
   // Apply to state

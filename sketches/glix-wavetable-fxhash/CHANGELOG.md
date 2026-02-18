@@ -1,5 +1,13 @@
 # GLIX Wavetable (fxhash Edition) - Changelog
 
+## v1.4.0 (2026-02-14)
+
+### Changed
+- **Expanded NFT features from 9 to 18 traits** — collector-friendly tiered classifications
+  - Added: Oscillator Family, Fold Intensity, Transform, Signal Chain, DSP Effects, Phase, Texture, Animation Speed, Animation Range, Motion, Resolution
+  - Replaced Yes/No toggles with meaningful categorical values
+- **Added Resolution trait** to feature metadata
+
 ## v1.3.0 (2026-02-14)
 
 ### Changed
