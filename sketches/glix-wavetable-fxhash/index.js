@@ -1820,57 +1820,78 @@ function generateFeatures() {
   const FOLD_NAMES = ['Shred','Drive','Warm','Soft','Whisper','Crease',
     'Harsh','Mangle','Destroy','Fracture','Ripple'];
 
-  // Classify fold intensity
+  // --- Classify traits for rarity ---
+
+  // Fold intensity tiers
   let foldIntensity = "None";
   if (params.fx_fold > 5000) foldIntensity = "Extreme";
   else if (params.fx_fold > 500) foldIntensity = "Heavy";
   else if (params.fx_fold > 50) foldIntensity = "Moderate";
   else if (params.fx_fold > 5) foldIntensity = "Light";
 
-  // Classify phase warp
-  let phaseWarp = "None";
-  if (params.fx_bend > 100) phaseWarp = "Heavy";
-  else if (params.fx_bend > 10) phaseWarp = "Moderate";
-  else if (params.fx_bend > 0) phaseWarp = "Light";
+  // Rectify mode
+  let rectifyName = ["None", "Full-Wave", "Half-Wave"][params.fx_rectify];
 
-  // Rectify mode name
-  let rectifyName = ["Off", "Full-Wave", "Half-Wave"][params.fx_rectify];
+  // Count active DSP effects (signal chain complexity)
+  let dspEffects = [];
+  if (params.fx_rectify > 0) dspEffects.push(rectifyName + " Rectify");
+  if (params.fx_clip > 0) dspEffects.push("Hard Clip");
+  if (Math.abs(params.fx_asym) > 0.01) dspEffects.push("Asymmetric Drive");
+  if (params.fx_ringmod > 0) dspEffects.push("Ring Mod");
+  if (params.fx_comb > 0) dspEffects.push("Comb Filter");
+  if (params.fx_slew > 0) dspEffects.push("Slew Limit");
+  if (params.fx_bitop > 0) dspEffects.push("Bit Ops");
+  let signalChain = dspEffects.length === 0 ? "Pure" : dspEffects.length <= 2 ? "Light" :
+    dspEffects.length <= 4 ? "Processed" : "Mangled";
 
-  // Count active post-FX
-  let activePP = [ppDitherBayer, ppDitherNoise, ppDitherLines, ppPosterize,
-    ppGrain, ppSharpen, ppHalftone, ppEdgeDetect, ppRipple].filter(Boolean);
-  let ppCount = activePP.length;
-  let ppLabel = ppCount === 0 ? "Clean" : ppCount === 1 ? "Subtle" :
-    ppCount <= 3 ? "Layered" : "Heavy";
+  // Phase modulation complexity
+  let phaseMods = [];
+  if (params.fx_bend > 0) phaseMods.push("Warp");
+  if (params.fx_noise > 0) phaseMods.push("Noise");
+  if (params.fx_quantize > 0) phaseMods.push("Quantize");
+  if (Math.abs(params.pw_morph) > 1) phaseMods.push("Spiral");
+  let phaseLabel = phaseMods.length === 0 ? "Clean" :
+    phaseMods.length === 1 ? phaseMods[0] : phaseMods.join(" + ");
 
-  // Build active post-FX list
+  // Active post-FX list
   let ppNames = [];
   if (ppDitherBayer) ppNames.push("Bayer");
-  if (ppDitherNoise) ppNames.push("Noise");
-  if (ppDitherLines) ppNames.push("Lines");
+  if (ppDitherNoise) ppNames.push("Noise Dither");
+  if (ppDitherLines) ppNames.push("Scanlines");
   if (ppPosterize) ppNames.push("Posterize");
-  if (ppGrain) ppNames.push("Grain");
+  if (ppGrain) ppNames.push("Film Grain");
   if (ppSharpen) ppNames.push("Sharpen");
   if (ppHalftone) ppNames.push("Halftone");
   if (ppEdgeDetect) ppNames.push("Edge Detect");
   if (ppRipple) ppNames.push("Ripple");
 
-  // Count active DSP effects
-  let dspCount = 0;
-  if (params.fx_clip > 0) dspCount++;
-  if (params.fx_asym !== 0) dspCount++;
-  if (params.fx_ringmod > 0) dspCount++;
-  if (params.fx_comb > 0) dspCount++;
-  if (params.fx_slew > 0) dspCount++;
-  if (params.fx_bitop > 0) dspCount++;
-  if (params.fx_rectify > 0) dspCount++;
-  let dspLabel = dspCount === 0 ? "Clean" : dspCount <= 2 ? "Light" :
-    dspCount <= 4 ? "Processed" : "Saturated";
+  // Animation speed tier
+  let speedTier = aSpd < 0.25 ? "Glacial" : aSpd < 0.4 ? "Moderate" : "Fast";
 
-  // Classify animation energy
-  let lockLabel = ['Couple', 'Multiple', 'Most', 'All'][lockCategory];
+  // Animation range (drift amount)
+  let rangeTier = aDrift < 0.35 ? "Subtle" : aDrift < 0.6 ? "Medium" : "Wild";
 
-  // Store features
+  // Count how many params animate at full speed
+  let fullSpeedCount = ANIM_PARAMS.filter(k => !paramLocks[k] && paramRanges[k] >= 1.0).length;
+  let motionLabel = fullSpeedCount === 0 ? "Frozen" : fullSpeedCount <= 2 ? "Minimal" :
+    fullSpeedCount <= 5 ? "Flowing" : fullSpeedCount <= 10 ? "Turbulent" : "Chaotic";
+
+  // Transform combo
+  let transform = "Normal";
+  if (params.wave_mirror === 1 && params.wave_invert === 1) transform = "Mirror + Invert";
+  else if (params.wave_mirror === 1) transform = "Mirror";
+  else if (params.wave_invert === 1) transform = "Invert";
+
+  // Oscillator family grouping (for broader rarity filtering)
+  let oscFamily;
+  let si = params.shape;
+  if (si <= 3) oscFamily = "Classic";           // Sine, Tri, Saw, Pulse
+  else if (si <= 7) oscFamily = "Waveform";     // HalfRect, Staircase, Parabolic, SuperSaw
+  else if (si <= 11) oscFamily = "Mathematical"; // Schrödinger, Chebyshev, FM, Harmonic
+  else if (si <= 15) oscFamily = "Exotic";       // Fractal, Chirp, Formant, Chaos
+  else oscFamily = "Synthesis";                   // RingMod, PhaseDist, Shepard, Wavelet
+
+  // Store features for window.getFeatures()
   features = {
     oscillator: OSC_NAMES[params.shape],
     palette: currentPalette,
@@ -1883,42 +1904,33 @@ function generateFeatures() {
     invert: params.wave_invert === 1
   };
 
-  // Register features with fxhash
+  // Register features with fxhash (NFT metadata)
   $fx.features({
-    // Core identity
+    // Identity
     "Oscillator": OSC_NAMES[params.shape],
+    "Oscillator Family": oscFamily,
     "Palette": currentPalette.charAt(0).toUpperCase() + currentPalette.slice(1),
     "Hue Shift": hueShift > 0 ? hueShift + "°" : "None",
+    "Transform": transform,
 
     // Waveshaping
     "Fold Mode": FOLD_NAMES[params.fold_mode],
     "Fold Intensity": foldIntensity,
-    "Bitcrush": params.fx_crush > 0 ? "Yes" : "No",
-    "Phase Warp": phaseWarp,
-    "Phase Noise": params.fx_noise > 0 ? "Yes" : "No",
-    "Quantize": params.fx_quantize > 0 ? "Yes" : "No",
+    "Crush": params.fx_crush > 0 ? "Yes" : "No",
 
-    // DSP effects
-    "DSP Chain": dspLabel,
-    "Rectify": rectifyName,
-    "Hard Clip": params.fx_clip > 0 ? "Yes" : "No",
-    "Asymmetric Drive": params.fx_asym !== 0 ? "Yes" : "No",
-    "Ring Mod": params.fx_ringmod > 0 ? "Yes" : "No",
-    "Comb Filter": params.fx_comb > 0 ? "Yes" : "No",
-    "Slew Limit": params.fx_slew > 0 ? "Yes" : "No",
-    "Bit Ops": params.fx_bitop > 0 ? "Yes" : "No",
+    // Signal chain
+    "Signal Chain": signalChain,
+    "DSP Effects": dspEffects.length > 0 ? dspEffects.join(", ") : "None",
+    "Phase": phaseLabel,
 
-    // Transforms
-    "Mirror": params.wave_mirror === 1 ? "Yes" : "No",
-    "Invert": params.wave_invert === 1 ? "Yes" : "No",
-
-    // Post-processing
-    "Post FX": ppLabel,
-    "Post FX Effects": ppNames.length > 0 ? ppNames.join(", ") : "None",
+    // Texture
+    "Texture": ppNames.length > 0 ? ppNames.join(", ") : "None",
 
     // Animation
-    "Animation": animModeChoice.charAt(0).toUpperCase() + animModeChoice.slice(1),
-    "Animation Lock": lockLabel,
+    "Animation Mode": animModeChoice.charAt(0).toUpperCase() + animModeChoice.slice(1),
+    "Animation Speed": speedTier,
+    "Animation Range": rangeTier,
+    "Motion": motionLabel,
   });
 
   // Apply to state
