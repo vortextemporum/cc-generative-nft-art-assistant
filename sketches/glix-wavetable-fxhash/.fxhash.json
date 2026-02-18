@@ -1,13 +1,13 @@
 {
   "name": "Wavetables",
-  "description": "A visual wavetable synthesizer where X=phase, Y=morph, color=amplitude. 20 oscillators (Sine to Shepard), 55 palettes with hue rotation, full GPU DSP chain (wave folding, bitcrush, ring mod, comb filter, slew), 10 post-FX textures, 5 animation modes. Interactive: S=save PNG, V=toggle 2D/isometric 3D view, P/Space=pause, +/-=speed. In isometric mode: click+drag to rotate, scroll to zoom.",
+  "description": "Each mint is a unique visual instrument. A complete DSP signal chain — wave folding, bitcrushing, ring modulation, comb filtering — runs per-pixel on the GPU, transforming 20 oscillator waveforms into living color fields. 55 palettes with continuous hue rotation. 5 animation modes from Perlin drift to Lorenz chaos. Press V to enter isometric 3D and explore your waveform as a landscape. S: save, P: pause, +/-: speed.",
   "tags": ["wavetable", "synthesizer", "dsp", "webgl", "glsl", "oscillator", "generative", "audio-visual", "shader", "abstract"],
   "capture": {
     "mode": "CANVAS",
     "triggerMode": "FN_TRIGGER",
     "canvasSelector": "canvas",
     "gpu": true,
-    "resolution": { "x": 800, "y": 800 }
+    "resolution": { "x": 1024, "y": 1024 }
   },
   "settings": {
     "exploration": {

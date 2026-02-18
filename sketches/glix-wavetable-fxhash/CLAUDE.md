@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 **Platform:** fxhash (Ethereum)
 **Framework:** p5.js + WebGL 1.0 GLSL
 **Editions:** 512

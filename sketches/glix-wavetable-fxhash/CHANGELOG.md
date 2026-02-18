@@ -1,5 +1,13 @@
 # GLIX Wavetable (fxhash Edition) - Changelog
 
+## v1.5.0 (2026-02-18)
+
+### Changed
+- **Improved project description** — narrative style for fxhash listing
+- **Capture resolution** — 800x800 → 1024x1024
+- **Hard Clip rarity** — 40% → 25%
+- **Asymmetric Drive rarity** — 40% → 25%
+
 ## v1.4.0 (2026-02-14)
 
 ### Changed

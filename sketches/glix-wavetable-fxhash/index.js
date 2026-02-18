@@ -1,7 +1,7 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - fxhash Edition
 //   Based on GenDSP v3.4 - Full Port
-//   Version: 1.4.0
+//   Version: 1.5.0
 // ==========================================
 
 // ============================================================
@@ -1758,8 +1758,8 @@ function generateFeatures() {
 
   let rectRoll = R();
   params.fx_rectify = rectRoll < 0.7 ? 0 : (rectRoll < 0.85 ? 1 : 2);
-  params.fx_clip = rndBool(0.6) ? 0 : Math.pow(R(), 2) * 0.8;
-  params.fx_asym = rndBool(0.6) ? 0 : (R() - 0.5) * 1.6;
+  params.fx_clip = rndBool(0.75) ? 0 : Math.pow(R(), 2) * 0.8;
+  params.fx_asym = rndBool(0.75) ? 0 : (R() - 0.5) * 1.6;
   params.fx_ringmod = rndBool(0.7) ? 0 : 1 + R() * 19;
   params.fx_comb = rndBool(0.7) ? 0 : 0.01 + R() * 0.29;
   params.fx_slew = rndBool(0.8) ? 0 : R() * 0.5;
