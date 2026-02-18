@@ -1,6 +1,6 @@
 {
-  "name": "GLIX Wavetable",
-  "description": "A visual dynamic wavetable generator with 20 oscillator types, 55 color palettes, full DSP signal chain, and 5 animation modes.",
+  "name": "Wavetables",
+  "description": "A visual wavetable synthesizer where X=phase, Y=morph, color=amplitude. 20 oscillators (Sine to Shepard), 55 palettes with hue rotation, full GPU DSP chain (wave folding, bitcrush, ring mod, comb filter, slew), 10 post-FX textures, 5 animation modes. Interactive: S=save PNG, V=toggle 2D/isometric 3D view, P/Space=pause, +/-=speed. In isometric mode: click+drag to rotate, scroll to zoom.",
   "tags": ["wavetable", "synthesizer", "dsp", "webgl", "glsl", "oscillator", "generative", "audio-visual", "shader", "abstract"],
   "capture": {
     "mode": "CANVAS",
