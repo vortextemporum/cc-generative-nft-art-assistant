@@ -4,9 +4,10 @@
   "tags": ["wavetable", "synthesizer", "dsp", "webgl", "glsl", "oscillator", "generative", "audio-visual", "shader", "abstract"],
   "capture": {
     "mode": "CANVAS",
-    "triggerMode": "FX_PREVIEW",
+    "triggerMode": "FN_TRIGGER",
     "canvasSelector": "canvas",
-    "delay": 2000
+    "gpu": true,
+    "resolution": { "x": 800, "y": 800 }
   },
   "settings": {
     "exploration": {

@@ -1002,7 +1002,8 @@ function draw() {
 
   // Trigger fxhash preview after first rendered frame
   if (frameCount === 1) {
-    $fx.preview();
+    // Small delay ensures canvas paint is fully flushed before capture
+    requestAnimationFrame(() => $fx.preview());
   }
 }
 
