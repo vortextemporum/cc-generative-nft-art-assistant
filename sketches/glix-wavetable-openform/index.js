@@ -12,8 +12,10 @@
 let R = $fx.rand;
 
 // Switch R to a specific depth's PRNG (open-form: each depth has its own)
+// $fx.randAt(d) calls the PRNG and returns a number, not a function.
+// Wrap it so R() works as a callable PRNG.
 function useDepth(d) {
-  R = $fx.randAt(d);
+  R = () => $fx.randAt(d);
 }
 
 function rnd(min = 0, max = 1) {
