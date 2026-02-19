@@ -1,15 +1,20 @@
 // ==========================================
 //   GLIX WAVETABLE GENERATOR - Open Form Edition
 //   Based on glix-wavetable-fxhash v1.5.0
-//   Version: 0.1.0
+//   Version: 0.2.0
 // ==========================================
 
 // ============================================================
 // RANDOMNESS (fxhash Compatible)
 // ============================================================
 
-// R is our deterministic PRNG — backed by $fx.rand()
+// R is our deterministic PRNG — swapped per depth in generateFeatures()
 let R = $fx.rand;
+
+// Switch R to a specific depth's PRNG (open-form: each depth has its own)
+function useDepth(d) {
+  R = $fx.randAt(d);
+}
 
 function rnd(min = 0, max = 1) {
   return R() * (max - min) + min;
@@ -1736,44 +1741,33 @@ function tanh_approx_cpu(x) {
 let features = {};
 
 function generateFeatures() {
-  // --- Oscillator ---
+  const depth = $fx.depth;
+
+  // Oscillator/fold name constants
+  const OSC_NAMES = ['Sine','Triangle','Sawtooth','Pulse','HalfRect','Staircase',
+    'Parabolic','SuperSaw','Schrodinger','Chebyshev','FM','Harmonic',
+    'Fractal','Chirp','Formant','Chaos','RingMod','PhaseDist','Shepard','Wavelet'];
+  const FOLD_NAMES = ['Shred','Drive','Warm','Soft','Whisper','Crease',
+    'Harsh','Mangle','Destroy','Fracture','Ripple'];
+
+  // ================================================================
+  // DEPTH 0 — Root: Oscillator, Palette, Animation (inherited by all)
+  // ================================================================
+  useDepth(0);
+
   params.shape = rndInt(0, 19);
   params.pw = rnd();
   params.soften = expMap(R(), 0.001, 50);
   params.y_bend = rnd(-0.25, 1.0);
 
-  params.fx_bend = rndBool(0.3) ? 0 : expMap(Math.pow(R(), 1.5), 0, 1000);
-  params.fx_noise = rndBool(0.4) ? 0 : Math.pow(R(), 3) * 0.8;
-  params.fx_quantize = rndBool(0.4) ? 0 : Math.pow(R(), 3) * 0.7;
-  params.pw_morph = Math.pow(R(), 1.5) * 50 * (rndBool() ? -1 : 1);
-
-  // fx_fold: 30% zero/low, 67% moderate, 3% extreme
-  let foldRoll = R();
-  if (foldRoll < 0.3) params.fx_fold = rnd(0, 50);
-  else if (foldRoll < 0.97) params.fx_fold = expMap(Math.pow(R(), 1.5), 0, 2000);
-  else params.fx_fold = expMap(R(), 5000, 10000);
+  // Root gets fold mode but NOT fold amount (that comes at depth 1)
   params.fold_mode = rndInt(0, 10);
 
-  params.fx_crush = rndBool(0.35) ? 0 : expMap(Math.pow(R(), 1.5), 0, 1);
-
-  let rectRoll = R();
-  params.fx_rectify = rectRoll < 0.7 ? 0 : (rectRoll < 0.85 ? 1 : 2);
-  params.fx_clip = rndBool(0.75) ? 0 : Math.pow(R(), 2) * 0.8;
-  params.fx_asym = rndBool(0.75) ? 0 : (R() - 0.5) * 1.6;
-  params.fx_ringmod = rndBool(0.7) ? 0 : 1 + R() * 19;
-  params.fx_comb = rndBool(0.7) ? 0 : 0.01 + R() * 0.29;
-  params.fx_slew = rndBool(0.8) ? 0 : R() * 0.5;
-  params.fx_bitop = rndBool(0.8) ? 0 : Math.pow(R(), 2);
-
-  // Wave mirror/invert (25% each)
-  params.wave_mirror = rndBool(0.25) ? 1 : 0;
-  params.wave_invert = rndBool(0.25) ? 1 : 0;
-
-  // --- Palette + hue shift ---
+  // Palette + hue shift
   currentPalette = rndChoice(paletteNames);
   hueShift = rndInt(0, 359);
 
-  // --- Animation ---
+  // Animation setup
   let animModeChoice = rndChoice(ANIM_MODES);
   let resChoice = rndInt(0, RESOLUTIONS.length - 1);
   lockCategory = rndInt(0, LOCK_CATEGORIES.length - 1);
@@ -1781,7 +1775,7 @@ function generateFeatures() {
   randomizeParamRanges();
   applyRandomLocks();
 
-  // Bounce phases (deterministic from hash)
+  // Bounce phases (deterministic from root hash)
   let bKeys = ['pw','soften','y_bend','fx_bend','fx_noise','fx_quantize','pw_morph','fx_fold','fx_crush',
                'fx_clip','fx_asym','fx_ringmod','fx_comb','fx_slew','fx_bitop'];
   for (let k of bKeys) bouncePhases[k] = R() * Math.PI * 2;
@@ -1798,30 +1792,111 @@ function generateFeatures() {
     paramRanges[rndChoice(pick)] = 1.0;
   }
 
-  // Post-FX: each has <10% chance to trigger
-  ppDitherBayer = rndBool(0.07);
-  ppDitherBayerScale = rndInt(0, 3);
-  ppDitherNoise = rndBool(0.05);
-  ppDitherNoiseScale = rndInt(0, 3);
-  ppDitherLines = rndBool(0.05);
-  ppDitherLinesScale = rndInt(0, 3);
-  ppPosterize = rndBool(0.06);
-  ppGrain = rndBool(0.08);
-  ppSharpen = rndBool(0.06);
-  ppHalftone = rndBool(0.05);
-  ppHalftoneScale = rndInt(0, 3);
-  ppEdgeDetect = rndBool(0.04);
-  ppRipple = rndBool(0.025);
+  // Defaults for params not yet unlocked (clean at depth 0)
+  params.fx_bend = 0;
+  params.fx_noise = 0;
+  params.fx_quantize = 0;
+  params.pw_morph = 0;
+  params.fx_fold = 0;
+  params.fx_crush = 0;
+  params.wave_mirror = 0;
+  params.wave_invert = 0;
+  params.fx_rectify = 0;
+  params.fx_clip = 0;
+  params.fx_asym = 0;
+  params.fx_ringmod = 0;
+  params.fx_comb = 0;
+  params.fx_slew = 0;
+  params.fx_bitop = 0;
+  ppDitherBayer = false;
+  ppDitherNoise = false;
+  ppDitherLines = false;
+  ppPosterize = false;
+  ppGrain = false;
+  ppSharpen = false;
+  ppHalftone = false;
+  ppHalftoneScale = 0;
+  ppEdgeDetect = false;
+  ppRipple = false;
 
-  // Oscillator names for features
-  const OSC_NAMES = ['Sine','Triangle','Sawtooth','Pulse','HalfRect','Staircase',
-    'Parabolic','SuperSaw','Schrodinger','Chebyshev','FM','Harmonic',
-    'Fractal','Chirp','Formant','Chaos','RingMod','PhaseDist','Shepard','Wavelet'];
+  // ================================================================
+  // DEPTH 1 — First Evolution: Fold, Crush, Transform, Phase Mods
+  // ================================================================
+  if (depth >= 1) {
+    useDepth(1);
 
-  const FOLD_NAMES = ['Shred','Drive','Warm','Soft','Whisper','Crease',
-    'Harsh','Mangle','Destroy','Fracture','Ripple'];
+    // Fold intensity: 15% none, 15% light, 40% moderate, 25% heavy, 5% extreme
+    let foldRoll = R();
+    if (foldRoll < 0.15) params.fx_fold = rnd(0, 5);
+    else if (foldRoll < 0.30) params.fx_fold = rnd(5, 50);
+    else if (foldRoll < 0.70) params.fx_fold = expMap(Math.pow(R(), 1.5), 50, 500);
+    else if (foldRoll < 0.95) params.fx_fold = expMap(Math.pow(R(), 1.5), 500, 5000);
+    else params.fx_fold = expMap(R(), 5000, 10000);
 
-  // --- Classify traits for rarity ---
+    // Crush
+    params.fx_crush = rndBool(0.35) ? expMap(Math.pow(R(), 1.5), 0, 1) : 0;
+
+    // Wave mirror/invert (25% each)
+    params.wave_mirror = rndBool(0.25) ? 1 : 0;
+    params.wave_invert = rndBool(0.25) ? 1 : 0;
+
+    // Phase modulations
+    params.fx_bend = rndBool(0.3) ? 0 : expMap(Math.pow(R(), 1.5), 0, 1000);
+    params.fx_noise = rndBool(0.4) ? 0 : Math.pow(R(), 3) * 0.8;
+    params.fx_quantize = rndBool(0.4) ? 0 : Math.pow(R(), 3) * 0.7;
+    params.pw_morph = Math.pow(R(), 1.5) * 50 * (rndBool() ? -1 : 1);
+  }
+
+  // ================================================================
+  // DEPTH 2 — Second Evolution: DSP Effects Chain
+  // ================================================================
+  if (depth >= 2) {
+    useDepth(2);
+
+    let rectRoll = R();
+    params.fx_rectify = rectRoll < 0.7 ? 0 : (rectRoll < 0.85 ? 1 : 2);
+    params.fx_clip = rndBool(0.75) ? 0 : Math.pow(R(), 2) * 0.8;
+    params.fx_asym = rndBool(0.75) ? 0 : (R() - 0.5) * 1.6;
+    params.fx_ringmod = rndBool(0.7) ? 0 : 1 + R() * 19;
+    params.fx_comb = rndBool(0.7) ? 0 : 0.01 + R() * 0.29;
+    params.fx_slew = rndBool(0.8) ? 0 : R() * 0.5;
+    params.fx_bitop = rndBool(0.8) ? 0 : Math.pow(R(), 2);
+  }
+
+  // ================================================================
+  // DEPTH 3+ — Deep Evolution: Post-FX Textures + Mutations
+  // ================================================================
+  if (depth >= 3) {
+    // Each depth level from 3 onward adds post-FX chances
+    for (let d = 3; d <= depth; d++) {
+      useDepth(d);
+
+      // Post-FX: higher chances than long-form since each depth is a new roll
+      if (!ppDitherBayer && rndBool(0.14)) { ppDitherBayer = true; ppDitherBayerScale = rndInt(0, 3); }
+      if (!ppDitherNoise && rndBool(0.10)) { ppDitherNoise = true; ppDitherNoiseScale = rndInt(0, 3); }
+      if (!ppDitherLines && rndBool(0.10)) { ppDitherLines = true; ppDitherLinesScale = rndInt(0, 3); }
+      if (!ppPosterize && rndBool(0.12)) ppPosterize = true;
+      if (!ppGrain && rndBool(0.15)) ppGrain = true;
+      if (!ppSharpen && rndBool(0.12)) ppSharpen = true;
+      if (!ppHalftone && rndBool(0.10)) { ppHalftone = true; ppHalftoneScale = rndInt(0, 3); }
+      if (!ppEdgeDetect && rndBool(0.08)) ppEdgeDetect = true;
+      if (!ppRipple && rndBool(0.05)) ppRipple = true;
+
+      // Resolution upgrade: 25% chance per depth to bump one tier
+      if (rndBool(0.25) && resChoice < RESOLUTIONS.length - 1) {
+        resChoice++;
+      }
+
+      // Mutations: small random variations on inherited params
+      if (params.fx_fold > 0) params.fx_fold *= (0.8 + R() * 0.4); // ±20%
+      if (params.fx_crush > 0) params.fx_crush *= (0.8 + R() * 0.4);
+      hueShift = (hueShift + rndInt(-30, 30) + 360) % 360; // drift hue
+    }
+  }
+
+  // ================================================================
+  // CLASSIFY TRAITS FOR FEATURES
+  // ================================================================
 
   // Fold intensity tiers
   let foldIntensity = "None";
@@ -1833,7 +1908,7 @@ function generateFeatures() {
   // Rectify mode
   let rectifyName = ["None", "Full-Wave", "Half-Wave"][params.fx_rectify];
 
-  // Count active DSP effects (signal chain complexity)
+  // Count active DSP effects
   let dspEffects = [];
   if (params.fx_rectify > 0) dspEffects.push(rectifyName + " Rectify");
   if (params.fx_clip > 0) dspEffects.push("Hard Clip");
@@ -1883,14 +1958,14 @@ function generateFeatures() {
   else if (params.wave_mirror === 1) transform = "Mirror";
   else if (params.wave_invert === 1) transform = "Invert";
 
-  // Oscillator family grouping (for broader rarity filtering)
+  // Oscillator family grouping
   let oscFamily;
   let si = params.shape;
-  if (si <= 3) oscFamily = "Classic";           // Sine, Tri, Saw, Pulse
-  else if (si <= 7) oscFamily = "Waveform";     // HalfRect, Staircase, Parabolic, SuperSaw
-  else if (si <= 11) oscFamily = "Mathematical"; // Schrödinger, Chebyshev, FM, Harmonic
-  else if (si <= 15) oscFamily = "Exotic";       // Fractal, Chirp, Formant, Chaos
-  else oscFamily = "Synthesis";                   // RingMod, PhaseDist, Shepard, Wavelet
+  if (si <= 3) oscFamily = "Classic";
+  else if (si <= 7) oscFamily = "Waveform";
+  else if (si <= 11) oscFamily = "Mathematical";
+  else if (si <= 15) oscFamily = "Exotic";
+  else oscFamily = "Synthesis";
 
   // Store features for window.getFeatures()
   features = {
@@ -1902,40 +1977,49 @@ function generateFeatures() {
     hasFold: params.fx_fold > 50,
     hasCrush: params.fx_crush > 0,
     mirror: params.wave_mirror === 1,
-    invert: params.wave_invert === 1
+    invert: params.wave_invert === 1,
+    depth: depth
   };
 
-  // Register features with fxhash (NFT metadata)
-  $fx.features({
-    // Identity
+  // ================================================================
+  // REGISTER FEATURES WITH FXHASH (NFT metadata)
+  // Only show traits that are relevant at this depth
+  // ================================================================
+  let fxFeatures = {
+    // Always present (from root)
     "Oscillator": OSC_NAMES[params.shape],
     "Oscillator Family": oscFamily,
     "Palette": currentPalette.charAt(0).toUpperCase() + currentPalette.slice(1),
     "Hue Shift": hueShift > 0 ? hueShift + "°" : "None",
-    "Transform": transform,
-
-    // Waveshaping
     "Fold Mode": FOLD_NAMES[params.fold_mode],
-    "Fold Intensity": foldIntensity,
-    "Crush": params.fx_crush > 0 ? "Yes" : "No",
-
-    // Signal chain
-    "Signal Chain": signalChain,
-    "DSP Effects": dspEffects.length > 0 ? dspEffects.join(", ") : "None",
-    "Phase": phaseLabel,
-
-    // Texture
-    "Texture": ppNames.length > 0 ? ppNames.join(", ") : "None",
-
-    // Animation
     "Animation Mode": animModeChoice.charAt(0).toUpperCase() + animModeChoice.slice(1),
     "Animation Speed": speedTier,
     "Animation Range": rangeTier,
     "Motion": motionLabel,
-
-    // Render
     "Resolution": RESOLUTIONS[resChoice] + "px",
-  });
+    "Depth": depth === 0 ? "Root" : "Generation " + depth,
+  };
+
+  // Depth 1+ traits
+  if (depth >= 1) {
+    fxFeatures["Transform"] = transform;
+    fxFeatures["Fold Intensity"] = foldIntensity;
+    fxFeatures["Crush"] = params.fx_crush > 0 ? "Yes" : "No";
+    fxFeatures["Phase"] = phaseLabel;
+  }
+
+  // Depth 2+ traits
+  if (depth >= 2) {
+    fxFeatures["Signal Chain"] = signalChain;
+    fxFeatures["DSP Effects"] = dspEffects.length > 0 ? dspEffects.join(", ") : "None";
+  }
+
+  // Depth 3+ traits
+  if (depth >= 3) {
+    fxFeatures["Texture"] = ppNames.length > 0 ? ppNames.join(", ") : "None";
+  }
+
+  $fx.features(fxFeatures);
 
   // Apply to state
   targetParams = { ...params };
@@ -1950,6 +2034,8 @@ function generateFeatures() {
   renderSize = RESOLUTIONS[resolutionIndex];
   if (gl) resizeGLCanvas();
 
+  // Restore R to current depth's PRNG for any subsequent calls
+  useDepth(depth);
   needsRender = true;
 }
 

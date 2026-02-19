@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Version:** 0.1.0
+**Version:** 0.2.0
 **Platform:** fxhash (Base blockchain, art coins)
 **Framework:** p5.js + WebGL 1.0 GLSL
 **Type:** Open Form (evolution-based)
@@ -57,7 +57,9 @@ Each depth uses `$fx.randAt(depth)` for its own PRNG. Root traits are inherited 
 ## Implementation Status
 
 - [x] Project structure and docs
-- [ ] Refactor generateFeatures() for depth-based layering
+- [x] Refactor generateFeatures() for depth-based layering
+- [x] useDepth() helper for depth-scoped PRNG
+- [x] Depth-gated feature traits in $fx.features()
 - [ ] Test with fxlens open-form mode
 - [ ] Verify lineage inheritance
 - [ ] Final rarity tuning
