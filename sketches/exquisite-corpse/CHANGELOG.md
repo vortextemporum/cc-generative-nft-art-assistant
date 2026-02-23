@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.1.0] - 2026-02-23
+
+### Added
+- **Circuit style**: neon network on dark background with nodes, traces, flow paths, grid lines, and nebula washes
+- Style switcher in controls bar (Ink / Circuit)
+- Each style has its own palette system, seam rendering, and feature generation
+- Styles module (`styles.js`) for clean renderer dispatch
+
+### Fixed
+- Sub-pixel gaps between gallery pieces: canvas dimensions now floor to integer pixels
+- Gallery flex container explicit `gap: 0`, `font-size: 0` to eliminate whitespace gaps
+- Removed inline element spacing artifacts from gallery wrapper divs
+
+### Changed
+- Renderer split into `render-ink.js` and `render-circuit.js` (was single `render.js`)
+- PieceCanvas, Gallery, SingleView accept `renderer` prop for style-agnostic rendering
+- Background color transitions with style (dark ink vs dark blue circuit)
+
 ## [2.0.0] - 2026-02-23
 
 ### Changed

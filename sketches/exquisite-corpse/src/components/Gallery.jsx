@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import PieceCanvas from './PieceCanvas';
-import { SIZE } from '../engine/render.js';
+import { SIZE } from '../engine/render-ink.js';
 
-export default function Gallery({ chain }) {
+export default function Gallery({ chain, renderer }) {
   const scrollRef = useRef(null);
   const [scale, setScale] = useState(1);
 
@@ -24,12 +24,12 @@ export default function Gallery({ chain }) {
     }
   }, [chain.length]);
 
-  const displaySize = SIZE * scale;
+  const displaySize = Math.floor(SIZE * scale);
 
   return (
     <div className="flex flex-col items-center w-full">
       <div className="font-mono text-xs text-paper/40 mb-2">
-        {chain.length} piece{chain.length > 1 ? 's' : ''} &middot; {Math.round(chain.length * displaySize)}px wide &middot; scroll to explore
+        {chain.length} piece{chain.length > 1 ? 's' : ''} &middot; {chain.length * displaySize}px wide &middot; scroll to explore
       </div>
 
       <div
@@ -37,13 +37,14 @@ export default function Gallery({ chain }) {
         className="gallery-scroll w-full overflow-x-auto overflow-y-hidden"
         style={{ maxHeight: displaySize + 20 }}
       >
-        <div className="flex" style={{ width: 'max-content' }}>
+        <div style={{ display: 'flex', gap: 0, width: 'max-content', fontSize: 0, lineHeight: 0 }}>
           {chain.map((hash, i) => (
-            <div key={`${hash}-${i}`} className="gallery-piece relative group">
+            <div key={`${hash}-${i}`} className="gallery-piece relative group" style={{ margin: 0, padding: 0 }}>
               <PieceCanvas
                 ownHash={hash}
                 leftHash={i > 0 ? chain[i - 1] : null}
                 scale={scale}
+                renderer={renderer}
               />
               <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="bg-ink/80 backdrop-blur-sm px-2 py-1 font-mono text-[10px] text-paper/60 truncate">

@@ -3,7 +3,7 @@
 ## Overview
 Generative art project inspired by the surrealist exquisite corpse game. Each piece seamlessly continues from the previous one via hash-pair edge matching. Monochrome ink aesthetic with mixed techniques.
 
-## Version: 2.0.0
+## Version: 2.1.0
 
 ## Architecture
 
@@ -11,9 +11,11 @@ Generative art project inspired by the surrealist exquisite corpse game. Each pi
 sketches/exquisite-corpse/
 ├── src/
 │   ├── engine/
-│   │   ├── prng.js          # sfc32 PRNG + utilities
-│   │   ├── noise.js         # Seeded 2D Perlin noise + FBM
-│   │   └── render.js        # Edge matching, field blending, 5 drawing techniques
+│   │   ├── prng.js            # sfc32 PRNG + utilities
+│   │   ├── noise.js           # Seeded 2D Perlin noise + FBM
+│   │   ├── render-ink.js      # Ink style: contours, flow, hatching, stipple, wash
+│   │   ├── render-circuit.js  # Circuit style: nodes, traces, grids, nebula
+│   │   └── styles.js          # Style registry and dispatch
 │   ├── components/
 │   │   ├── PieceCanvas.jsx  # Single canvas renderer
 │   │   ├── Gallery.jsx      # Horizontal scroll gallery

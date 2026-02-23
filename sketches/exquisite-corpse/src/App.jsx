@@ -3,19 +3,18 @@ import Gallery from './components/Gallery';
 import SingleView from './components/SingleView';
 import Controls from './components/Controls';
 import { generateHash } from './engine/prng.js';
+import { STYLES } from './engine/styles.js';
 
 export default function App() {
   const [chain, setChain] = useState(() => [generateHash(), generateHash(), generateHash()]);
   const [view, setView] = useState('gallery');
+  const [styleKey, setStyleKey] = useState('ink');
+  const style = STYLES[styleKey];
 
-  // Keyboard shortcuts
   const handleKey = useCallback((e) => {
     if (e.target.tagName === 'INPUT') return;
     if (e.key === 'r' || e.key === 'R') {
       setChain((prev) => [...prev, generateHash()]);
-    }
-    if (e.key === 's' || e.key === 'S') {
-      document.querySelector('[data-action="save"]')?.click();
     }
   }, []);
 
@@ -24,9 +23,10 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [handleKey]);
 
+  const bgClass = styleKey === 'circuit' ? 'bg-[#08080f]' : 'bg-ink';
+
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
+    <div className={`min-h-screen flex flex-col text-paper ${bgClass} transition-colors duration-500`}>
       <header className="px-6 py-4 border-b border-paper/10">
         <div className="flex items-center justify-between">
           <div>
@@ -34,33 +34,32 @@ export default function App() {
               Exquisite Corpse
             </h1>
             <p className="font-mono text-xs text-paper/40 mt-0.5">
-              Collaborative generative chain &middot; monochrome ink
+              Collaborative generative chain &middot; {style.description}
             </p>
           </div>
-          <div className="font-mono text-[10px] text-paper/30">
-            v2.0.0
-          </div>
+          <div className="font-mono text-[10px] text-paper/30">v2.1.0</div>
         </div>
       </header>
 
-      {/* Controls */}
       <div className="px-6 py-3 border-b border-paper/10">
-        <Controls chain={chain} setChain={setChain} view={view} setView={setView} />
+        <Controls
+          chain={chain} setChain={setChain}
+          view={view} setView={setView}
+          styleKey={styleKey} setStyleKey={setStyleKey}
+        />
       </div>
 
-      {/* Main content */}
       <main className="flex-1 px-6 py-6 flex items-center justify-center">
         {view === 'gallery' ? (
-          <Gallery chain={chain} />
+          <Gallery chain={chain} renderer={style.renderer} />
         ) : (
-          <SingleView chain={chain} setChain={setChain} />
+          <SingleView chain={chain} setChain={setChain} renderer={style.renderer} />
         )}
       </main>
 
-      {/* Footer */}
       <footer className="px-6 py-3 border-t border-paper/10">
         <div className="flex justify-between font-mono text-[10px] text-paper/30">
-          <span>R = add piece &middot; S = save</span>
+          <span>R = add piece</span>
           <span>Hash-pair edge matching &middot; sfc32 PRNG</span>
         </div>
       </footer>
