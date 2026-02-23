@@ -38,7 +38,7 @@ export default function App() {
             </p>
           </div>
           <div className="font-mono text-[10px] text-paper/30">
-            v1.0.0
+            v2.0.0
           </div>
         </div>
       </header>

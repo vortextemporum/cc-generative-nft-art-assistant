@@ -3,7 +3,7 @@
 ## Overview
 Generative art project inspired by the surrealist exquisite corpse game. Each piece seamlessly continues from the previous one via hash-pair edge matching. Monochrome ink aesthetic with mixed techniques.
 
-## Version: 1.0.0
+## Version: 2.0.0
 
 ## Architecture
 
