@@ -181,3 +181,4 @@ The expanded feature set enables themed sub-collections:
 - Tested: Chrome, Firefox, Safari, Edge
 - Mobile: iOS Safari, Chrome Android
 - DPR capped at 2x for performance
+
